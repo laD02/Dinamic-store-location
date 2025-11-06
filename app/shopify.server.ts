@@ -12,7 +12,7 @@ const shopify = shopifyApp({
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "fe5c4373d04811dce98fa47cd65e269b",
   apiVersion: ApiVersion.October25,
   scopes: process.env.SCOPES?.split(","),
-  appUrl: process.env.SHOPIFY_APP_URL || "http://my-app-2779073.myshopify.com",
+  appUrl: process.env.SHOPIFY_APP_URL || "https://dinamic-store-location.vercel.app",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,

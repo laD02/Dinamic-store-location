@@ -3,7 +3,7 @@ import { redirect } from "react-router";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // redirect trực tiếp server-side
-  return redirect("/app/help-center"); // hoặc route bạn muốn hiển thị đầu tiên
+  return redirect("/app"); // hoặc route bạn muốn hiển thị đầu tiên
 };
 
 export default function Index() {
