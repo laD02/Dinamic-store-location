@@ -1,5 +1,5 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Navigate, Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
@@ -24,7 +24,6 @@ export default function App() {
         <s-link href="/app/major-retailers">Major Retailers</s-link>
         <s-link href="/app/settings">Settings</s-link>
         <s-link href="/app/help-center">Help Center</s-link>
-        <Navigate to="/app" replace />
       </s-app-nav>
       <Outlet />
     </AppProvider>
