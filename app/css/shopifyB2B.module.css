@@ -1,0 +1,132 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px
+}
+
+.boxShopifyB2B {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 207, 207);
+    gap: 8px
+}
+
+.upgrade {
+    display: flex;
+    justify-content: flex-start;
+    background-color:rgb(191, 237, 246) ;
+    padding: 8px;
+    align-items: flex-start;
+    border-radius: 8px;
+}
+
+.contentUpgrade {
+    margin-left: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.contentUpgrade button {
+    background-color: white;
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.contentUpgrade button:hover {
+    background-color: rgb(210, 207, 207);
+    cursor: pointer;
+}
+
+h5 {
+    margin: 0;
+}
+
+.urlText {
+    color: rgb(121, 121, 121);
+}
+
+.storeUrl {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+}
+
+.inputUrl {
+    margin: 0;
+    padding: 4px;
+    width: 100%;
+}
+
+.warning {
+    display: flex;
+    justify-content: flex-start;
+    background-color:rgb(255, 243, 182) ;
+    padding: 8px;
+    align-items: flex-start;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.text {
+    color: rgb(244, 219, 108);
+}
+
+.warning i {
+    color: rgb(244, 219, 108);
+}
+
+.saveCnt {
+    background-color: white;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border: 1px solid rgb(210, 207, 207);
+}
+
+.saveCnt:hover {
+    cursor: pointer;
+}
+
+.needHelp {
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 8px;
+    background-color: white;
+    padding-bottom: 12px;
+}
+
+.title {
+    padding: 16px;
+    background-color: rgb(152, 237, 254);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.content {
+    margin-left: 16px;
+}
+
+.mgl16{
+    margin-left: 16px;
+}
+
+.api {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16px;
+    margin-top: 12px;
+    margin-right: 16px;
+    gap: 4px;
+}
+
+.api input {
+    margin: 0;
+}
+
+.shopifyStore {
+    margin-right: 12px;
+}

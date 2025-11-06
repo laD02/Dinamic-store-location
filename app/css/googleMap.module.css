@@ -1,0 +1,66 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px
+}
+
+.boxGoogleMap {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 207, 207);
+}
+
+.connection {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+input {
+    padding: 8px;
+    margin-left: 8px;
+    margin-right: 8px;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 207, 207);
+    text-align: center;
+}
+
+input::placeholder {
+  text-align: center;
+}
+
+.btnSave {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btnSave button {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 207, 207);
+    padding: 8px;
+}
+
+button:hover {
+    background-color: rgb(210, 207, 207);
+}
+
+.needHelp {
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 8px;
+    background-color: white;
+}
+
+.title {
+    padding: 16px;
+    background-color: rgb(152, 237, 254);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.content {
+    padding: 16px;
+}
