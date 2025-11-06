@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id @default(cuid())
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model Store {
+  id         String   @id @default(cuid())
+  storeName  String
+  address    String
+  city       String
+  state      String
+  code       String
+  phone      String?
+  image      String?
+  url        String?
+  directions String?
+  contract   Json?
+  source     String
+  visibility String
+  time       Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  lat        Float?
+  lng        Float?
+}
+
+model Style {
+  id              String    @id @default(cuid())
+  primaryColor    String
+  secondaryColor  String
+  primaryFont     String
+  secondaryFont   String
+  backgroundColor String
+  color           String
+  iconColor       String
+  shadowColor     String
+  transparency    Int
+  blur            Int
+  anchorx         Int
+  anchory         Int
+  cornerRadius    Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+}

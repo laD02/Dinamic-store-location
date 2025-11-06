@@ -1,0 +1,287 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 24px;
+    padding-bottom: 24px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.boxButton {
+    display: flex;
+    justify-content: space-between;
+    gap: 28px
+}
+
+.button {
+    background-color: rgb(210, 207, 207);
+    border-radius: 4px;
+    padding: 4px;
+    opacity: 0.5;
+}
+
+.open {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.button.open:hover {
+    background-color: rgb(189, 186, 186);
+}
+
+.button i {
+    margin-right: 4px;
+}
+
+.btnAdd {
+    background-color: rgb(60, 58, 58);
+    color: white;
+    padding: 4px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.btnAdd:hover {
+    background-color:rgb(31, 31, 31) ;
+    cursor: pointer;
+}
+
+.btnAdd i {
+    margin-right: 4px;
+}
+
+.body {
+    background-color: white;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.search {
+    padding: 8px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    border: 0;
+    border-radius: 8px;
+    margin: 4px;
+}
+
+.searchInput {
+    width: 100%;
+    border: none;
+    outline: none;
+}
+
+.search:focus-within {
+    border: 1px solid blue;
+}
+
+.search i {
+    margin-right: 4px;
+    text-align: center;
+}
+
+.boxAddFilter {
+    padding: 8px;
+    border-top: 1px solid rgb(210, 207, 207);
+    display: flex;
+    justify-content: flex-start;
+}
+
+.selectSource {
+    position: absolute;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); 
+    z-index: 10;
+    padding: 4px;
+    width: 200%;
+    display: none;
+}
+
+.selectSource input[type="checkbox"] {
+    accent-color: black;
+}
+
+.selectSource input[type="radio"] {
+    accent-color: black;
+}
+
+.addSource {
+    padding-right: 8px;
+    padding-left: 8px;
+    border: 1px dotted rgb(210, 207, 207);
+    border-radius: 8px;
+    margin-right: 4px;
+}
+
+.source {
+    position: relative; 
+    display: none;
+}
+
+.select {
+    position: absolute;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); 
+    z-index: 10;
+    padding: 4px;
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
+.unShow {
+    display: none;
+}
+
+.select div:hover {
+    background-color: rgb(210, 207, 207);
+    border-radius: 8px;
+}
+
+.select div:active {
+    background-color: rgb(190, 186, 186);
+    border-radius: 8px;
+}
+
+.source i {
+    font-size: 8px;
+    margin-left: 4px;
+}
+
+.source i:hover {
+    cursor: pointer;
+}
+
+.filter {
+    position: relative;
+}
+
+.addFilter {
+    padding-right: 8px;
+    padding-left: 8px;
+    border: 1px dotted rgb(210, 207, 207);
+    border-radius: 8px;
+}
+
+.addFilter:active {
+    background-color: rgb(190, 186, 186);
+}
+
+.addFilter:hover {
+    border: 1px solid rgb(210, 207, 207)
+}
+
+.addFilter i {
+    margin-left: 4px;
+}
+
+.select div {
+    padding: 4px;
+    padding-right: 6px;
+    padding-left: 6px;
+    box-shadow: black;
+}
+
+.storeTable {
+    border-collapse: collapse;     /* Xóa khoảng cách giữa các ô */
+    border-spacing: 0;
+    width: 100%;
+}
+
+.storeTable td {
+    border-bottom: 1px solid rgb(210, 207, 207);
+}
+
+.storeTable thead tr th {
+    padding: 8px;
+    background: transparent; /* bỏ màu riêng của th */
+    border: none; 
+}
+
+.storeTable tbody tr td {
+    padding: 8px;
+}
+
+.storeTable thead tr {
+    background-color: rgb(210, 207, 207);
+}
+
+.storeTable tr:hover td{ 
+    background-color: rgb(210, 207, 207);
+    cursor: pointer;
+}
+
+.footerTb {
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid rgb(210, 207, 207);
+}
+
+.footerTb i{
+    padding: 8px;
+    background-color: rgb(210, 207, 207);
+    border-radius: 8px;
+}
+
+.footerTb div {
+    margin-right: 4px;
+    margin-left: 4px;
+}
+
+.titleTb {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    width: 100%;
+    border-bottom: 1px solid rgb(210, 207, 207);
+    border-top: 1px solid rgb(210, 207, 207);
+}
+
+.boxQuantity {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.boxQuantity input {
+    margin-right: 16px;
+}
+
+.boxQuantity input[type="checkbox"] {
+    accent-color: black;
+}
+
+.boxBtn {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    align-items: center;
+}
+
+.boxBtn button {
+    background-color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.storeTable input[type= "checkbox"] {
+    accent-color: black;
+}
+
+.link {
+    text-decoration: none;
+    color: black;
+}
+
+

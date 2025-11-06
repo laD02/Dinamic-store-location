@@ -1,0 +1,72 @@
+.wrapper {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  width: 100%;
+  margin-top: 16px;
+  margin-left: 8px;
+}
+
+.colorRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.colorBoxWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.colorBox {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid #ddd;
+}
+
+.pickerWrapper {
+  margin-top: 8px;
+  z-index: 10;
+  position: absolute;
+  top: 48px; /* nằm ngay dưới box */
+  left: 0;
+}
+
+.colorInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.colorInfo strong {
+  font-size: 14px;
+  color: #222;
+}
+
+.colorInfo span {
+  font-size: 13px;
+  color: #666;
+}
+
+.fontRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px
+}
+
+.fontColum {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fontColum select {
+  padding: 4px;
+  border-radius: 8px;
+}

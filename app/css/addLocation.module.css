@@ -1,0 +1,245 @@
+
+h4, p {
+    margin: 0;
+}
+
+.title {
+    display: flex;
+    justify-content: space-between;
+    padding: 24px 0px;
+    align-items: center;
+}
+
+.boxTitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btnBack {
+    border: none;
+    margin-right: 4px;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.btnBack:hover {
+    background-color: rgb(234, 231, 231);
+    cursor: pointer;
+}
+
+.btnVisible {
+    margin-left: 4px;
+    border-radius: 8px;
+    background-color: aquamarine;
+    border: none;
+    padding: 4px;
+}
+
+.btnHidden {
+    margin-left: 4px;
+    border-radius: 8px;
+    border: none;
+    background-color: rgb(216, 218, 217);
+    color: rgb(97, 97, 245);
+    padding: 4px;
+}
+
+.btnAttribute i {
+    margin-right: 4px;
+}
+
+.btnSave {
+    margin-right: 8px;
+    border: none;
+    background-color: rgb(210, 207, 207);
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btnSave:hover {
+    background-color: rgb(189, 186, 186);
+}
+
+.btnDelete {
+    margin-right: 8px;
+    border: none;
+    background-color: rgb(210, 207, 207);
+    padding: 8px;
+    border-radius: 8px;
+    color: red;
+}
+
+.btnDelete:hover {
+    background-color: rgb(189, 186, 186);
+    cursor: pointer;
+}
+
+.body {
+    display: flex;
+    justify-content: space-between;
+}
+
+.box {
+    width: 50%;
+    height: 100%;
+}
+
+.information {
+    width: 65%;
+}
+
+.shared {
+    padding: 16px;
+    border-radius: 8px;
+    background-color: white;
+    border: 1px solid rgb(193, 188, 188);
+    margin-bottom: 20px;
+}
+
+.right {
+    display: flex;
+    justify-content: space-between;
+}
+
+.source {
+    background-color: rgb(136, 240, 240);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.formLocation {
+    margin-top: 8px;
+    padding: 8px;
+}
+
+.sharedForm {
+    margin-bottom: 12px;
+}
+
+.sharedForm input{
+    width: 100%;
+    margin-top: 4px;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+select {
+    width: 100%;
+    margin-top: 4px;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.sharedRow {
+    display: flex;
+    justify-content: space-between;
+}
+
+.right  button{
+    padding: 6px;
+    background-color: white;
+    border-radius: 8px;
+    border-color: rgb(210, 207, 207);
+}
+
+.right button:hover {
+    cursor: pointer;
+    background-color: rgb(189, 186, 186);
+}
+
+i {
+    margin-right: 4px;
+}
+
+.socialSection {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.socialSection section {
+    width: 12px;
+    margin: 0;
+}
+
+.socialSection input {
+    padding: 4px;
+    border-radius: 8px;
+}
+
+table {
+    width: 100%;
+}
+
+.addImage {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.boxAddImage {
+    width: 100%;
+    height: 100px;
+    border: 1px dotted rgb(193, 188, 188);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center; /* căn giữa ngang */
+    align-items: center;  
+    cursor: pointer; 
+}
+
+.boxAddImage button {
+    padding: 8px;
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer; 
+}
+
+.boxAddImage button:hover {
+    background-color: rgb(189, 186, 186);
+}
+
+.boxAddImage > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.previewBox {
+  width: 100%;
+    height: 100%;           /* bạn đổi theo ý muốn */
+    overflow: hidden;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;  /* ảnh trên, icon dưới */
+    align-items: center;     /* căn giữa icon theo ngang */
+    justify-content: center;
+}
+
+.previewImage {
+    width: 100%;
+    height: 50px;
+    object-fit: contain;     /* hoặc cover nếu muốn full khung */
+    display: flex;          /* ảnh không cần flex */  
+    cursor: pointer;
+}
+
+.boxImage {
+    position: fixed;
+    right: 0;
+    top: 50;
+    width: 450px;  /* thay theo ý bạn */
+    height: 400px;
+    width: 35%;
+}
+
+.unShow {
+    display: none;
+}
+
+

@@ -1,0 +1,52 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+button {
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+.save {
+    border-radius: 4px;
+    background-color: green;
+    color: white;
+    height: 28px;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.save:hover {
+    background-color: rgb(2, 102, 2);
+}
+
+.body {
+    display: flex;
+    justify-content: space-between;
+}
+
+.list {
+    margin-left: 8px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.listItem {
+    padding: 4px 12px;
+    margin-right: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.listItem:hover {
+    background-color: rgb(210, 207, 207);
+}
+
+.active {
+    background-color: rgb(210, 207, 207);
+}
+
+
