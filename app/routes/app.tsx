@@ -1,5 +1,5 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Navigate, Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
@@ -18,12 +18,13 @@ export default function App() {
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
-        <s-link href="/">All Location</s-link>
+        <s-link href="/app">All Location</s-link>
         <s-link href="/app/map-designers">Map Designers</s-link>
         <s-link href="/app/intergrations">Intergrations</s-link>
         <s-link href="/app/major-retailers">Major Retailers</s-link>
         <s-link href="/app/settings">Settings</s-link>
         <s-link href="/app/help-center">Help Center</s-link>
+        <Navigate to="/app" replace />
       </s-app-nav>
       <Outlet />
     </AppProvider>
