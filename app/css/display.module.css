@@ -1,0 +1,43 @@
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.change {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+.select {
+    width: 100%;
+    background-color: white;
+    border: 1px solid rgb(210, 210, 210);
+    padding: 32px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.select select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 210, 210);
+}
+
+.btnSave {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.btnSave button {
+    background-color: rgb(240, 240, 240);
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgb(240, 240, 240);
+    color: rgb(218, 218, 218);
+}

@@ -21,7 +21,6 @@ export default function App() {
         <s-link href="/app">All Location</s-link>
         <s-link href="/app/map-designers">Map Designers</s-link>
         <s-link href="/app/intergrations">Intergrations</s-link>
-        <s-link href="/app/major-retailers">Major Retailers</s-link>
         <s-link href="/app/settings">Settings</s-link>
         <s-link href="/app/help-center">Help Center</s-link>
       </s-app-nav>

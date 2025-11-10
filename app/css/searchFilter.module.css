@@ -1,0 +1,212 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background-color: white;
+    border-radius: 12px;
+    margin-top: 16px;
+    border: 1px solid rgb(210, 207, 207);
+}
+
+.addFilter {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16px;
+    margin-right: 16px;
+    margin-top: 16px;
+    gap: 4px;
+}
+
+.btnFilter {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.input {
+    width: 100%;
+    margin: 0;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 210, 210);
+}
+
+.add {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap:4px;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid rgb(210, 210, 210);
+    padding: 8px;
+}
+
+.inputError {
+    background-color: rgb(253, 227, 227);
+    border: 1px solid brown
+}
+
+.add:hover {
+    background-color: rgb(232, 231, 231);
+}
+
+.textError {
+    color: brown;
+}
+
+.blockFilter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin-top: 28px;
+}
+
+.blockFilter i {
+    color: rgb(210, 210, 210);
+    font-size: 60px;
+}
+
+.blockFilter span {
+    color: rgb(210, 210, 210);
+}
+
+.tableFilter {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+/* Header */
+.tableFilter thead tr {
+  background: #f5f5f5;
+}
+
+.tableFilter th {
+  text-align: center;
+  padding: 12px 20px;
+  font-weight: 600;
+  color: #666;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Body rows */
+.tableFilter td {
+  padding: 12px 20px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+}
+
+/* Hàng */
+.tableFilter tr:hover {
+  background: #fafafa;
+}
+
+/* Icon nhóm bên phải */
+.action {
+  text-align: center;
+  cursor: pointer;
+}
+
+.action i {
+  font-size: 16px;
+  color: #555;
+  transition: 0.2s;
+}
+
+.action i:hover {
+  color: #111;
+}
+
+.colFilter {
+    width: 90%;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.formEdit {
+  background: white;
+  border-radius: 8px;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 16px;
+}
+
+.title {
+  padding: 16px;
+  background-color: rgb(230, 230, 230);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title i {
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.title i:hover {
+  background-color: rgb(210, 210, 210);
+}
+
+.inputEdit {
+  display: flex;
+  flex-direction: column;
+  margin-left: 16px;
+  margin-right: 16px;
+  gap: 8px;
+}
+
+.inputEdit input {
+  padding: 4px;
+  border: 1px solid rgb(210, 210, 210);
+  border-radius: 8px;
+}
+
+.btnEdit {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-right: 16px;
+}
+
+.btnCancelEdit {
+  background-color: white;
+  padding: 8px;
+  border: 1px solid rgb(210, 210, 210);
+  border-radius: 8px;
+  cursor: pointer;
+} 
+
+.btnCancelEdit:hover {
+  background-color: rgb(210, 210, 210);
+}
+
+.btnSaveEdit {
+  background-color: black;
+  color: white;
+  padding: 8px;
+  border: 1px solid rgb(210, 210, 210);
+  border-radius: 8px;
+  cursor: pointer;
+} 
+
+.btnSaveEdit:hover {
+  background-color: rgb(44, 44, 44);
+}
+
+

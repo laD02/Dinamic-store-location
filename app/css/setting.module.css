@@ -1,0 +1,21 @@
+.listBlock {
+    display: flex;
+    justify-content: flex-start;
+    gap: 16px;
+    margin-left: 16px;
+}
+
+.itemsBlock {
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.itemsBlock:hover {
+    background-color:  rgb(223, 223, 223);
+}
+
+.active {
+    background-color: rgb(211, 209, 209);
+}
+

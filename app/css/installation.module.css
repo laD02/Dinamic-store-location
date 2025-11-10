@@ -1,0 +1,45 @@
+.wrapper {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px
+}
+
+.option {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px
+}
+
+.boxLeft {
+    width: 70%;
+}
+
+.boxRight {
+    background-color: white;
+    border: 1px solid rgb(210, 210, 210);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+hr {
+    width: 100%;
+    border: 1px solid rgb(210, 210, 210)
+}
+
+.step {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px
+}
+
+.stepTitle {
+    width: 40%;
+}
+.stepContent {
+    width: 100%;
+}
