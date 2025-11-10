@@ -1,10 +1,11 @@
-import { Link } from "react-router"
+
+import { useNavigate } from "react-router"
 import styles from "../css/shopifyB2B.module.css"
 import { useState } from "react"
 
 export default function ShopifyB2B () {
-    
-    const [value, setValue] = useState("2")
+    const navigate = useNavigate()
+    const [value, setValue] = useState("")
 
     return (
         <div className={styles.wrapper}>
@@ -16,9 +17,9 @@ export default function ShopifyB2B () {
                     <div className={styles.contentUpgrade}>
                         <h5>Upgrade Required</h5>
                         <p>Shopify B2B Integration feature is only available on the Business Plus plan. Upgrade your plan to access this feature.</p>
-                        <Link to="">
-                            <button>Upgrade My Plan</button>
-                        </Link>
+                        <div>    
+                            <button onClick={ () => navigate("/app/plan")}>Upgrade My Plan</button>
+                        </div>
                     </div>
                 </div>
                 <h4 style={{marginTop:"16px"}}>Shopify B2B Account</h4>

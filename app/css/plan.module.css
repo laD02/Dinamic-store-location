@@ -56,11 +56,15 @@ i:hover {
 
 .btnSelect {
     width: 100%;
-    background-color: black;
+    background-color: rgb(40, 40, 40);
     color: white;
     border-radius: 8px;
     padding: 8px;
     cursor: pointer;
+}
+
+.btnSelect:hover {
+    background-color: black;
 }
 
 .list {

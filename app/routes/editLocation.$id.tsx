@@ -84,7 +84,7 @@ export default function AddLocation () {
     const [preview, setPreview] = useState<string | null>(null);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [deleteContract, setDeleteContract] = useState<string[]>([]);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => ({
         storeName: "",
         address:  "",
         city:  "",
@@ -113,7 +113,7 @@ export default function AddLocation () {
         contract:  {} as Record<string, string[]>,
         source:  "",
         visibility:  ""
-    });
+    }));
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;

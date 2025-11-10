@@ -4,10 +4,17 @@ import styles from "../css/allLocation.module.css"
 import { useState } from "react";
 import prisma from "app/db.server";
 import { Store } from "@prisma/client";
+import { exportStoresToCSV } from "../utils/exportCSV";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const storeData = await prisma.store.findMany();
-  return storeData; // hoặc return {}
+  const serialized = storeData.map((s) => ({
+    ...s,
+    createdAt: s.createdAt.toISOString(),
+    updatedAt: s.updatedAt.toISOString(),
+  }));
+
+  return serialized;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -142,7 +149,7 @@ export default function AllLocation() {
       <div className={styles.header}>
         <div className={styles.title}>All Location</div>
         <div className={styles.boxButton}>
-          <div className={`${styles.button} ${hasChecked && styles.open }`}>
+          <div className={`${styles.button} ${hasChecked && styles.open }`} onClick={() => exportStoresToCSV(stores, sellectRow)}>
             <i className="fa-solid fa-arrow-up-from-bracket"></i>
             Export
           </div>
@@ -401,8 +408,8 @@ export default function AllLocation() {
                 </td>
                 <td></td>
                 <td><span >{store.visibility}</span></td>
-                <td>{store.createdAt.toLocaleString()}</td>
-                <td>{store.updatedAt.toLocaleString()}</td>
+                <td>{new Date(store.createdAt).toLocaleString()}</td>
+                <td>{new Date(store.updatedAt).toLocaleString()}</td>
                 <td>
                   <i className="fa-regular fa-trash-can" onClick={() => handleDeleteTrash(store.id)}></i>
                 </td>
