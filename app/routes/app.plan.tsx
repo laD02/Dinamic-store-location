@@ -16,7 +16,7 @@ export default function Plan () {
                     <div className={styles.pricing}>Free</div>
                     <div className={styles.info}></div>
                     <div>
-                        <button className={styles.btnSelect}>Select</button>
+                        <s-button variant="primary">Select</s-button>
                     </div>
                     <div className={styles.list}>
                         <span>
@@ -38,7 +38,7 @@ export default function Plan () {
                     <div className={styles.pricing}>$30 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
                     <div>
-                        <button className={styles.btnSelect}>Select</button>
+                        <s-button variant="primary">Select</s-button>
                     </div>
                     <div className={styles.list}>
                         <span>
@@ -68,7 +68,7 @@ export default function Plan () {
                     <div className={styles.pricing}>$50 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
                     <div className={styles.boxBtn}>
-                        <button className={styles.btnSelect}>Select</button>
+                        <s-button variant="primary">Select</s-button>
                     </div>
                     <div className={styles.list}>
                         <span>

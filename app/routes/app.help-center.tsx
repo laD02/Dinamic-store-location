@@ -41,28 +41,26 @@ export default function HelpCenter() {
         <div className={styles.boxRight}>
           <div className={styles.helpChat}>
             <div>
-              <i className="fa-regular fa-message"></i>
+              <s-icon type="chat"/>
             </div>
             <div>
               <h2 className={styles.titleBox}>Chat with us</h2>
               <p>Submit your request using our support widget and someone will be in touch shortly!</p>
-              <button>
-                <i className="fa-regular fa-message"></i>
+              <s-button icon="chat">
                 Open chat
-              </button>
+              </s-button>
             </div>
           </div>
           <div className={styles.helpEmail}>
             <div>
-              <i className="fa-regular fa-envelope"></i>
+              <s-icon type="email"/>
             </div>
             <div>
               <h2 className={styles.titleBox}>Email us</h2>
               <p>Click the button below to send us an email with your issue or question.</p>
-              <button>
-                <i className="fa-regular fa-envelope"></i>
+              <s-button icon="email">
                 Email us
-              </button>
+              </s-button>
             </div>
           </div>
         </div>
