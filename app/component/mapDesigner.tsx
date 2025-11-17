@@ -3,17 +3,20 @@ import styles from "../css/mapDesignerChilrent.module.css"
 import { useState } from "react";
 import ThemeSetUp from "./themeSetup";
 import PopupStyle from "./popupStyle";
+import { useNavigation } from "react-router";
 
 export default function MapDesigner ({ 
     onThemeChange,
     onPopupChange,
     onSave,
-    config
+    config,
+    isSaving
 }: { 
     onThemeChange: (theme: any) => void;
     onPopupChange: (popup: any) => void;  
     onSave: () => void,
-    config: any
+    config: any,
+    isSaving: boolean
 }) {
 
     const listDesign = ["theme Setup", "Popup Style"]
@@ -24,9 +27,15 @@ export default function MapDesigner ({
             <s-stack>
                 <div className={styles.header}>
                     <h2>Map Designer</h2>
-                    <button className={styles.save} onClick={onSave}>
-                        Save
-                    </button>
+                    <s-button
+                        variant="secondary"
+                        onClick={onSave}
+                        icon="arrow-down"
+                        type="submit"
+                        loading={isSaving}
+                    >
+                        save
+                    </s-button>
                 </div>
 
                 <div className={styles.list}>

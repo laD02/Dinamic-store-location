@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useLoaderData, useNavigate, useSubmit } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useFetcher, useLoaderData, useNavigate, useNavigation, useSubmit } from "react-router";
 import styles from "../css/addLocation.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
@@ -15,6 +15,7 @@ export async function loader({params}:LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const urls = formData.getAll("contract") as string[];
+  const actionType = formData.get('actionType')
   const deleted = JSON.parse(formData.get("deleteContract")?.toString() || "[]") as string[];
   const { id } = params;
 
@@ -36,6 +37,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!contract[key]) contract[key] = [];
     contract[key].push(url);
   });
+
+  if (actionType === "deleteId") {
+    const id = formData.get("id") as string;
+    await prisma.store.delete({ where: { id } });
+    return redirect("/app");
+  }
 
   // ✅ Cập nhật vào database
   await prisma.store.update({
@@ -76,6 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 
 export default function EditLocation () {
+    const fetcher = useFetcher()
     const store = useLoaderData()
     const submit = useSubmit();
     const navigate = useNavigate();
@@ -85,6 +93,8 @@ export default function EditLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [deleteContract, setDeleteContract] = useState<string[]>([]);
     const [error, setError] = useState(false)
+    const navigation = useNavigation();
+    const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
     const [formData, setFormData] = useState(() => ({
         storeName: "",
         address:  "",
@@ -183,6 +193,57 @@ export default function EditLocation () {
         }
     }, [store]);
 
+    const handleDiscard = () => {
+        if (!store) return;
+
+        // Reset formData về store
+        setFormData({
+            ...store,
+            time: { ...store.time },
+            contract: { ...store.contract },
+        });
+
+        // Reset state phụ
+        setPreview(store.image || null);
+        setImageBase64(store.image || null);
+        setDeleteContract([]);
+        setCountSocial([]);
+        setClick(store.visibility === "visible");
+        setError(false);
+    }; 
+
+    const handleSubmit = () => {
+        const form = formRef.current;
+        if (!form) return;
+
+        // Check required fields
+        const requiredFields = ["storeName", "address", "city", "state", "code"];
+        const emptyFields = requiredFields.filter((name) => {
+        const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
+        return !el?.value.trim();
+        });
+
+        // Hidden input deleteContract
+        let hidden = form.querySelector("input[name='deleteContract']") as HTMLInputElement;
+        if (!hidden) {
+        hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "deleteContract";
+        form.appendChild(hidden);
+        }
+        hidden.value = JSON.stringify(deleteContract ?? []);
+
+        if (emptyFields.length > 0) {
+            setError(true);
+            return;
+        }
+
+        setError(false);
+
+        // Submit form
+        submit(form, { method: "post" });
+    }
+
     const handleAdd = () => {
         const newItem = {};
         setCountSocial([...countSocial, newItem]);
@@ -191,6 +252,13 @@ export default function EditLocation () {
     const handleRemove = (index: number) => {
         const newArr =  countSocial.filter((_,i) => i !== index)
         setCountSocial(newArr)
+    }
+
+    const handleDelete = (id : string) => {
+        const formData = new FormData()
+        formData.append("actionType", "deleteId");
+        formData.append("id", id);
+        fetcher.submit(formData, { method: "post" });
     }
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -256,70 +324,60 @@ export default function EditLocation () {
                 </s-stack>
                 <s-stack direction="inline" justifyContent="space-between" gap="small-300">
                     <s-button
-                        onClick={() => {
-                            const form = formRef.current;
-                            if (!form) return;
-
-                            // Check required fields
-                            const requiredFields = ["storeName", "address", "city", "state", "code"];
-                            const emptyFields = requiredFields.filter((name) => {
-                            const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
-                            return !el?.value.trim();
-                            });
-
-                            if (emptyFields.length > 0) {
-                            alert("Please fill out all required fields: " + emptyFields.join(", "));
-                            return;
-                            }
-
-                            // Hidden input deleteContract
-                            let hidden = form.querySelector("input[name='deleteContract']") as HTMLInputElement;
-                            if (!hidden) {
-                            hidden = document.createElement("input");
-                            hidden.type = "hidden";
-                            hidden.name = "deleteContract";
-                            form.appendChild(hidden);
-                            }
-                            hidden.value = JSON.stringify(deleteContract ?? []);
-
-                            // Submit form
-                            submit(form, { method: "post" });
-                        }}
+                        type="submit"
+                        onClick={() => handleSubmit()}
+                        loading={isSubmitting}
                         >
                         Save
                     </s-button>
 
                     <s-button
                         tone="critical"
-                        onClick={() => {
-                            setFormData({
-                            storeName: store.storeName || "",
-                            address: store.address || "",
-                            city: store.city || "",
-                            state: store.state || "",
-                            code: store.code || "",
-                            phone: store.phone || "",
-                            image: store.image || "",
-                            url: store.url || "",
-                            time: store.time || {},
-                            directions: store.directions || "",
-                            contract: store.contract || {},
-                            source: store.source || "",
-                            visibility: store.visibility || "",
-                            });
-                            setClick(store.visibility === "visible");
-                            setPreview(store.image || null);
-                            setDeleteContract([]);
-                            setCountSocial([]);
-                        }}
+                        commandFor="deleteTrash-modal"
                         >
                         Delete
                     </s-button>
+                    <s-modal id="deleteTrash-modal" heading="Delete Location">
+                        <s-text>
+                            Are you sure you want to delete the location? This action cannot be undone.
+                        </s-text>
+
+                        <s-button
+                            slot="secondary-actions"
+                            variant="secondary"
+                            commandFor="deleteTrash-modal"
+                            command="--hide"
+                        >
+                            Cancel
+                        </s-button>
+
+                        <s-button
+                            slot="primary-action"
+                            variant="primary"
+                            tone="critical"
+                            commandFor="deleteTrash-modal"
+                            command="--hide"
+                            onClick={() => handleDelete(store.id)}
+                        >
+                            Delete 
+                        </s-button>
+                    </s-modal>
                 </s-stack>
             </s-stack>
 
             <s-stack>
-                <Form ref={formRef} className={styles.information} method="post" encType="multipart/form-data">
+                <Form 
+                    ref={formRef} 
+                    className={styles.information} 
+                    method="post" 
+                    encType="multipart/form-data" 
+                    data-save-bar
+                    onSubmit={(e) => {
+                        e.preventDefault(); // prevent default submit
+                        handleSubmit();     // dùng hàm validate + submit chung
+                    }}
+                    onReset={handleDiscard}
+                >
                     <input type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
                     <s-stack gap="large-100">
                         <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
@@ -337,7 +395,7 @@ export default function EditLocation () {
                                         name = "storeName"
                                         error={ error === true ? "Location name is required" : ""}
                                         required
-                                        value={store.storeName}
+                                        defaultValue={formData.storeName}
                                     />
                                 </s-box>
                                 <s-box>
@@ -346,7 +404,7 @@ export default function EditLocation () {
                                         name = "address"
                                         error={error === true ? "Address line 1 is required" : ""}
                                         required
-                                        value={store.address}
+                                        defaultValue={formData.address}
                                     />
                                 </s-box>
                                 <s-stack direction="inline" justifyContent="space-between" gap="small-100">
@@ -357,12 +415,12 @@ export default function EditLocation () {
                                             name="city"
                                             error={ error === true ? "City is required" : ""}
                                             required
-                                            value={store.city}
+                                            defaultValue={formData.city}
                                         />
                                     </s-box>
                                 
                                     <s-box>
-                                        <s-select label="State" name="state" error={error === true ? "State is required" : ""} value={store.state}>
+                                        <s-select label="State" name="state" error={error === true ? "State is required" : ""} value={formData.state}>
                                             <s-option value="AL">AL</s-option>
                                             <s-option value="AZ">AZ</s-option>
                                             <s-option value="AS">AS</s-option>
@@ -376,7 +434,7 @@ export default function EditLocation () {
                                             name="code"
                                             error={error === true ? "Zip code is required" : ""}
                                             required
-                                            value={store.code}
+                                            defaultValue={formData.code}
                                         />
                                     </s-box>
                                 </s-stack>
@@ -386,7 +444,7 @@ export default function EditLocation () {
                                         <s-text-field 
                                             label="Phone Number"
                                             name="phone"
-                                            value={store.phone}
+                                            defaultValue={formData.phone}
                                         />
                                     </s-box>
                                     
@@ -394,7 +452,7 @@ export default function EditLocation () {
                                         <s-text-field 
                                             label="Website"
                                             name="url"
-                                            value={store.url}
+                                            defaultValue={formData.url}
                                         />
                                     </s-box>
                                 </s-stack>
@@ -402,7 +460,7 @@ export default function EditLocation () {
                                 <s-text-area 
                                     label="Direction"
                                     name="directions"
-                                    value={store.directions}
+                                    defaultValue={formData.directions}
                                 />
                             </s-stack>
                         </s-stack>

@@ -89,6 +89,7 @@ export default function MapDesigners() {
   const { stores, config } = useLoaderData<typeof loader>();
   const [searchAddress, setSearchAddress] = useState<string>("")
   const listRef = useRef<HTMLDivElement>(null);
+  const isSaving = fetcher.state !== "idle";
   const [theme, setTheme] = useState(() => ({
     primaryColor: "#000",
     secondaryColor: "#000",
@@ -204,6 +205,7 @@ export default function MapDesigners() {
           onPopupChange={setPopup}
           onSave={handleSave}
           config={{theme, popup}}
+          isSaving = {isSaving}
         />
       </s-stack>
     </s-page> 

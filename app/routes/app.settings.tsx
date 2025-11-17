@@ -7,7 +7,6 @@ import Display from "app/component/display";
 import SearchFilter from "app/component/searchFilter";
 import Installation from "app/component/installation";
 import prisma from "app/db.server";
-import Plan from "./app.plan";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const filter = await prisma.attribute.findMany()

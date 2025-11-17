@@ -1,10 +1,10 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useNavigate, useSubmit } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useNavigate, useNavigation, useSubmit } from "react-router";
 import styles from "../css/addLocation.module.css"
 import { useRef, useState } from "react";
 import prisma from "app/db.server";
 
 export async function loader({request}:LoaderFunctionArgs) {
-    return {};
+    return { };
 }
 
 export async function action({request}: ActionFunctionArgs) {
@@ -73,6 +73,8 @@ export default function AddLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
+    const navigation = useNavigation();
+    const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
     const handleAdd = () => {
         const newItem = {};
         setCountSocial([...countSocial, newItem]);
@@ -106,6 +108,24 @@ export default function AddLocation () {
         }
     };
 
+    const handleSubmit = () => {
+        if (!formRef.current) return;
+
+        const requiredFields = ["storeName", "address", "city", "state", "code"];
+        const emptyFields = requiredFields.filter((name) => {
+            const el = formRef.current!.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
+            return !el?.value?.trim();
+        });
+
+        if (emptyFields.length > 0) {
+            setError(true);
+            return;
+        }
+
+        setError(false);
+        submit(formRef.current, { method: "post" });
+    };
+
     return (
         <s-page heading="Dynamic Store Locator">
             <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
@@ -115,7 +135,7 @@ export default function AddLocation () {
                             background="strong" 
                             borderRadius="small-100" 
                             blockSize="50%"
-                            onClick={() => navigate(-1)}
+                            onClick={() => navigate("/app")}
                             padding="small-300"
                         >
                             <s-icon type="arrow-left"/>
@@ -147,46 +167,58 @@ export default function AddLocation () {
                 </s-stack>
                 <s-stack direction="inline" justifyContent="space-between" gap="small-300">
                     <s-button
-                        onClick={() => {
-                            if (!formRef.current) return;
-
-                            const requiredFields = ["storeName", "address", "city", "state", "code"];
-                            const emptyFields = requiredFields.filter((name) => {
-                            const el = formRef.current!.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
-                            return !el?.value?.trim();
-                            });
-
-                            if (emptyFields.length > 0) {
-                            setError(true);
-                            return;
-                            }
-
-                            setError(false);
-                            submit(formRef.current, { method: "post" });
-                        }}
-                        >
+                        type="submit"
+                        onClick={() => handleSubmit()}
+                        loading={isSubmitting}
+                    >
                         Save
                     </s-button>
 
                     <s-button
                         tone="critical"
-                        onClick={() => {
-                            if (!confirm("Are you sure you want to clear all data?")) return;
-
-                            formRef.current?.reset();           
-                            setCountSocial([{}, {}]);          
-                            setPreview(null);                  
-                            setImageBase64(null);               
-                            setClick(false);                   
-                        }}
-                        >
+                        commandFor="delete-modal"
+                    >
                         Delete
                     </s-button>
+                    <s-modal id="delete-modal" heading="Delete Location">
+                        <s-text>
+                        Are you sure you want to delete the location? This action cannot be undone.
+                        </s-text>
+
+                        <s-button
+                            slot="secondary-actions"
+                            variant="secondary"
+                            commandFor="delete-modal"
+                            command="--hide"
+                        >
+                            Cancel
+                        </s-button>
+
+                        <s-button
+                            slot="primary-action"
+                            variant="primary"
+                            tone="critical"
+                            commandFor="delete-modal"
+                            command="--hide"
+                            onClick={() => navigate('/app')}
+                        >
+                            Delete 
+                        </s-button>
+                    </s-modal>
                 </s-stack>
             </s-stack>
 
             <s-stack>
-                <Form ref={formRef} className={styles.information} method="post">
+                <Form 
+                    ref={formRef} 
+                    className={styles.information} 
+                    method="post" 
+                    data-save-bar
+                    onSubmit={(e) => {
+                        e.preventDefault(); // prevent default submit
+                        handleSubmit();     // dùng hàm validate + submit chung
+                    }}
+                >
                     <input type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
                     <s-stack gap="large-100">
                         <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
