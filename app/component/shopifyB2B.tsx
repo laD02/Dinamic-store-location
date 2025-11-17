@@ -18,7 +18,7 @@ export default function ShopifyB2B () {
                         <h5>Upgrade Required</h5>
                         <p>Shopify B2B Integration feature is only available on the Business Plus plan. Upgrade your plan to access this feature.</p>
                         <div>    
-                            <button onClick={ () => navigate("/app/plan")}>Upgrade My Plan</button>
+                            <s-button onClick={ () => navigate("/app/plan")}>Upgrade My Plan</s-button>
                         </div>
                     </div>
                 </div>
@@ -54,7 +54,7 @@ export default function ShopifyB2B () {
                             >
                             </s-banner>
 
-                            <button className={styles.saveCnt}>Save Connection</button>
+                            <s-button>Save Connection</s-button>
                         </s-stack>
                     }
                 </s-stack>
