@@ -104,11 +104,16 @@ input[type="range"]::-moz-range-thumb {
 .hrRow {
   background-color: #ddd;
   width: 100%;
+  height: 1px;
+  border: none;
 }
 
 .hrColum {
-  height: 100%;
-  background: #ddd;
+  width: 1px;          /* độ dày của line */
+  height: 100%;       /* chiều cao */
+  background-color: #ddd;
+  border: none;        /* loại bỏ border mặc định */
+  margin: 0;           /* xóa margin mặc định */
 }
 
 .rightBox {

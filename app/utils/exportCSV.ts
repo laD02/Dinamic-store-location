@@ -1,9 +1,13 @@
 // app/utils/exportCSV.ts
 import { Store } from "@prisma/client";
 
-export const exportStoresToCSV = (stores: Store[], selectedRow: boolean[]) => {
-  const selectedStores = stores.filter((_, index) => selectedRow[index]);
-  if (selectedStores.length === 0) return alert("No stores selected");
+export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
+  const selectedStores = stores.filter(store => selectedIds.includes(store.id));
+  
+  if (selectedStores.length === 0) {
+    alert("No stores selected");
+    return;
+  }
 
   const headers = [
     "No",
@@ -24,8 +28,8 @@ export const exportStoresToCSV = (stores: Store[], selectedRow: boolean[]) => {
     index + 1,
     store.storeName,
     store.source,
-    "Map Marker", // Hoặc bỏ trống nếu không cần
-    "",           // Tags nếu có
+    "Map Marker",
+    "",
     store.visibility,
     store.address,
     store.city,
@@ -35,16 +39,15 @@ export const exportStoresToCSV = (stores: Store[], selectedRow: boolean[]) => {
     new Date(store.updatedAt).toLocaleString()
   ]);
 
-  const csvContent =
-    [headers, ...rows]
-      .map((row) => row.map((v) => `"${v}"`).join(","))
-      .join("\n");
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.setAttribute("download", "stores.csv");
+  link.download = `stores_export_${new Date().toISOString().split("T")[0]}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

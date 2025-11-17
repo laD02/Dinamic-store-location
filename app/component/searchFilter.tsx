@@ -25,7 +25,7 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
     }
 
      const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value
+        const newValue = e.currentTarget.value
         setValue(newValue)
 
         // Nếu rỗng -> hiện lỗi
@@ -61,75 +61,125 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
     }
 
     return (
-        <div className={styles.wrapper}>
-            <span>Set up custom search filters so customers can more easily sort locations by specific criteria on your map to quickly find the type of location they are looking for. For example, you can set up filters like 'Local Boutique' or 'Wheelchair Accessible'.</span>
+        <s-stack background="base" padding="base" borderRadius="large" inlineSize="100%" gap="small" borderWidth="base">
+            <s-paragraph>Set up custom search filters so customers can more easily sort locations by specific criteria on your map to quickly find the type of location they are looking for. For example, you can set up filters like 'Local Boutique' or 'Wheelchair Accessible'.</s-paragraph>
             
-            <div className={styles.addFilter}>
-                <label>Add a filter</label>
-                <div className={styles.btnFilter}>
-                    <input 
-                        className={`${styles.input} ${show && styles.inputError}`}
-                        type = "text"
-                        value={value}
-                        onChange={handleChange}
-                    />
-
-                    <button 
-                        className={styles.add}
+            <s-stack padding="large" >
+                <s-text>Add a filter</s-text>
+                <s-stack direction="inline" justifyContent="space-between" alignItems="start">
+                    <s-box inlineSize="90%">
+                        <s-text-field 
+                            value={value}
+                            onInput= {(e: any)=> handleChange(e)}
+                            error={show ? 'The filter should not be empty.' : ''}
+                        />
+                    </s-box>
+                    <s-button 
+                        icon="plus"
                         onClick={() => handleError()}
                     >
-                        <i className="fa-solid fa-plus"></i>
                         Add
-                    </button>
-                </div>
-                {
-                    show && 
-                    <span className={styles.textError}>
-                        <i className="fa-solid fa-circle-exclamation"></i>
-                        The filter should not be empty.
-                    </span>
-                }
-            </div>
+                    </s-button>
+                </s-stack>
+            </s-stack>
             {
                 config && config.length > 0
                 ? 
-                    <table className={styles.tableFilter}>
-                         <thead>
-                            <tr>
-                                <th style={{textAlign: "left"}}>Filter</th>
-                                <th>Edit</th>
-                                <th>Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <s-table >
+                         <s-table-header-row>
+                            <s-table-header>Filter</s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header></s-table-header>
+                            <s-table-header>Edit</s-table-header>
+                            <s-table-header>Delete</s-table-header>
+                        </s-table-header-row>
+                        <s-table-body>
                             {
                                 config.map((item: any, index: any) => (
-                                    <tr key={index}>
-                                        <td className={styles.colFilter}>{item.filter}</td>
-                                        <td 
-                                            className={styles.action} 
-                                            onClick={() => {
-                                                setOpen(true)
-                                                setValueEdit(item.filter)
-                                                setEditId(item.id)
-                                            }}
-                                        >
-                                            <i className="fa-solid fa-pen"></i>
-                                        </td>
-                                        <td className={styles.action} onClick={() => handleDelete(item.id)}><i className="fa-solid fa-trash"></i></td>
-                                    </tr>
+                                    <s-table-row key={index}>
+                                        <s-table-cell>{item.filter}</s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell></s-table-cell>
+                                        <s-table-cell>
+                                            <s-button
+                                                commandFor="edit-modal"
+                                                variant="tertiary"
+                                                onClick={() => {
+                                                    setOpen(true)
+                                                    setValueEdit(item.filter)
+                                                    setEditId(item.id)
+                                                }}
+                                            >
+                                                <i className="fa-solid fa-pen"></i>
+                                            </s-button>
+                                            <s-modal id="edit-modal" heading="Update Filter" size="large">
+                                                <s-stack gap="base">
+                                                <s-text-field
+                                                    label="Filer"
+                                                    name="name"
+                                                    value={valueEdit}
+                                                    onInput={(e :any) => handleEditFilter(e)}
+                                                />
+                                                </s-stack>
+
+                                                <s-button
+                                                slot="primary-action"
+                                                variant="primary"
+                                                commandFor="edit-modal"
+                                                command="--hide"
+                                                onClick={() => handleSaveEdit()}
+                                                >
+                                                Save
+                                                </s-button>
+                                                <s-button
+                                                slot="secondary-actions"
+                                                variant="secondary"
+                                                commandFor="edit-modal"
+                                                command="--hide"
+                                                >
+                                                Cancel
+                                                </s-button>
+                                            </s-modal>
+                                        </s-table-cell>
+                                        <s-table-cell >
+                                            <s-button
+                                                onClick={() => handleDelete(item.id)}
+                                                variant="tertiary"
+                                            >
+                                                <i className="fa-solid fa-trash"></i>
+                                            </s-button>
+                                        </s-table-cell>
+                                    </s-table-row>
                                 ))
                             }
-                        </tbody>
-                    </table>
+                        </s-table-body>
+                    </s-table>
                 :
                     <div className={styles.blockFilter}>
                         <i className="fa-solid fa-magnifying-glass"></i>
                         <h2>No filters found</h2>
-                        <span>Try changing the filters or search term</span>
+                        <s-text color="subdued">Try changing the filters or search term</s-text>
                     </div>
             }
-            {
+            {/* {
                 open &&
                 <div className={styles.overlay}>
                     <div className={styles.formEdit}>
@@ -163,8 +213,7 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
                         </div>   
                     </div>
                 </div>
-            }
-
-        </div>
+            } */}
+        </s-stack>
     )
 }

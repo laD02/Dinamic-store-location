@@ -10,8 +10,8 @@ export default function Plan () {
                 <i className="fa-solid fa-arrow-left" onClick={() => navigate(-1)}></i>
                 Select a plan
             </h3>
-            <div className={styles.body}>
-                <div className={styles.select}>
+            <s-stack direction="inline" justifyContent="space-between">
+                <s-stack padding="large-200" background="base" borderRadius="large-200" borderWidth="base" inlineSize="30%">
                     <div className={styles.title}>Basic</div>
                     <div className={styles.pricing}>Free</div>
                     <div className={styles.info}></div>
@@ -32,8 +32,8 @@ export default function Plan () {
                             Google Maps Integration
                         </span>
                     </div>
-                </div>
-                <div className={styles.select}>
+                </s-stack>
+                <s-stack padding="large-200" background="base" borderRadius="large-200" borderWidth="base" inlineSize="30%">
                     <div className={styles.title}>Advanced</div>
                     <div className={styles.pricing}>$30 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
@@ -62,8 +62,8 @@ export default function Plan () {
                             Google Maps Integration
                         </span>
                     </div>
-                </div>
-                <div className={styles.select}>
+                </s-stack>
+                <s-stack padding="large-200" background="base" borderRadius="large-200" borderWidth="base" inlineSize="30%">
                     <div className={styles.title}>Business Plus</div>
                     <div className={styles.pricing}>$50 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
@@ -104,8 +104,8 @@ export default function Plan () {
                             Priority Support
                         </span>
                     </div>
-                </div>
-            </div>
+                </s-stack>
+            </s-stack>
         </div>
     )
 }

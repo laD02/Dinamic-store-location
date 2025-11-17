@@ -76,5 +76,8 @@
   "trustedDependencies": [
     "@shopify/plugin-cloudflare"
   ],
-  "author": "hoang"
+  "author": "hoang",
+  "overrides": {
+    "undici": "6.13.0"
+  }
 }

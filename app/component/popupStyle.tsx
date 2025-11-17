@@ -1,7 +1,5 @@
-
 import { useEffect, useState } from "react";
 import styles from "../css/popupStyle.module.css"
-import { HexColorPicker } from "react-colorful";
 
 export default function PopupStyle ({ onChange, config }: { onChange: (popup: any) => void, config: any }) {
     const [backgroundColor, setBackgroundColor] = useState(config?.backgroundColor ?? "#fff");
@@ -34,7 +32,15 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     />
                     {activePicker === "backgroundColor" && (
                         <div className={styles.pickerWrapper}>
-                            <HexColorPicker color={backgroundColor} onChange={setBackgroundColor} />
+                            {/* <HexColorPicker color={backgroundColor} onChange={setBackgroundColor} /> */}
+                            <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                <s-color-picker 
+                                value={backgroundColor} 
+                                onChange={(e) => {
+                                    const target = e.currentTarget as any;
+                                    setBackgroundColor(target.value)
+                                }}/>
+                            </s-box>
                         </div>
                     )}
                     <div className={styles.colorInfo}> 
@@ -70,7 +76,15 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     />
                     {activePicker === "color" && (
                         <div className={styles.pickerWrapper}>
-                            <HexColorPicker color={color} onChange={setColor} />
+                            {/* <HexColorPicker color={color} onChange={setColor} /> */}
+                            <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                <s-color-picker 
+                                value={color} 
+                                onChange={(e) => {
+                                    const target = e.currentTarget as any;
+                                    setColor(target.value)
+                                }}/>
+                            </s-box>
                         </div>
                     )}
                     <div className={styles.colorInfo}> 
@@ -86,7 +100,15 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     />
                     {activePicker === "iconColor" && (
                         <div className={styles.pickerWrapper}>
-                            <HexColorPicker color={iconColor} onChange={setIconColor} />
+                            {/* <HexColorPicker color={iconColor} onChange={setIconColor} /> */}
+                            <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                <s-color-picker 
+                                value={iconColor} 
+                                onChange={(e) => {
+                                    const target = e.currentTarget as any;
+                                    setIconColor(target.value)
+                                }}/>
+                            </s-box>
                         </div>
                     )}
                     <div className={styles.colorInfo}> 
@@ -106,7 +128,15 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     />
                     {activePicker === "shadowColor" && (
                         <div className={styles.pickerWrapper}>
-                            <HexColorPicker color={iconColor} onChange={setShadowColor} />
+                            {/* <HexColorPicker color={iconColor} onChange={setShadowColor} /> */}
+                            <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                <s-color-picker 
+                                value={shadowColor} 
+                                onChange={(e) => {
+                                    const target = e.currentTarget as any;
+                                    setShadowColor(target.value)
+                                }}/>
+                            </s-box>
                         </div>
                     )}
                     <div className={styles.colorInfo}> 

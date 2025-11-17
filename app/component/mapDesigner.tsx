@@ -20,32 +20,34 @@ export default function MapDesigner ({
     const [selected, setSeleceted] = useState<number>(0)
 
     return (
-        <div className={styles.wrapper}>
-            <div className={styles.header}>
-                <h2>Map Designer</h2>
-                <button className={styles.save} onClick={onSave}>
-                    Save
-                </button>
-            </div>
+        <s-stack gap="large">
+            <s-stack>
+                <div className={styles.header}>
+                    <h2>Map Designer</h2>
+                    <button className={styles.save} onClick={onSave}>
+                        Save
+                    </button>
+                </div>
 
-            <div className={styles.list}>
-                {
-                    listDesign.map((item, index) => (
-                        <div 
-                            className={`${styles.listItem} ${selected === index ? styles.active : ""}`} 
-                            key={index} 
-                            onClick={() => setSeleceted(index)}
-                        >
-                            {item}
-                        </div>
-                    ))
-                }
-            </div>
+                <div className={styles.list}>
+                    {
+                        listDesign.map((item, index) => (
+                            <div 
+                                className={`${styles.listItem} ${selected === index ? styles.active : ""}`} 
+                                key={index} 
+                                onClick={() => setSeleceted(index)}
+                            >
+                                {item}
+                            </div>
+                        ))
+                    }
+                </div>
+            </s-stack>
 
             <div className={styles.body}>
                 {selected === 0 && <ThemeSetUp onChange={onThemeChange} config={config.theme}/>}
                 {selected === 1 && <PopupStyle onChange={onPopupChange} config={config.popup}/>}
             </div>
-        </div>
+        </s-stack>
     )
 }

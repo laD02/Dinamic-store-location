@@ -6,7 +6,7 @@ import { useState } from "react";
 
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return null; // hoặc return {}
+  return {}; // hoặc return {}
 }
 
 export default function HelpCenter() {

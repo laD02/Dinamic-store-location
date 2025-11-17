@@ -59,7 +59,7 @@
     border-radius: 8px;
 }
 
-.search {
+/* .search {
     padding: 8px;
     display: flex;
     justify-content: flex-start;
@@ -67,26 +67,33 @@
     border: 0;
     border-radius: 8px;
     margin: 4px;
+} */
+
+.search {
+    margin: 4px;
 }
 
-.searchInput {
+/* .searchInput {
     width: 100%;
     border: none;
     outline: none;
-}
+} */
 
-.search:focus-within {
+/* .search:focus-within {
     border: 1px solid blue;
 }
 
 .search i {
     margin-right: 4px;
     text-align: center;
+} */
+
+.input-wrapper.no-label{
+    border: none ;
 }
 
 .boxAddFilter {
     padding: 8px;
-    border-top: 1px solid rgb(210, 207, 207);
     display: flex;
     justify-content: flex-start;
 }
@@ -283,5 +290,6 @@
     text-decoration: none;
     color: black;
 }
+
 
 

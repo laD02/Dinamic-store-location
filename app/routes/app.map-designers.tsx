@@ -143,32 +143,33 @@ export default function MapDesigners() {
     <s-page heading="Dynamic Store Locator" >
       <div className={styles.boxMap}>
         <div className={styles.boxInfo}>
-          <div className={styles.search}>
-            <i className="fa-solid fa-magnifying-glass"></i>
-            <input 
-              type="text" 
-              placeholder="Enter Address or Zip code"
-              value={searchAddress}
-              onChange={(e) => {
-                setSearchAddress(e.target.value)
+          <s-search-field 
+            placeholder="Enter Address or Zip code"
+            value={searchAddress}
+              onInput={(e) => {
+                const target = e.target as any;
+                setSearchAddress(target.value)
               }}
-            />
-          </div>
-          <div className={styles.attribute}>
-            <div className={styles.allTag}>
-              <i className="fa-solid fa-bars"></i>
-              All Tag
-            </div>
-            <div className={styles.miles}>
-              <select>
-                <option value="5">5 miles</option>
-                <option value="10">10 miles</option>
-                <option value="25">25 miles</option>
-                <option value="50">50 miles</option>
-                <option value="100">100 miles</option>      
-              </select>
-            </div>
-          </div>
+          />
+          <s-stack direction="inline" justifyContent="space-between" gap="small">
+            <s-stack direction="inline" alignItems="center" background="strong" borderRadius="large" paddingInline="small">   
+              <s-box>
+                <s-icon type="menu" />
+              </s-box>
+              <s-box>
+                <s-text>All Tag</s-text>       
+              </s-box>
+            </s-stack>
+            <s-stack>
+              <s-select>
+                <s-option value="5">5 miles</s-option>
+                <s-option value="10">10 miles</s-option>
+                <s-option value="25">25 miles</s-option>
+                <s-option value="50">50 miles</s-option>
+                <s-option value="100">100 miles</s-option>      
+              </s-select>
+            </s-stack>
+          </s-stack>
           <div className={styles.information} ref={listRef}>
             {
               stores.map((store: any, index:number) => (
@@ -197,14 +198,14 @@ export default function MapDesigners() {
         </div>  
       </div>
 
-      <div>
-          <MapDesigner 
-            onThemeChange={setTheme}
-            onPopupChange={setPopup}
-            onSave={handleSave}
-            config={{theme, popup}}
-          />
-      </div>
+      <s-stack>
+        <MapDesigner 
+          onThemeChange={setTheme}
+          onPopupChange={setPopup}
+          onSave={handleSave}
+          config={{theme, popup}}
+        />
+      </s-stack>
     </s-page> 
   );
 }

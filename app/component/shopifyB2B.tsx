@@ -8,10 +8,10 @@ export default function ShopifyB2B () {
     const [value, setValue] = useState("")
 
     return (
-        <div className={styles.wrapper}>
-            <div className={styles.boxShopifyB2B}>
+        <s-stack inlineSize="100%" gap="large">
+            <s-stack background="base" padding="base" borderRadius="large" inlineSize="100%" gap="small" borderWidth="base">
                 <h2>Shopify B2B</h2>
-                <p>Automatically display and update information for your Shopify B2B customers on your map. You must have a Shopify Plus account with active Company listings in order for this integration to work correctly.</p>
+                <s-paragraph>Automatically display and update information for your Shopify B2B customers on your map. You must have a Shopify Plus account with active Company listings in order for this integration to work correctly.</s-paragraph>
                 <div className={styles.upgrade}>
                     <i className="fa-solid fa-circle-exclamation"></i>
                     <div className={styles.contentUpgrade}>
@@ -23,88 +23,54 @@ export default function ShopifyB2B () {
                     </div>
                 </div>
                 <h4 style={{marginTop:"16px"}}>Shopify B2B Account</h4>
-                <div className={styles.boxRadio}>
-                    <div>
-                        <input 
-                            type="radio"
-                            name= "account"
-                            value="1"
-                            checked= {value === "1"}
-                            onChange={(e) => setValue(e.target.value)}
-                        />
-                        <label>
-                            My retailers are in this Shopify account, and I want them to display on the Retail Locator on this store.
-                        </label>
-                    </div>
-                    <div>
-                        <input 
-                            type="radio"
-                            name="account"
-                            value="2"
-                            checked= {value === "2"}
-                            onChange={(e) => setValue(e.target.value)}
-                        />
-                        <label>
-                            My retailers are in another Shopify account, and I want them to display on the Retailer Locator on this store.
-                        </label>
-                    </div>
+                <s-stack>
+                    <s-choice-list
+                        name="account"
+                        onChange={e => {
+                            const target = e.currentTarget.values
+                            setValue(target ? target[0] : "")
+                        }}
+                    >
+                        <s-choice value="1">My retailers are in this Shopify account, and I want them to display on the Retail Locator on this store.</s-choice>
+                        <s-choice value="2">My retailers are in another Shopify account, and I want them to display on the Retailer Locator on this store.</s-choice>
+                    </s-choice-list>
 
                     {
                         value === "2" && 
-                        <div className={styles.shopifyStore}>
-                            <h3>Shopify B2B Store</h3>
-                            <div className={styles.storeUrl}>
-                                <h4>Shopify B2B Store URL</h4>
-                                <i className="fa-regular fa-circle-question"></i>
-                            </div>
-                            <input 
-                                className={styles.inputUrl} 
-                                type="text" 
+                        <s-stack gap="small" paddingBlockStart="small">
+                            <s-url-field 
+                                label="Shopify B2B Store"
                                 placeholder="https://your-store.myshopify.com"
+                                details="URL must be in the format: https://store.myshopify.com"
                             />
-                            <span className={styles.urlText}>URL must be in the format: https://store.myshopify.com</span>
-            
-                            <div className={styles.storeUrl}>
-                                <h4>Shopify B2B Store URL</h4>
-                                <i className="fa-regular fa-circle-question"></i>
-                            </div>
-                            <input 
-                                className={styles.inputUrl} 
-                                type="text" 
+                            <s-url-field 
+                                label="Shopify B2B Store URL"
                                 placeholder="Enter Shopify B2B API Key"
                             />
 
-                            <div className={styles.warning}>
-                                <i className="fa-solid fa-triangle-exclamation"></i>
-                                <div className={styles.contentUpgrade}>
-                                    <span className={styles.text}>Shopify B2B Integration feature is only available on the Business Plus plan. Upgrade your plan to access this feature.</span>
-                                </div>
-                            </div>
+                            <s-banner 
+                                heading="Shopify B2B Integration feature is only available on the Business Plus plan. Upgrade your plan to access this feature."
+                                tone="warning"
+                            >
+                            </s-banner>
 
                             <button className={styles.saveCnt}>Save Connection</button>
-                        </div>
+                        </s-stack>
                     }
-                </div>
-            </div>
+                </s-stack>
+            </s-stack>
 
-            <div className={styles.needHelp}>
-                <div className={styles.title}>
-                    <i className="fa-solid fa-circle-exclamation"></i>
-                    <span>If you just loaded the app in order to connect this store with your Retail Locator, please see instructions below.</span>
-                </div>
-                <div className={styles.content}>
-                    <p><a href="">Click here</a> to display your individualized API key below, then copy it over into your other store.</p>
-                </div>
-                <h4 className={styles.mgl16}>Connect Your B2B Store With Another Store</h4>
-                <div className={styles.api}>
-                    <label>API Key</label>
-                    <input 
-                        type="text"
+            <s-banner heading="If you just loaded the app in order to connect this store with your Retail Locator, please see instructions below.">
+                <s-stack gap="small">
+                    <s-text><s-link>Click here</s-link> to display your individualized API key below, then copy it over into your other store.</s-text>
+                    <s-text type="strong">Connect Your B2B Store With Another Store</s-text>
+                    <s-text-field 
+                        label="API Key"
                         placeholder="No access token available"
                     />
-                </div>
-            </div>
+                </s-stack>
+            </s-banner>
 
-        </div>
+        </s-stack>
     )
 }

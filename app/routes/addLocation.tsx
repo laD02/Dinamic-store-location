@@ -72,6 +72,7 @@ export default function AddLocation () {
     const [countSocial, setCountSocial] = useState([{},{}]);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [error, setError] = useState(false)
     const handleAdd = () => {
         const newItem = {};
         setCountSocial([...countSocial, newItem]);
@@ -83,6 +84,7 @@ export default function AddLocation () {
     }
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const formRef = useRef<HTMLFormElement>(null);
 
     const handleClick = () => {
         fileInputRef.current?.click(); // Kích hoạt input file
@@ -106,297 +108,285 @@ export default function AddLocation () {
 
     return (
         <s-page heading="Dynamic Store Locator">
-            <div className={styles.title}>
-                <div className={styles.boxTitle}>
-                    <button onClick={() => navigate(-1)} className={styles.btnBack}>
-                        <i className="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <h2>Location Editor</h2>
-                    {
-                        click 
-                        ?
-                        <button className={styles.btnVisible} onClick={() => setClick(!click)}>
-                            <i className="fa-solid fa-eye"></i>
-                            visible
-                        </button>
-                        :   
-                        <button className={styles.btnHidden} onClick={() => setClick(!click)}>
-                            <i className="fa-solid fa-eye-slash"></i>
-                            hidden
-                        </button>
-                    }
-                </div>
-                <div className={styles.boxBtn}>
-                    <button 
-                        type="button"
-                        className={styles.btnSave}
+            <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
+                <s-stack direction="inline" gap="small-100" alignItems="center">
+                    <s-box>
+                        <s-clickable 
+                            background="strong" 
+                            borderRadius="small-100" 
+                            blockSize="50%"
+                            onClick={() => navigate(-1)}
+                            padding="small-300"
+                        >
+                            <s-icon type="arrow-left"/>
+                        </s-clickable>
+                    </s-box>
+                    <s-text type="strong">Location Editor</s-text>
+                    <s-box>
+                        {
+                            click ?
+                            <s-clickable onClick={() => setClick(!click)}>
+                                <s-badge tone="success">
+                                    <s-stack direction="inline" alignItems="center">
+                                        <s-icon type="eye-check-mark"/>
+                                        visible
+                                    </s-stack>
+                                </s-badge>
+                            </s-clickable>
+                            :
+                            <s-clickable onClick={() => setClick(!click)}>
+                                <s-badge >
+                                    <s-stack direction="inline" alignItems="center">
+                                        <s-icon type="eye-check-mark" tone="info"/>
+                                        hidden
+                                    </s-stack>
+                                </s-badge>
+                            </s-clickable>
+                        }
+                    </s-box>
+                </s-stack>
+                <s-stack direction="inline" justifyContent="space-between" gap="small-300">
+                    <s-button
                         onClick={() => {
-                            const form = document.getElementById("storeForm") as HTMLFormElement;
+                            if (!formRef.current) return;
+
                             const requiredFields = ["storeName", "address", "city", "state", "code"];
                             const emptyFields = requiredFields.filter((name) => {
-                            const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
-                            return !el.value.trim();
+                            const el = formRef.current!.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
+                            return !el?.value?.trim();
                             });
 
                             if (emptyFields.length > 0) {
-                            alert("Please fill out all required fields: " + emptyFields.join(", "));
-                            return; // dừng submit
+                            setError(true);
+                            return;
                             }
 
-                            submit(form, { method: "post" });;
+                            setError(false);
+                            submit(formRef.current, { method: "post" });
                         }}
-                    >
+                        >
                         Save
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.btnDelete}
+                    </s-button>
+
+                    <s-button
+                        tone="critical"
                         onClick={() => {
-                            if (confirm("Are you sure you want to clear all data?")) {
-                            const form = document.getElementById("storeForm") as HTMLFormElement;
-                            form.reset(); // reset lại tất cả input trong form
-                            setCountSocial([{}, {}]); // reset social về mặc định
-                            setPreview(null); // xoá ảnh
-                            setImageBase64(null);
-                            setClick(false); // đưa visibility về hidden
-                            }
+                            if (!confirm("Are you sure you want to clear all data?")) return;
+
+                            formRef.current?.reset();           
+                            setCountSocial([{}, {}]);          
+                            setPreview(null);                  
+                            setImageBase64(null);               
+                            setClick(false);                   
                         }}
                         >
                         Delete
-                    </button>
-                </div>
-            </div>
+                    </s-button>
+                </s-stack>
+            </s-stack>
 
-            <div className={styles.body}>
-                <Form id = "storeForm" className={styles.information} method="post">
+            <s-stack>
+                <Form ref={formRef} className={styles.information} method="post">
                     <input type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
-                    <div className={styles.shared}>
-                        <div className={styles.titleForm}>
-                            <div className={styles.right}>
-                                <h4>Location Information</h4>
-                                <p className={styles.source}>Manual</p>                               
-                            </div>
-                            <p>Customize your location information</p>
-                        </div>
-                        <div className={styles.formLocation}>
-                            <label>
-                                <div className={styles.sharedForm}>
-                                    <div>Location Name</div>
-                                    <input 
-                                        type ="text"
+                    <s-stack gap="large-100">
+                        <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                            <s-stack padding="small-200">
+                                <s-stack direction="inline" justifyContent="space-between">
+                                    <s-text type="strong">Location Information</s-text>
+                                    <s-badge tone="info">Manual</s-badge>                               
+                                </s-stack>
+                                <s-paragraph >Customize your location information</s-paragraph>
+                            </s-stack>
+                            <s-stack padding="small-200" gap="small-200">
+                                <s-box>
+                                    <s-text-field 
+                                        label="Location Name"
                                         name = "storeName"
+                                        error={ error === true ? "Location name is required" : ""}
                                         required
                                     />
-                                </div>
-                            </label>
-                            <label>
-                                <div className={styles.sharedForm}>
-                                    <div>Address 1</div>
-                                    <input 
-                                        type ="text"
+                                </s-box>
+                                <s-box>
+                                    <s-text-field 
+                                        label="Address"
                                         name = "address"
+                                        error={error === true ? "Address line 1 is required" : ""}
                                         required
                                     />
-                                </div>
-                            </label>
-                             <label>
-                                <div className={styles.sharedRow}>
-                                    <div className={styles.sharedForm}>
-                                        <div>City</div>
-                                         <input 
-                                            type ="text"
-                                            name = "city"
+                                </s-box>
+                                <s-stack direction="inline" justifyContent="space-between" gap="small-100">
+                                
+                                    <s-box>
+                                        <s-text-field 
+                                            label="City"
+                                            name="city"
+                                            error={ error === true ? "City is required" : ""}
                                             required
                                         />
-                                    </div>
-                                    <div className={styles.sharedForm}>
-                                        <div>State</div>
-                                        <select name="state" required>
-                                            <option value="AL">AL</option>
-                                            <option value="AK">AK</option>
-                                            <option value="AS">AS</option>
-                                        </select>
-                                        
-                                    </div>
-                                    <div className={styles.sharedForm}>
-                                        <div>Zip Code</div>
-                                        <input 
-                                            type ="text"
-                                            name = "code"
+                                    </s-box>
+                                
+                                    <s-box>
+                                        <s-select label="State" name="state" error={error === true ? "State is required" : ""}>
+                                            <s-option value="AL">AL</s-option>
+                                            <s-option value="AZ">AZ</s-option>
+                                            <s-option value="AS">AS</s-option>
+                                            <s-option value="AR">AR</s-option>
+                                        </s-select>
+                                    </s-box>
+                                    
+                                    <s-box>
+                                        <s-text-field 
+                                            label="Zip Code"
+                                            name="code"
+                                            error={error === true ? "Zip code is required" : ""}
                                             required
                                         />
-                                    </div>
-                                </div>
-                            </label>
-                            <label>
-                                <div className={styles.sharedRow}>
-                                    <div className={styles.sharedForm}>
-                                        <div>Phone Number</div>
-                                        <input 
-                                            type ="text"
-                                            name = "phone"
+                                    </s-box>
+                                </s-stack>
+                                <s-stack direction="inline" justifyContent="space-between" gap="small-100">
+                                
+                                    <s-box>
+                                        <s-text-field 
+                                            label="Phone Number"
+                                            name="phone"
                                         />
-                                    </div>
-                                    <div className={styles.sharedForm}>
-                                        <div>Website URL</div>
-                                        <input 
-                                            type ="text"
-                                            name = "url"
+                                    </s-box>
+                                    
+                                    <s-box>
+                                        <s-text-field 
+                                            label="Website"
+                                            name="url"
                                         />
-                                    </div>
-                                </div>
-                            </label>
-                            <label>
-                                <div className={styles.sharedForm}>
-                                    <div>Derection</div>
-                                    <input 
-                                        type ="text"
-                                        name = "directions"
-                                    />
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    <div className={styles.shared}>
-                        <div className={styles.titleForm}>
-                            <div className={styles.right}>
-                                <h4>Social Media</h4>
-                                <button type="button" onClick={() => handleAdd()}>
-                                    <i className="fa-solid fa-circle-plus"></i>
-                                    Add Social Media
-                                </button>                              
-                            </div>
-                            <p>Customize your location information</p>
-                        </div>
-                        <div className={styles.formSocial}>
+                                    </s-box>
+                                </s-stack>
+                                
+                                <s-text-area 
+                                    label="Direction"
+                                    name="directions"
+                                />
+                            </s-stack>
+                        </s-stack>
+                        <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                            <s-stack padding="small-200">
+                                <s-stack direction="inline" justifyContent="space-between">
+                                    <s-text type="strong">Social Media</s-text>
+                                    <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
+                                </s-stack>
+                                <s-paragraph>Customize your location information</s-paragraph>
+                            </s-stack>
+                            <s-stack paddingBlock="small-200" paddingInlineStart="small-200">
+                                {
+                                    countSocial.map((item, index) => (
+                                        <s-stack direction="inline" justifyContent="start" gap="small-200" alignItems="center" key = {index} >
+                                            <s-box inlineSize="33%">
+                                                <s-select>
+                                                    <s-option value="linkedin">LinkedIn</s-option>
+                                                    <s-option value="youtube">Youtube</s-option>
+                                                    <s-option value="facebook">Facebook</s-option>
+                                                </s-select>
+                                            </s-box>
+                                            <s-box inlineSize="33%">
+                                                <s-text-field 
+                                                    name="contract"
+                                                />
+                                            </s-box>
+                                            <s-button icon="delete" onClick={() => handleRemove(index)}></s-button>
+                                        </s-stack>
+                                    ))
+                                }
+                                
+                            </s-stack>
+                        </s-stack>
+                        <s-stack background="base" padding="small" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                            <s-box>
+                                <s-text type="strong">Hours of Operation</s-text>
+                            </s-box>
+                            <s-stack direction="inline" justifyContent="space-around">
+                                <s-box>Open</s-box>
+                                <s-box>Close</s-box>
+                            </s-stack>
                             {
-                                countSocial.map((item, index) => (
-                                    <div className={styles.socialSection} key = {index}>
-                                    <select>
-                                        <option value="linkedin">LinkedIn</option>
-                                        <option value="youtube">Youtube</option>
-                                        <option value="facebook">Facebook</option>
-                                    </select>
-                                    <input 
-                                        type = "text"
-                                        name = "contract"
-                                    />
-                                    <button type="button" onClick={() => handleRemove(index)}>
-                                        <i className="fa-regular fa-trash-can"></i>
-                                    </button>
-                                </div>
+                                ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Satuday', 'Sunday'].map((item, index) => (
+                                    <s-stack direction="inline" justifyContent="space-between" paddingBlockEnd="small-200" key={index}>
+                                        <s-box inlineSize="10%">{item}</s-box>
+                                        <s-box>
+                                            <s-text-field name={`${item}-open`}/>
+                                        </s-box>
+                                        <s-box>
+                                            <s-text-field name={`${item}-close`}/>
+                                        </s-box>
+                                        <s-box>
+                                            <s-clickable>
+                                                <s-icon type="eye-check-mark"/>
+                                            </s-clickable>
+                                        </s-box>
+                                    </s-stack>
                                 ))
                             }
-                            
-                        </div>
-                    </div>
-                    <div className={styles.shared}>
-                        <div className={styles.titleForm}>
-                            <div className={styles.right}>
-                                <h4>Hours of Operation</h4>                                          
-                            </div>
-                        </div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Open</th>
-                                    <th>Close</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Monday</td>
-                                    <td><input type="text" name="monday-open"/></td>
-                                    <td><input type="text" name="monday-close"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>Tuesday</td>
-                                    <td><input type="text" name="tuesday-open "/></td>
-                                    <td><input type="text" name="tuesday-close"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>Wednesday</td>
-                                    <td><input type="text" name="wednesday-open"/></td>
-                                    <td><input type="text" name="wednesday-open"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>Thursday</td>
-                                    <td><input type="text" name="thursday-open"/></td>
-                                    <td><input type="text"name="thursday-close"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>Friday</td>
-                                    <td><input type="text" name="friday-open"/></td>
-                                    <td><input type="text" name="friday-close"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>Satuday</td>
-                                    <td><input type="text" name="satuday-open"/></td>
-                                    <td><input type="text" name="satuday-close"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                                <tr>
-                                    <td>Sunday</td>
-                                    <td><input type="text" name="sunday-open"/></td>
-                                    <td><input type="text" name="sunday-close"/></td>
-                                    <td><i className="fa-solid fa-eye"></i></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className={styles.shared}>
-                        <div className={styles.titleForm}>
-                            <div className={styles.right}>
-                                <h4>Add a logo for this location</h4>                                          
-                            </div>
-                        </div>
-                        <p>Customize your location information</p>
-                        <div className={styles.addImage}>
-                            <div className={styles.boxAddImage} onClick={() =>  handleClick()}>
-                                {preview ? (
-                                    <div className={styles.previewBox}>
-                                        <img src={preview} alt="preview" className={styles.previewImage} />
-                                        <i 
-                                            className="fa-solid fa-ban" 
-                                            onClick={ (e)=> {
-                                                e.stopPropagation();
-                                                setPreview(null) 
-                                            }}
-                                        />
-                                    </div>
-                                        
-                                ) : (
-                                    <div>
-                                        <button type="button" onClick={() => handleClick()}>Add file</button>
-                                        <p>Accepts .gif, .jpg, .png and .svg</p>
-                                    </div>          
-                                )}
-                            </div>
-                            <input
-                                ref={fileInputRef}
-                                id="upload-file"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                style={{ display: "none" }}
-                            />
-                            <input type="hidden" name="image" value={imageBase64 ?? ""} />
-                            <div>We support .gif, .jpg, .png, and .svg files up to 3MB</div>
-                        </div>
-                    </div>
+                        </s-stack>   
+                        <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                            <s-box>
+                                <s-text type="strong">Add a logo for this location</s-text>                                          
+                                <s-paragraph>Customize your location information</s-paragraph>  
+                            </s-box>
+                            <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" >
+                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="48%">
+                                    {preview ? (
+                                        <s-stack justifyContent="center" alignItems="center">
+                                            <s-box inlineSize="60px" blockSize="60px">
+                                                <s-image
+                                                    src={preview} 
+                                                    alt="preview" 
+                                                    objectFit="cover"
+                                                    loading="lazy"
+                                                />
+                                            </s-box>
+                                            <s-box>
+                                                <s-clickable
+                                                    onClick={ (e)=> {
+                                                        e.stopPropagation();
+                                                        setPreview(null) 
+                                                    }}
+                                                >
+                                                    <s-icon type="x"/>
+                                                </s-clickable>
+                                            </s-box>
+                                            {/* <i 
+                                                className="fa-solid fa-ban" 
+                                                onClick={ (e)=> {
+                                                    e.stopPropagation();
+                                                    setPreview(null) 
+                                                }}
+                                            /> */}
+                                        </s-stack>
+                                            
+                                    ) : (
+                                        <s-stack alignItems="center">
+                                            <s-button onClick={() => handleClick()}>Add file</s-button>
+                                            <s-paragraph>Accepts .gif, .jpg, .png and .svg</s-paragraph>
+                                        </s-stack>          
+                                    )}
+                                </s-stack>
+                                <input
+                                    ref={fileInputRef}
+                                    id="upload-file"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    style={{ display: "none" }}
+                                />
+                                <input type="hidden" name="image" value={imageBase64 ?? ""} />
+                                
+                                <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box>
+                            </s-stack>
+                        </s-stack>
+                    </s-stack>
                     {/* <div className={styles.shared}>
                          
                     </div> */}
                 </Form>
                 <img src="/place2.jpg" alt="demo" className={styles.boxImage}/>
-            </div>
+            </s-stack>
         </s-page>
     );
 }

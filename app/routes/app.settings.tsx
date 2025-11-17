@@ -80,9 +80,9 @@ export default function Settings() {
 
   return (
     <s-page heading="Dynamic Store Locator">
-      <div className={styles.wrapper}>
+      <s-stack gap="small">
         <h2>Settings</h2>
-        <div className={styles.listBlock}>
+        <s-stack direction="inline" gap="large">
           {
             listBlock.map((item, index) => (
               <div 
@@ -97,12 +97,12 @@ export default function Settings() {
               </div>
             ))
           }
-        </div>
+        </s-stack>
         {active === 0 && <Display />}
         {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>}
         {active === 3 && <Installation />}
 
-      </div>
+      </s-stack>
     </s-page>
   );
 }
