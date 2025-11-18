@@ -45,7 +45,7 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
     }
 
     const handleSaveEdit = () => {
-         if (!valueEdit.trim()) {
+         if (!valueEdit.trim()) { 
             setShowEdit(true)
             return
         } 
@@ -56,8 +56,9 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
             filter: valueEdit
         }))
         fetcher.submit(formData, {method: "post"})
-
-        setOpen(!open)
+        const cancelButton = document.querySelector('#edit-modal [command="--hide"]') as HTMLElement;
+        cancelButton?.click();
+        setShowEdit(false);
     }
 
     return (
@@ -130,42 +131,68 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
                                             >
                                                 <i className="fa-solid fa-pen"></i>
                                             </s-button>
-                                            <s-modal id="edit-modal" heading="Update Filter" size="large">
+                                            <s-modal id="edit-modal" heading="Update Filter" size="large" onAfterHide={ () => setShowEdit(false)} >
                                                 <s-stack gap="base">
-                                                <s-text-field
-                                                    label="Filer"
-                                                    name="name"
-                                                    value={valueEdit}
-                                                    onInput={(e :any) => handleEditFilter(e)}
-                                                />
+                                                    <s-text-field
+                                                        label="Filer"
+                                                        name="name"
+                                                        value={valueEdit}
+                                                        onInput={(e :any) => handleEditFilter(e)}
+                                                        error = {showEdit ? "The filter should not be empty." : ''}
+                                                    />
                                                 </s-stack>
 
                                                 <s-button
-                                                slot="primary-action"
-                                                variant="primary"
-                                                commandFor="edit-modal"
-                                                command="--hide"
-                                                onClick={() => handleSaveEdit()}
+                                                    slot="primary-action"
+                                                    variant="primary"
+                                                    // commandFor="edit-modal" 
+                                                    // command="--hide"
+                                                    onClick={() => handleSaveEdit()}
                                                 >
-                                                Save
+                                                    Save
                                                 </s-button>
                                                 <s-button
-                                                slot="secondary-actions"
-                                                variant="secondary"
-                                                commandFor="edit-modal"
-                                                command="--hide"
+                                                    slot="secondary-actions"
+                                                    variant="secondary"
+                                                    commandFor="edit-modal"
+                                                    command="--hide"
                                                 >
-                                                Cancel
+                                                    Cancel
                                                 </s-button>
                                             </s-modal>
                                         </s-table-cell>
                                         <s-table-cell >
                                             <s-button
-                                                onClick={() => handleDelete(item.id)}
+                                                // onClick={() => handleDelete(item.id)}
                                                 variant="tertiary"
+                                                commandFor="delete-modal"
                                             >
                                                 <i className="fa-solid fa-trash"></i>
                                             </s-button>
+                                            <s-modal id="delete-modal" heading="Delete filter?">
+                                                <s-stack gap="base">
+                                                    <s-text>Are you sure you want to delete ?</s-text>
+                                                </s-stack>
+
+                                                <s-button
+                                                    slot="primary-action"
+                                                    variant="primary"
+                                                    tone="critical"
+                                                    commandFor="delete-modal"
+                                                    command="--hide"
+                                                    onClick={() => handleDelete(item.id)}
+                                                >
+                                                    Delete 
+                                                </s-button>
+                                                <s-button
+                                                    slot="secondary-actions"
+                                                    variant="secondary"
+                                                    commandFor="delete-modal"
+                                                    command="--hide"
+                                                >
+                                                    Cancel
+                                                </s-button>
+                                            </s-modal>
                                         </s-table-cell>
                                     </s-table-row>
                                 ))

@@ -93,8 +93,6 @@ export default function EditLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [deleteContract, setDeleteContract] = useState<string[]>([]);
     const [error, setError] = useState(false)
-    const navigation = useNavigation();
-    const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
     const [formData, setFormData] = useState(() => ({
         storeName: "",
         address:  "",
@@ -283,6 +281,21 @@ export default function EditLocation () {
             reader.readAsDataURL(file);
         }
     };
+
+    const handleRemoveImage = () => {
+        setPreview(null);
+        setImageBase64(null);
+
+        // Trigger change event trên input hidden
+        if (formRef.current) {
+            const input = formRef.current.querySelector<HTMLInputElement>("input[name='image']");
+            if (input) {
+            input.value = "";
+            const event = new Event("change", { bubbles: true });
+            input.dispatchEvent(event);
+            }
+        }
+    };
     return (
         <s-page heading="Dynamic Store Locator">
             <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
@@ -323,14 +336,6 @@ export default function EditLocation () {
                     </s-box>
                 </s-stack>
                 <s-stack direction="inline" justifyContent="space-between" gap="small-300">
-                    <s-button
-                        type="submit"
-                        onClick={() => handleSubmit()}
-                        loading={isSubmitting}
-                        >
-                        Save
-                    </s-button>
-
                     <s-button
                         tone="critical"
                         commandFor="deleteTrash-modal"
@@ -495,7 +500,7 @@ export default function EditLocation () {
                                             <s-box inlineSize="33%">
                                                 <s-text-field 
                                                     name="contract"
-                                                    value={value}
+                                                    defaultValue={value}
                                                     onInput={(e) => {
                                                         const target = e.target as any
                                                         handleSocialChange(key, index, target.value)
@@ -589,24 +594,11 @@ export default function EditLocation () {
                                             </s-box>
                                             <s-box>
                                                 <s-clickable
-                                                    onClick={ (e)=> {
-                                                        e.stopPropagation();
-                                                        setPreview(null) 
-                                                        setImageBase64(null);
-
-                                                    }}
+                                                    onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
                                                 >
                                                     <s-icon type="x"/>
                                                 </s-clickable>
                                             </s-box>
-                                            {/* <i 
-                                                className="fa-solid fa-ban" 
-                                                onClick={ (e)=> {
-                                                    e.stopPropagation();
-                                                    setPreview(null) 
-                                                    setImageBase64(null);
-                                                }}
-                                            /> */}
                                         </s-stack>
                                             
                                     ) : (

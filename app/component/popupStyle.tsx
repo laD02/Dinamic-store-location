@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "../css/popupStyle.module.css"
 
 export default function PopupStyle ({ onChange, config }: { onChange: (popup: any) => void, config: any }) {
@@ -13,9 +13,44 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
     const [cornerRadius, setCornerRadius] = useState<number>(config?.cornerRadius ?? 3)
     const [activePicker, setActivePicker] = useState(null); 
 
+    const backgroundPickerRef = useRef<HTMLDivElement | null>(null);
+    const colorPickerRef = useRef<HTMLDivElement | null>(null);
+    const iconPickerRef = useRef<HTMLDivElement | null>(null);
+    const shadowPickerRef = useRef<HTMLDivElement | null>(null);
+
     const togglePicker = (picker: any) => {
         setActivePicker(activePicker === picker ? null : picker);
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const refs = [
+                backgroundPickerRef.current,
+                colorPickerRef.current,
+                iconPickerRef.current,
+                shadowPickerRef.current
+            ];
+
+            if (activePicker && !refs.some(ref => ref?.contains(event.target as Node))) {
+                setActivePicker(null);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [activePicker]);
+
+    useEffect(() => {
+        if (config?.backgroundColor) setBackgroundColor(config.backgroundColor)
+        if (config?.color) setColor(config.color)
+        if (config?.iconColor) setIconColor(config.iconColor)
+        if (config?.shadowColor) setShadowColor(config.shadowColor)
+        if (config?.transparency) setTransparency(config.transparency)
+        if (config?.blur) setBlur(config.blur)
+        if (config?.anchorx) setAnchorx(config.anchorx)
+        if (config?.anchory) setAnchory(config.anchory)
+        if (config?.cornerRadius) setCornerRadius(config.cornerRadius)  
+    },[config])
 
     useEffect(() => {
         onChange({backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius});
@@ -24,7 +59,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
         <div className={styles.wrapper}>
             <div className={styles.leftBox}>
                 <h4>Popup Box</h4>
-                <div className={styles.backgroundColor}>
+                <div className={styles.backgroundColor} ref={backgroundPickerRef}>
                     <div 
                         className={styles.colorBox}
                         style={{ backgroundColor: backgroundColor}}
@@ -68,7 +103,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                 </div>
                 <hr className={styles.hrRow}/>
                 <h4>Font Color</h4>
-                <div className={styles.backgroundColor}>
+                <div className={styles.backgroundColor} ref={colorPickerRef}>
                     <div 
                         className={styles.colorBox}
                         style={{ backgroundColor: color}}
@@ -92,7 +127,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         <span>{color}</span>
                     </div>
                 </div>
-                <div className={styles.backgroundColor}>
+                <div className={styles.backgroundColor} ref={iconPickerRef}>
                     <div 
                         className={styles.colorBox}
                         style={{ backgroundColor: iconColor}}
@@ -120,7 +155,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
             <hr className={styles.hrColum} />
             <div className={styles.rightBox}>
                 <h4>Drop Shadow</h4>
-                <div className={styles.backgroundColor}>
+                <div className={styles.backgroundColor} ref={shadowPickerRef}>
                     <div 
                         className={styles.colorBox}
                         style={{ backgroundColor: shadowColor}}

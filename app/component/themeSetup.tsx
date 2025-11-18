@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "../css/themeSetup.module.css";
 import { fontList } from "app/utils/primaryFont";
 
@@ -9,9 +9,27 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   const [primaryFont, setPrimaryFont] = useState(config?.primaryFont ?? "Roboto");
   const [secondaryFont, setSecondaryFont] = useState(config?.secondary ?? "Open Sans");
 
+  const primaryPickerRef = useRef<HTMLDivElement | null>(null);
+  const secondaryPickerRef = useRef<HTMLDivElement | null>(null);
+
   const togglePicker = (picker: any) => {
     setActivePicker(activePicker === picker ? null : picker);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        activePicker &&
+        !primaryPickerRef.current?.contains(event.target as Node) &&
+        !secondaryPickerRef.current?.contains(event.target as Node)
+      ) {
+        setActivePicker(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [activePicker]);
 
   useEffect(() => {
     if (config?.primaryColor) setPrimaryColor(config.primaryColor);
@@ -29,8 +47,8 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
       <h4>Theme Colors</h4>
 
       {/* Primary color */}
-      <s-stack direction="inline" gap="small" paddingBlockStart="small">
-        <div className={styles.colorBoxWrapper}>
+      <s-stack direction="inline" gap="small" paddingBlockStart="small" >
+        <div className={styles.colorBoxWrapper} ref={primaryPickerRef}>
           <div
             className={styles.colorBox}
             style={{ backgroundColor: primaryColor }}
@@ -57,7 +75,7 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
 
       {/* Secondary color */}
       <s-stack direction="inline" gap="small" paddingBlockStart="small">
-        <div className={styles.colorBoxWrapper}>
+        <div className={styles.colorBoxWrapper} ref={secondaryPickerRef}>
           <div
             className={styles.colorBox}
             style={{ backgroundColor: secondaryColor }}

@@ -73,8 +73,50 @@ export default function AddLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
-    const navigation = useNavigation();
-    const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
+    // const [deleteContract, setDeleteContract] = useState<string[]>([]);
+    // const [formData, setFormData] = useState(() => ({
+    //     storeName: "",
+    //     address:  "",
+    //     city:  "",
+    //     state:  "",
+    //     code: "",
+    //     phone: "",
+    //     image: "",
+    //     url: "",
+    //     time: {
+    //       mondayOpen: "",
+    //       mondayClose: "",
+    //       tuesdayOpen: "",
+    //       tuesdayClose: "",
+    //       wednesdayOpen: "",
+    //       wednesdayClose: "",
+    //       thursdayOpen: "",
+    //       thursdayClose: "",
+    //       fridayOpen: "",
+    //       fridayClose: "",
+    //       satudayOpen: "",
+    //       satudayClose: "",
+    //       sundayOpen: "",
+    //       sundayClose: "",
+    //     },
+    //     directions:  "",
+    //     contract:  {} as Record<string, string[]>,
+    //     source:  "",
+    //     visibility:  ""
+    // }));
+
+    // const handleDiscard = () => {
+    //     setFormData(formData)
+    //     // Reset formData về store
+    //     setPreview(null);
+    //     setImageBase64(null);
+    //     setDeleteContract([]);
+    //     setCountSocial([]);
+    //     setClick(false);
+    //     setError(false);
+    //     // Reset state phụ
+    // }; 
+
     const handleAdd = () => {
         const newItem = {};
         setCountSocial([...countSocial, newItem]);
@@ -167,14 +209,6 @@ export default function AddLocation () {
                 </s-stack>
                 <s-stack direction="inline" justifyContent="space-between" gap="small-300">
                     <s-button
-                        type="submit"
-                        onClick={() => handleSubmit()}
-                        loading={isSubmitting}
-                    >
-                        Save
-                    </s-button>
-
-                    <s-button
                         tone="critical"
                         commandFor="delete-modal"
                     >
@@ -218,6 +252,7 @@ export default function AddLocation () {
                         e.preventDefault(); // prevent default submit
                         handleSubmit();     // dùng hàm validate + submit chung
                     }}
+                    onReset={() => setPreview(null)}
                 >
                     <input type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
                     <s-stack gap="large-100">
@@ -235,7 +270,8 @@ export default function AddLocation () {
                                         label="Location Name"
                                         name = "storeName"
                                         error={ error === true ? "Location name is required" : ""}
-                                        required
+                                        required       
+                                        value=""                          
                                     />
                                 </s-box>
                                 <s-box>
@@ -243,7 +279,8 @@ export default function AddLocation () {
                                         label="Address"
                                         name = "address"
                                         error={error === true ? "Address line 1 is required" : ""}
-                                        required
+                                        required       
+                                        value=""                             
                                     />
                                 </s-box>
                                 <s-stack direction="inline" justifyContent="space-between" gap="small-100">
@@ -254,6 +291,7 @@ export default function AddLocation () {
                                             name="city"
                                             error={ error === true ? "City is required" : ""}
                                             required
+                                            value=""
                                         />
                                     </s-box>
                                 
@@ -272,7 +310,9 @@ export default function AddLocation () {
                                             name="code"
                                             error={error === true ? "Zip code is required" : ""}
                                             required
+                                            value=""
                                         />
+
                                     </s-box>
                                 </s-stack>
                                 <s-stack direction="inline" justifyContent="space-between" gap="small-100">
@@ -281,6 +321,7 @@ export default function AddLocation () {
                                         <s-text-field 
                                             label="Phone Number"
                                             name="phone"
+                                            value=""
                                         />
                                     </s-box>
                                     
@@ -288,6 +329,7 @@ export default function AddLocation () {
                                         <s-text-field 
                                             label="Website"
                                             name="url"
+                                            value=""
                                         />
                                     </s-box>
                                 </s-stack>
@@ -295,6 +337,7 @@ export default function AddLocation () {
                                 <s-text-area 
                                     label="Direction"
                                     name="directions"
+                                    value=""
                                 />
                             </s-stack>
                         </s-stack>
@@ -320,6 +363,7 @@ export default function AddLocation () {
                                             <s-box inlineSize="33%">
                                                 <s-text-field 
                                                     name="contract"
+                                                    value=""
                                                 />
                                             </s-box>
                                             <s-button icon="delete" onClick={() => handleRemove(index)}></s-button>
@@ -342,10 +386,10 @@ export default function AddLocation () {
                                     <s-stack direction="inline" justifyContent="space-between" paddingBlockEnd="small-200" key={index}>
                                         <s-box inlineSize="10%">{item}</s-box>
                                         <s-box>
-                                            <s-text-field name={`${item}-open`}/>
+                                            <s-text-field name={`${item}-open`} value=""/>
                                         </s-box>
                                         <s-box>
-                                            <s-text-field name={`${item}-close`}/>
+                                            <s-text-field name={`${item}-close`} value=""/>
                                         </s-box>
                                         <s-box>
                                             <s-clickable>
@@ -383,13 +427,6 @@ export default function AddLocation () {
                                                     <s-icon type="x"/>
                                                 </s-clickable>
                                             </s-box>
-                                            {/* <i 
-                                                className="fa-solid fa-ban" 
-                                                onClick={ (e)=> {
-                                                    e.stopPropagation();
-                                                    setPreview(null) 
-                                                }}
-                                            /> */}
                                         </s-stack>
                                             
                                     ) : (

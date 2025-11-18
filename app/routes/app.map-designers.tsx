@@ -1,5 +1,5 @@
 // app/routes/app.help-center.tsx
-import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useLoaderData } from "react-router";
 import styles from "../css/mapDesigner.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const config = await prisma.style.findFirst()
 
-  return { stores, config }; // hoặc return {}
+  return { stores, config };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -33,11 +33,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const theme = JSON.parse(formData.get("theme") as string);
   const popup = JSON.parse(formData.get("popup") as string);
 
-  // Save / update
   const exist = await prisma.style.findFirst();
 
   if (!exist) {
-    // ✅ create
     await prisma.style.create({
       data: {
         primaryColor: theme.primaryColor,
@@ -56,7 +54,6 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
   } else {
-    // ✅ update
     await prisma.style.update({
       where: {
         id: exist.id,
@@ -80,44 +77,55 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return { ok: true };
-
 }
 
 export default function MapDesigners() {
-  const fetcher = useFetcher()
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const { stores, config } = useLoaderData<typeof loader>();
-  const [searchAddress, setSearchAddress] = useState<string>("")
+  const [searchAddress, setSearchAddress] = useState<string>("");
   const listRef = useRef<HTMLDivElement>(null);
-  const isSaving = fetcher.state !== "idle";
-  const [theme, setTheme] = useState(() => ({
+
+  // Giá trị mặc định
+  const defaultTheme = {
     primaryColor: "#000",
     secondaryColor: "#000",
     primaryFont: "Roboto",
     secondaryFont: "Open Sans",
-  }));
-  const [popup, setPopup] = useState(() => ({
-    backgroundColor:"#fff",
-    color:"#000000",
-    iconColor:"#5230f9",
-    shadowColor:"#000000",
-    transparency:60,
-    blur:4,
-    anchorx:-2,
-    anchory:-2,
-    cornerRadius:3
-  }));
+  };
 
+  const defaultPopup = {
+    backgroundColor: "#fff",
+    color: "#000000",
+    iconColor: "#5230f9",
+    shadowColor: "#000000",
+    transparency: 60,
+    blur: 4,
+    anchorx: -2,
+    anchory: -2,
+    cornerRadius: 3
+  };
+
+  // State hiện tại
+  const [theme, setTheme] = useState(defaultTheme);
+  const [popup, setPopup] = useState(defaultPopup);
+
+  // Ref để lưu giá trị đã save (từ database)
+  const savedConfigRef = useRef({
+    theme: defaultTheme,
+    popup: defaultPopup
+  });
+
+  // Load config từ database
   useEffect(() => {
     if (config) {
-      setTheme({
+      const loadedTheme = {
         primaryColor: config.primaryColor,
         secondaryColor: config.secondaryColor,
         primaryFont: config.primaryFont,
         secondaryFont: config.secondaryFont,
-      });
+      };
 
-      setPopup({
+      const loadedPopup = {
         backgroundColor: config.backgroundColor,
         color: config.color,
         iconColor: config.iconColor,
@@ -127,17 +135,24 @@ export default function MapDesigners() {
         anchorx: config.anchorx,
         anchory: config.anchory,
         cornerRadius: config.cornerRadius,
-      });
+      };
+
+      // Lưu vào ref
+      savedConfigRef.current = {
+        theme: loadedTheme,
+        popup: loadedPopup
+      };
+
+      // Set state
+      setTheme(loadedTheme);
+      setPopup(loadedPopup);
     }
   }, [config]);
 
-
-  const handleSave = () => {
-    const formData = new FormData();
-    formData.append("theme", JSON.stringify(theme));
-    formData.append("popup", JSON.stringify(popup));
-
-    fetcher.submit(formData, { method: "post" });
+  // Hàm reset về giá trị đã lưu
+  const handleReset = () => {
+    setTheme(savedConfigRef.current.theme);
+    setPopup(savedConfigRef.current.popup);
   };
 
   return (
@@ -147,10 +162,10 @@ export default function MapDesigners() {
           <s-search-field 
             placeholder="Enter Address or Zip code"
             value={searchAddress}
-              onInput={(e) => {
-                const target = e.target as any;
-                setSearchAddress(target.value)
-              }}
+            onInput={(e) => {
+              const target = e.target as any;
+              setSearchAddress(target.value)
+            }}
           />
           <s-stack direction="inline" justifyContent="space-between" gap="small">
             <s-stack direction="inline" alignItems="center" background="strong" borderRadius="large" paddingInline="small">   
@@ -173,14 +188,14 @@ export default function MapDesigners() {
           </s-stack>
           <div className={styles.information} ref={listRef}>
             {
-              stores.map((store: any, index:number) => (
+              stores.map((store: any, index: number) => (
                 <div
                   key={store.id || index}
                   className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}
                   onClick={() => setSelectedIndex(index)}
                   style={{borderColor: theme.secondaryColor}}
                 >
-                  <h4 style={{color: theme.primaryColor, fontFamily:theme.primaryFont}}>{store.storeName}</h4>
+                  <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>{store.storeName}</h4>
                   <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>{store.address}, {store.city}, {store.state}, {store.code}<br/></span>
                   <span style={{color: theme.secondaryColor}}>{store.phone}</span>
                 </div>
@@ -194,20 +209,28 @@ export default function MapDesigners() {
             stores={stores ?? []} 
             selectedIndex={selectedIndex}  
             searchAddress={searchAddress}
-            popupStyle = {popup}
+            popupStyle={popup}
           />
         </div>  
       </div>
 
-      <s-stack>
+      <Form 
+        method="post" 
+        data-save-bar
+        onReset={(e) => {
+          e.preventDefault();
+          handleReset();
+        }}
+      >
         <MapDesigner 
           onThemeChange={setTheme}
           onPopupChange={setPopup}
-          onSave={handleSave}
           config={{theme, popup}}
-          isSaving = {isSaving}
         />
-      </s-stack>
+
+        <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
+        <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
+      </Form>
     </s-page> 
   );
 }
