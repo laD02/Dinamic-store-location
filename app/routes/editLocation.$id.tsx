@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useFetcher, useLoaderData, useNavigate, useNavigation, useSubmit } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useActionData, useFetcher, useLoaderData, useNavigate, useNavigation, useSubmit } from "react-router";
 import styles from "../css/addLocation.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       image: formData.get("image")?.toString() ?? "",
       directions: formData.get("directions")?.toString() ?? "",
       contract,
-      source: formData.get("source")?.toString() ?? "",
+      source: formData.get("source")?.toString() ?? "Manual",
       visibility: formData.get("visibility")?.toString() ?? "",
       time: {
         mondayOpen: formData.get("monday-open")?.toString() ?? "",
@@ -78,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
   });
 
-  return redirect("/app");
+  return {ok: true};
 }
 
 
@@ -93,6 +93,8 @@ export default function EditLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [deleteContract, setDeleteContract] = useState<string[]>([]);
     const [error, setError] = useState(false)
+    const [showBanner, setShowBanner] = useState(false);
+    const actionData = useActionData<typeof action>();
     const [formData, setFormData] = useState(() => ({
         storeName: "",
         address:  "",
@@ -123,6 +125,20 @@ export default function EditLocation () {
         source:  "",
         visibility:  ""
     }));
+
+    useEffect(() => {
+        if (actionData?.ok) {
+            setShowBanner(true);
+            
+            // Tự động ẩn sau 5 giây
+            const timer = setTimeout(() => {
+                setShowBanner(false);
+            }, 3000);
+
+            // Cleanup timer khi component unmount
+            return () => clearTimeout(timer);
+        }
+    }, [actionData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -344,7 +360,7 @@ export default function EditLocation () {
                     </s-button>
                     <s-modal id="deleteTrash-modal" heading="Delete Location">
                         <s-text>
-                            Are you sure you want to delete the location? This action cannot be undone.
+                            Are you sure you want to delete this store? This action cannot be undone.
                         </s-text>
 
                         <s-button
@@ -477,7 +493,7 @@ export default function EditLocation () {
                                 </s-stack>
                                 <s-paragraph>Customize your location information</s-paragraph>
                             </s-stack>
-                            <div className={styles.formSocial}>
+                            <s-stack paddingBlock="small-200" paddingInlineStart="small-200">
                                 {
                                 (Object.entries(formData.contract) as [string, string[]][]).flatMap(([key, values]) =>
                                     values.map((value: string, index: number) => {
@@ -545,9 +561,9 @@ export default function EditLocation () {
                                     );
                                 })
                                 }
-                            </div>
+                            </s-stack>
                         </s-stack>
-                        <s-stack background="base" padding="small" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
                                 <s-text type="strong" >Hours of Operation</s-text>
                             </s-box>
@@ -574,7 +590,7 @@ export default function EditLocation () {
                                 ))
                             }
                         </s-stack>   
-                        <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
                                 <s-text type="strong">Add a logo for this location</s-text>                                          
                                 <s-paragraph>Customize your location information</s-paragraph>  
@@ -627,6 +643,37 @@ export default function EditLocation () {
                 </Form>
                 <img src="/place2.jpg" alt="demo" className={styles.boxImage}/>
             </s-stack>
+            {showBanner && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: 1000,
+                    minWidth: '400px',
+                    animation: 'slideIn 0.3s ease-out'
+                }}>
+                    <s-banner 
+                        heading="Store edited successfully" 
+                        tone="success" 
+                        dismissible={true}
+                        onDismiss={() => setShowBanner(false)}
+                    >
+                        Your store has been edited!
+                    </s-banner>
+                </div>
+            )}
+            <style>{`
+                @keyframes slideIn {
+                    from {
+                        transform: translateY(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
         </s-page>
     );
 } 

@@ -1,6 +1,6 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useNavigate, useNavigation, useSubmit } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useActionData, useFetcher, useNavigate, useNavigation, useSubmit } from "react-router";
 import styles from "../css/addLocation.module.css"
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 
 export async function loader({request}:LoaderFunctionArgs) {
@@ -42,7 +42,7 @@ export async function action({request}: ActionFunctionArgs) {
             image: formData.get("image")?.toString() ?? "",
             directions: formData.get("directions")?.toString() ?? "",
             contract, // đây là object chứa arrays
-            source: formData.get('source')?.toString() ?? "",
+            source: formData.get('source')?.toString() ?? "Manual",
             visibility: formData.get('visibility')?.toString() ?? "",
             time:{
                 mondayOpen: formData.get('monday-open')?.toString() ?? "",
@@ -62,60 +62,33 @@ export async function action({request}: ActionFunctionArgs) {
             },
         },
     });
-    return redirect("/app")
+    return {ok: true}
 }
 
 export default function AddLocation () {
     const submit = useSubmit();
     const navigate = useNavigate();
+    const actionData = useActionData<typeof action>();
     const [click, setClick] = useState(false)
     const [countSocial, setCountSocial] = useState([{},{}]);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
-    // const [deleteContract, setDeleteContract] = useState<string[]>([]);
-    // const [formData, setFormData] = useState(() => ({
-    //     storeName: "",
-    //     address:  "",
-    //     city:  "",
-    //     state:  "",
-    //     code: "",
-    //     phone: "",
-    //     image: "",
-    //     url: "",
-    //     time: {
-    //       mondayOpen: "",
-    //       mondayClose: "",
-    //       tuesdayOpen: "",
-    //       tuesdayClose: "",
-    //       wednesdayOpen: "",
-    //       wednesdayClose: "",
-    //       thursdayOpen: "",
-    //       thursdayClose: "",
-    //       fridayOpen: "",
-    //       fridayClose: "",
-    //       satudayOpen: "",
-    //       satudayClose: "",
-    //       sundayOpen: "",
-    //       sundayClose: "",
-    //     },
-    //     directions:  "",
-    //     contract:  {} as Record<string, string[]>,
-    //     source:  "",
-    //     visibility:  ""
-    // }));
+    const [showBanner, setShowBanner] = useState(false);
 
-    // const handleDiscard = () => {
-    //     setFormData(formData)
-    //     // Reset formData về store
-    //     setPreview(null);
-    //     setImageBase64(null);
-    //     setDeleteContract([]);
-    //     setCountSocial([]);
-    //     setClick(false);
-    //     setError(false);
-    //     // Reset state phụ
-    // }; 
+    useEffect(() => {
+        if (actionData?.ok) {
+            setShowBanner(true);
+            
+            // Tự động ẩn sau 5 giây
+            const timer = setTimeout(() => {
+                setShowBanner(false);
+            }, 3000);
+
+            // Cleanup timer khi component unmount
+            return () => clearTimeout(timer);
+        }
+    }, [actionData]);
 
     const handleAdd = () => {
         const newItem = {};
@@ -373,7 +346,7 @@ export default function AddLocation () {
                                 
                             </s-stack>
                         </s-stack>
-                        <s-stack background="base" padding="small" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
                                 <s-text type="strong">Hours of Operation</s-text>
                             </s-box>
@@ -400,7 +373,7 @@ export default function AddLocation () {
                                 ))
                             }
                         </s-stack>   
-                        <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
                                 <s-text type="strong">Add a logo for this location</s-text>                                          
                                 <s-paragraph>Customize your location information</s-paragraph>  
@@ -456,6 +429,39 @@ export default function AddLocation () {
                 </Form>
                 <img src="/place2.jpg" alt="demo" className={styles.boxImage}/>
             </s-stack>
+      
+           {showBanner && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: 1000,
+                    minWidth: '400px',
+                    animation: 'slideIn 0.3s ease-out'
+                }}>
+                    <s-banner 
+                        heading="Store added successfully" 
+                        tone="success" 
+                        dismissible={true}
+                        onDismiss={() => setShowBanner(false)}
+                    >
+                        Your store has been added!
+                    </s-banner>
+                </div>
+            )}
+            <style>{`
+                @keyframes slideIn {
+                    from {
+                        transform: translateY(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
+
         </s-page>
     );
 }

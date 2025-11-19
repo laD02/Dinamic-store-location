@@ -206,41 +206,6 @@ export default function SearchFilter ({config, handleDelete}: {config: any, hand
                         <s-text color="subdued">Try changing the filters or search term</s-text>
                     </div>
             }
-            {/* {
-                open &&
-                <div className={styles.overlay}>
-                    <div className={styles.formEdit}>
-                        <div className={styles.title}>
-                            <span>Update File</span>
-                            <i 
-                                className="fa-solid fa-xmark"
-                                onClick={() => setOpen(!open)}
-                            >
-                            </i>
-                        </div>
-                        <div className={styles.inputEdit}>
-                            <label>Filter</label>
-                            <input 
-                                type="text" 
-                                value={valueEdit}
-                                onChange={handleEditFilter}
-                                className={`${showEdit && styles.inputError}`}
-                            />
-                            {
-                                showEdit && 
-                                <span className={styles.textError}>
-                                    <i className="fa-solid fa-circle-exclamation"></i>
-                                    The filter should not be empty.
-                                </span>
-                            }
-                        </div>
-                        <div className={styles.btnEdit}>
-                            <button className={styles.btnCancelEdit} onClick={() => setOpen(!open)}>Cancel</button>
-                            <button className={styles.btnSaveEdit} onClick={() => handleSaveEdit()}>Save</button>
-                        </div>   
-                    </div>
-                </div>
-            } */}
         </s-stack>
     )
 }

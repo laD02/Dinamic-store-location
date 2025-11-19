@@ -291,5 +291,22 @@
     color: black;
 }
 
+.blockFilter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin-top: 28px;
+}
+
+.blockFilter i {
+    color: rgb(210, 210, 210);
+    font-size: 60px;
+}
+
+.blockFilter span {
+    color: rgb(210, 210, 210);
+}
+
 
 

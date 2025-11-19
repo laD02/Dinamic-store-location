@@ -3,6 +3,7 @@ import {
   ActionFunctionArgs,
   Link,
   LoaderFunctionArgs,
+  useActionData,
   useFetcher,
   useLoaderData,
 } from "react-router";
@@ -12,7 +13,11 @@ import { Store } from "@prisma/client";
 import { exportStoresToCSV } from "../utils/exportCSV";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const storeData = await prisma.store.findMany();
+  const storeData = await prisma.store.findMany({
+    orderBy: {
+      createdAt: 'desc', // mới nhất lên đầu
+    },
+  });
 
   return storeData.map(s => ({
     ...s,
@@ -51,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
         data: { visibility },
       });
     }
-    return { success: true };
+    return {oks: true };
   }
 
   return { error: "Unknown action" };
@@ -63,11 +68,25 @@ export default function AllLocation() {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const fetcher = useFetcher();
-
-  const [clickSource, setClickSource] = useState(false);
-  const [clickVisi, setClickVisi] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedVisibility, setSelectedVisibility] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+        if (fetcher.data?.success) {
+            setShowBanner(true);
+            
+            // Tự động ẩn sau 5 giây
+            const timer = setTimeout(() => {
+                setShowBanner(false);
+            }, 3000);
+
+            // Cleanup timer khi component unmount
+            return () => clearTimeout(timer);
+        }
+    }, [fetcher.data]);
 
   useEffect(() => {
     setStores(storesData);
@@ -100,6 +119,20 @@ export default function AllLocation() {
       return matchesSearch && matchesSource && matchesVisibility;
     });
   }, [stores, searchTerm, selectedSources, selectedVisibility]);
+
+  // Tính tổng số trang
+  const totalPages = Math.ceil(filteredStores.length / itemsPerPage);
+
+  // Tính vị trí bắt đầu và kết thúc
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  // Lấy chỉ 5 items của trang hiện tại
+  const currentStores = filteredStores.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedSources, selectedVisibility]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -136,12 +169,6 @@ export default function AllLocation() {
 
   const handleDelete = () => {
     const ids = Array.from(selectedIds);
-    if (ids.length === 0) return alert("No stores selected");
-    if (!confirm(`Delete ${ids.length} store(s)?`)) return;
-
-    setStores(prev => prev.filter(s => !ids.includes(s.id)));
-    setSelectedIds(new Set());
-
     const formData = new FormData();
     formData.append("actionType", "delete");
     ids.forEach(id => formData.append("ids", id));
@@ -180,266 +207,270 @@ export default function AllLocation() {
         </s-heading>
         <s-stack direction="inline" gap="base">
             <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} >Export</s-button> 
-            <s-button variant="secondary" disabled={!hasChecked} icon="delete" onClick={handleDelete}>Delete</s-button>
-            <Link to="/addLocation" >
-              <s-button variant="primary" icon="plus-circle">Add Product</s-button>
-            </Link>
+            <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete">Delete</s-button>
+            <s-modal id="deleteTrash-modal" heading="Delete Location">
+              <s-text>
+                  Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
+              </s-text>
+              <s-button
+                  slot="secondary-actions"
+                  variant="secondary"
+                  commandFor="deleteTrash-modal"
+                  command="--hide"
+              >
+                  Cancel
+              </s-button>
+
+              <s-button
+                  slot="primary-action"
+                  variant="primary"
+                  tone="critical"
+                  commandFor="deleteTrash-modal"
+                  command="--hide"
+                  onClick={() => handleDelete()}
+              >
+                  Delete 
+              </s-button>
+          </s-modal>
+          <Link to="/addLocation" >
+            <s-button variant="primary" icon="plus-circle">Add Product</s-button>
+          </Link>
         </s-stack>
       </s-stack>
 
       <s-stack background="base" padding="small-100" borderRadius="large-100" >
-        <s-stack paddingBlockEnd="small-100">
-          <s-search-field
-            label="Search"
-            labelAccessibilityVisibility="exclusive"
-            placeholder="Search by name, city, or address"
-            value={searchTerm}
-            onInput={(event) => {
-              const target = event.target as any;
-              setSearchTerm(target.value);
-            }}
-          />
-        </s-stack>
-        <s-divider />
-
-        <s-stack direction="inline" paddingBlockStart="small-100" paddingBlockEnd="small-100" gap="small">
-       
-          <s-stack display={clickSource ? "auto" : "none"}>
-            <s-stack direction="inline" alignItems="center" background="base" borderWidth="small" borderStyle="dashed" borderRadius="large-200" gap="small-100">
-              <s-button 
-                variant="tertiary"
-                commandFor="source"
-              >
-                <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                  {selectedSources.length > 0 ? selectedSources.join(", ") : "Source"} 
-                    <s-text>
-                      <s-clickable
-                        blockSize="1%"
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedSources([]);
-                          setClickSource(false);
-                          
-                        }}
-                        >
-                        <s-icon type="x" size="small"/>
-                      </s-clickable>
-                    </s-text>   
-                </s-stack>
-              </s-button>
-              
-              <s-popover id="source">
-                <s-stack direction="block" padding="small-100">
+        <s-table 
+          paginate 
+          hasPreviousPage={currentPage > 1}  // Thay vì filteredStores.length > 5
+          hasNextPage={currentPage < totalPages}  // Thay vì filteredStores.length > 5
+          onPreviousPage={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+          onNextPage={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+        >
+          <s-grid slot="filters" gap="small-200" gridTemplateColumns="1fr auto">
+            <s-text-field
+              label="Search puzzles"
+              labelAccessibilityVisibility="exclusive"
+              icon="search"
+              placeholder="Search by name, city, or address"
+              value={searchTerm}
+              onInput={(event) => {
+                const target = event.target as any;
+                setSearchTerm(target.value);
+              }}
+            />
+            <s-button
+              icon="sort"
+              variant="secondary"
+              accessibilityLabel="Sort"
+              interestFor="sort-tooltip"
+              commandFor="sort-actions"
+            />
+            <s-tooltip id="sort-tooltip">
+              <s-text>Sort</s-text>
+            </s-tooltip>
+            <s-popover id="sort-actions">
+              <s-stack gap="none">
+                <s-box padding="small">
+                  Source
                   {["Manual", "Faire", "National Retailer", "Shopify B2B"].map((src, index) => (
-                    <s-checkbox 
-                      key={index}
-                      label={src}
-                      value={src}
-                      checked={selectedSources.includes(src)}
-                      onChange={e => {
-                        const target = e.target as HTMLInputElement;
-                        const val = target.value;
-                        setSelectedSources(prev =>
-                          target.checked ? [...prev, val] : prev.filter(v => v !== val)
-                        );
-                      }}
-                    />
-                  ))}
-                  
-                </s-stack>
-              </s-popover>
-            </s-stack>
-          </s-stack>
-       
-          <s-stack display={clickVisi ? "auto" : "none"} direction="inline" alignItems="center" background="base" borderWidth="small" borderStyle="dashed" borderRadius="large-200" gap="small-100">
-            <s-button 
-              variant="tertiary"
-              commandFor="visibility"
-            >
-              <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                {selectedVisibility || "Visibility"}
-                  <s-text>
-                    <s-clickable
-                      blockSize="1%"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setSelectedVisibility("");
-                        setClickVisi(false);
-                      }}
-                      >
-                      <s-icon type="x" size="small"/>
-                    </s-clickable>
-                  </s-text>   
-              </s-stack>
-            </s-button>
-
-            <s-popover id="visibility">
-              <s-stack direction="block" padding="small-100">
-                <s-choice-list 
-                  name= "visi"
-                  onChange={(e) => {
-                      const target = e.currentTarget.values;                     
-                      setSelectedVisibility(target ? target[0] : "")
+                  <s-checkbox 
+                    key={index}
+                    label={src}
+                    value={src}
+                    checked={selectedSources.includes(src)}
+                    onChange={e => {
+                      const target = e.target as HTMLInputElement;
+                      const val = target.value;
+                      setSelectedSources(prev =>
+                        target.checked ? [...prev, val] : prev.filter(v => v !== val)
+                      );
                     }}
-                >
-                  <s-choice value="visible">Visiable</s-choice>
-                  <s-choice value="hidden">Hidden</s-choice>
-                </s-choice-list>
+                  />
+                ))}
+                </s-box>
+                <s-divider />
+                <s-box padding="small">
+                  <s-choice-list 
+                    label="Visibility"
+                    name= "visi"
+                    values={selectedVisibility ? [selectedVisibility] : []}
+                    onChange={(e) => {
+                        const target = e.currentTarget.values;                     
+                        setSelectedVisibility(target ? target[0] : "")
+                      }}
+                  >
+                    <s-choice value="visible">Visiable</s-choice>
+                    <s-choice value="hidden">Hidden</s-choice>
+                  </s-choice-list>
+                  <s-button
+                    variant="tertiary"
+                    onClick={() => setSelectedVisibility("")}
+                  >
+                    Clear
+                  </s-button>
+                </s-box>
               </s-stack>
             </s-popover>
-          </s-stack>
-
-          <s-stack direction="inline" alignItems="center" background="base" borderWidth="small" borderStyle="dashed" borderRadius="large-200" gap="small-100">
-            <s-button 
-              variant="tertiary"
-              commandFor="add-filter"
-            >
-              <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                Add filter
-                <s-icon type="plus" size="small"/>
-              </s-stack>
-            </s-button>
-
-            <s-popover id="add-filter">
-              <s-stack direction="block" padding="small-100">
-                <s-box display={clickSource ? "none" : "auto"}>
-                  <s-button
-                    variant="tertiary"
-                    onClick={() => {
-                      setClickSource(true);
-                      // setClickShow(true);
-                      // setShow(false);
-                    }}
-                  >
-                    Source
-                  </s-button>
-                </s-box>
-                <s-box display={clickVisi ? "none" : "auto"}>
-                  <s-button
-                    variant="tertiary"
-                    onClick={() => {
-                    setClickVisi(true);
-                    // setClickShowVisi(true);
-                    // setShow(false);
-                  }}
-                  >
-                    Visibility
-                  </s-button>
-                </s-box>
-                <s-box>
-                  <s-button
-                    variant="tertiary"
-                  >
-                    Tags
-                  </s-button>
-                </s-box>
-              </s-stack>
-            </s-popover>  
-          </s-stack>
-        </s-stack>
-        <s-divider />
-
-        {hasChecked && (
-          <>
-            <s-stack paddingInlineStart="small-100" paddingBlock="small-300" direction="inline" justifyContent="space-between" alignItems="center">
-              <s-stack direction="inline" gap="large-300">
-                <s-checkbox 
-                  onChange={selectAllVisible}
-                  checked={checkedRowCount === stores.length}
-                />
-                <s-stack>
-                  {checkedRowCount} selected
-                </s-stack>
-              </s-stack>
-              
-              <s-stack direction="inline" justifyContent="space-between" gap="small">
-                <s-button onClick={() => updateVisibility("visible")}>
-                  Set As Visible
-                </s-button>
-                <s-button onClick={() => updateVisibility("hidden")}>
-                  Set As Hidden
-                </s-button>
-                <s-button>Add Tags</s-button>
-              </s-stack>
-            </s-stack>
-            <s-divider />
-          </>
-        )}
-
-          <s-table paginate hasPreviousPage hasNextPage>     
-            {!hasChecked && (
-              <s-table-header-row>
-                <s-table-header listSlot="primary">
-                  <s-checkbox 
-                    checked={allVisibleSelected}
-                    onChange={selectAllVisible}
-                  />
-                </s-table-header>
-                <s-table-header listSlot="kicker">No</s-table-header>
-                <s-table-header listSlot="inline">Store Name</s-table-header>
-                <s-table-header listSlot="labeled">Source</s-table-header>
-                <s-table-header listSlot="labeled">Map Maker</s-table-header>
-                <s-table-header listSlot="labeled">Visibility</s-table-header>
-                <s-table-header listSlot="labeled">Added</s-table-header>
-                <s-table-header listSlot="labeled">Update</s-table-header>
-                <s-table-header listSlot="labeled"></s-table-header>
-                <s-table-header listSlot="labeled"></s-table-header>
-              </s-table-header-row> 
-            )}
-
-            <s-table-body>     
-              {
-                filteredStores.map((store, index) => (
-                    <s-table-row>
-                      <s-table-cell>
+          </s-grid>
+          {
+            filteredStores.length !== 0 ? (
+              <>
+                {hasChecked && (
+                  <s-table-header-row>
+                    <s-table-header listSlot="primary">
+                      <s-stack direction="inline" gap="small" alignItems="center">
                         <s-checkbox 
-                          checked={selectedIds.has(store.id)}
-                          onChange={() => toggleSelect(store.id)}
+                          onChange={selectAllVisible}
+                          checked={checkedRowCount === stores.length || checkedRowCount === filteredStores.length}
                         />
-                      </s-table-cell>
-                      <s-table-cell>{index + 1}</s-table-cell>
-                      <s-table-cell>
-                        <s-link href={`/editLocation/${store.id}`}>  
-                          <s-box>{store.storeName}</s-box>
-                          <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
-                        </s-link>
-                      </s-table-cell>
-                      <s-table-cell>{store.source}</s-table-cell>
-                      <s-table-cell>
-                        <s-icon type="location"/>
-                      </s-table-cell>
-                      <s-table-cell>{store.visibility}</s-table-cell>
-                      <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
-                      <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
-                      <s-table-cell>
-                        <s-clickable
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleDeleteTrash(store.id);
-                          }}
-                        >
-                          <s-icon type="delete"></s-icon>
-                        </s-clickable>
-                      </s-table-cell>
-                      <s-table-cell>
-                        <s-link href={`/editLocation/${store.id}`}>Edit</s-link>
-                      </s-table-cell>
-                    </s-table-row> 
-                  // </s-clickable>
-                ))
-              }
-            </s-table-body>
-          </s-table>
-
-        {/* <div className={styles.footerTb}>
-          <i className="fa-solid fa-chevron-left"></i>
-          <div>
-            <span>1</span> - <span>{filteredStores.length}</span> of{" "}
-            <span>{stores.length}</span>
-          </div>
-          <i className="fa-solid fa-chevron-right"></i>
-        </div> */}
+                      </s-stack>
+                    </s-table-header>
+                    <s-table-header listSlot="kicker"></s-table-header>
+                    <s-table-header listSlot="inline"><s-text>{checkedRowCount} selected</s-text></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled">
+                      <s-button onClick={() => updateVisibility("visible")}>
+                        Set As Visible
+                      </s-button>
+                    </s-table-header>
+                    <s-table-header listSlot="labeled">
+                      <s-button onClick={() => updateVisibility("hidden")}>
+                        Set As Hidden
+                      </s-button>
+                    </s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                  </s-table-header-row>
+                )}
+                {!hasChecked && (
+                  <s-table-header-row>
+                    <s-table-header listSlot="primary">
+                      <s-checkbox 
+                        checked={allVisibleSelected}
+                        onChange={selectAllVisible}
+                      />
+                    </s-table-header>
+                    <s-table-header listSlot="kicker">No</s-table-header>
+                    <s-table-header listSlot="inline">Store Name</s-table-header>
+                    <s-table-header listSlot="labeled">Source</s-table-header>
+                    <s-table-header listSlot="labeled">Map Maker</s-table-header>
+                    <s-table-header listSlot="labeled">Visibility</s-table-header>
+                    <s-table-header listSlot="labeled">Added</s-table-header>
+                    <s-table-header listSlot="labeled">Update</s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                  </s-table-header-row> 
+                )}
+                <s-table-body>
+                  {
+                    currentStores.map((store, index) => (
+                      <s-table-row>
+                        <s-table-cell>
+                          <s-checkbox 
+                            checked={selectedIds.has(store.id)}
+                            onChange={() => toggleSelect(store.id)}
+                          />
+                        </s-table-cell>
+                        <s-table-cell>{index + 1}</s-table-cell>
+                        <s-table-cell>
+                          <s-link href={`/editLocation/${store.id}`}>  
+                            <s-box>{store.storeName}</s-box>
+                            <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
+                          </s-link>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-badge tone="info">{store.source}</s-badge>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-icon type="location"/>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
+                        </s-table-cell>
+                        <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
+                        <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
+                        <s-table-cell>
+                          <s-clickable
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDeleteTrash(store.id);
+                            }}
+                          >
+                            <s-icon type="delete"></s-icon>
+                          </s-clickable>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-link href={`/editLocation/${store.id}`}>Edit</s-link>
+                        </s-table-cell>
+                      </s-table-row> 
+                    ))
+                  }
+                </s-table-body>
+              </>
+            ) : (
+              <>
+                <s-table-body>
+                  <s-table-row>
+                    <s-table-cell >
+                      <s-stack alignItems="center" gap="small">
+                        <s-icon type="search" size="base"/>
+                        <h2>No filters found</h2>
+                        <s-text color="subdued">
+                          Try changing the filters or search term
+                        </s-text>
+                      </s-stack>
+                    </s-table-cell>
+                  </s-table-row>
+                </s-table-body>
+              </>
+            )
+          }        
+        </s-table>
+        {filteredStores.length > 0 && (
+          <s-stack direction="inline" justifyContent="center" padding="small" gap="base" alignItems="center">
+            <s-text>
+              Page {currentPage} of {totalPages}
+            </s-text>
+            <s-text color="subdued">•</s-text>
+            <s-text>
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredStores.length)} of {filteredStores.length} 
+            </s-text>
+          </s-stack>
+        )}
       </s-stack>
+      {showBanner && (
+        <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 1000,
+            minWidth: '400px',
+            animation: 'slideIn 0.3s ease-out'
+        }}>
+            <s-banner 
+                heading="Store deleted successfully" 
+                tone="success" 
+                dismissible={true}
+                onDismiss={() => setShowBanner(false)}
+            >
+                Your store has been deleted!
+            </s-banner>
+        </div>
+        )}
+        <style>{`
+            @keyframes slideIn {
+                from {
+                    transform: translateY(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        `}</style>
     </s-page>
   );
 }
