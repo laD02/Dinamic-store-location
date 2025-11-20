@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (actionType === "deleteId") {
     const id = formData.get("id") as string;
     await prisma.store.delete({ where: { id } });
-    return redirect("/app");
+    return redirect("/app?message=deleted");
   }
 
   // ✅ Cập nhật vào database

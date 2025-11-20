@@ -74,19 +74,36 @@ export default function AllLocation() {
   const itemsPerPage = 5;
   const [showBanner, setShowBanner] = useState(false);
 
+  // ✅ Đọc message từ URL - chỉ chạy 1 lần khi mount
   useEffect(() => {
-        if (fetcher.data?.success) {
-            setShowBanner(true);
-            
-            // Tự động ẩn sau 5 giây
-            const timer = setTimeout(() => {
-                setShowBanner(false);
-            }, 3000);
+    const params = new URLSearchParams(window.location.search);
+    const message = params.get('message');
+    
+    if (message === 'deleted') {
+      setShowBanner(true);
+      
+      // Xóa param khỏi URL
+      window.history.replaceState({}, '', '/app');
+    }
+  }, []); // Empty deps - chỉ chạy 1 lần
 
-            // Cleanup timer khi component unmount
-            return () => clearTimeout(timer);
-        }
-    }, [fetcher.data]);
+  // Theo dõi fetcher.data cho các action trong trang này
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      setShowBanner(true);
+    }
+  }, [fetcher.data]);
+
+  // ✅ Tự động ẩn banner sau 3 giây khi showBanner = true
+  useEffect(() => {
+    if (showBanner) {
+      const timer = setTimeout(() => {
+        setShowBanner(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showBanner]);
 
   useEffect(() => {
     setStores(storesData);
@@ -154,7 +171,8 @@ export default function AllLocation() {
   };
 
   const allVisibleSelected =
-    filteredStores.length > 0 && filteredStores.every(s => selectedIds.has(s.id));
+  filteredStores.length > 0 &&
+  filteredStores.every(s => selectedIds.has(s.id));
 
   const hasChecked = selectedIds.size > 0;
   const checkedRowCount = selectedIds.size;
@@ -299,7 +317,7 @@ export default function AllLocation() {
                         setSelectedVisibility(target ? target[0] : "")
                       }}
                   >
-                    <s-choice value="visible">Visiable</s-choice>
+                    <s-choice value="visible">Visible</s-choice>
                     <s-choice value="hidden">Hidden</s-choice>
                   </s-choice-list>
                   <s-button
@@ -321,7 +339,7 @@ export default function AllLocation() {
                       <s-stack direction="inline" gap="small" alignItems="center">
                         <s-checkbox 
                           onChange={selectAllVisible}
-                          checked={checkedRowCount === stores.length || checkedRowCount === filteredStores.length}
+                          checked={allVisibleSelected}
                         />
                       </s-stack>
                     </s-table-header>
