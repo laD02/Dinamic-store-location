@@ -3,7 +3,6 @@ import {
   ActionFunctionArgs,
   Link,
   LoaderFunctionArgs,
-  useActionData,
   useFetcher,
   useLoaderData,
 } from "react-router";
@@ -11,6 +10,7 @@ import { useEffect, useState, useMemo } from "react";
 import prisma from "app/db.server";
 import { Store } from "@prisma/client";
 import { exportStoresToCSV } from "../utils/exportCSV";
+import { useAppBridge } from '@shopify/app-bridge-react';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const storeData = await prisma.store.findMany({
@@ -72,7 +72,7 @@ export default function AllLocation() {
   const [selectedVisibility, setSelectedVisibility] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const [showBanner, setShowBanner] = useState(false);
+  const shopify = useAppBridge()
 
   // ✅ Đọc message từ URL - chỉ chạy 1 lần khi mount
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function AllLocation() {
     const message = params.get('message');
     
     if (message === 'deleted') {
-      setShowBanner(true);
+      shopify.toast.show('Store deleted successfully!');
       
       // Xóa param khỏi URL
       window.history.replaceState({}, '', '/app');
@@ -90,20 +90,9 @@ export default function AllLocation() {
   // Theo dõi fetcher.data cho các action trong trang này
   useEffect(() => {
     if (fetcher.data?.success) {
-      setShowBanner(true);
+      shopify.toast.show('Store deleted successfully!');
     }
   }, [fetcher.data]);
-
-  // ✅ Tự động ẩn banner sau 3 giây khi showBanner = true
-  useEffect(() => {
-    if (showBanner) {
-      const timer = setTimeout(() => {
-        setShowBanner(false);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [showBanner]);
 
   useEffect(() => {
     setStores(storesData);
@@ -169,6 +158,14 @@ export default function AllLocation() {
       return next;
     });
   };
+
+  useEffect(() => {
+    // Nếu trang hiện tại không còn item nhưng vẫn còn item ở trang cũ → lùi lại 1 trang
+    if (currentPage > 1 && currentStores.length === 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [filteredStores, currentPage, currentStores.length]);
+
 
   const allVisibleSelected =
   filteredStores.length > 0 &&
@@ -458,37 +455,6 @@ export default function AllLocation() {
           </s-stack>
         )}
       </s-stack>
-      {showBanner && (
-        <div style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            zIndex: 1000,
-            minWidth: '400px',
-            animation: 'slideIn 0.3s ease-out'
-        }}>
-            <s-banner 
-                heading="Store deleted successfully" 
-                tone="success" 
-                dismissible={true}
-                onDismiss={() => setShowBanner(false)}
-            >
-                Your store has been deleted!
-            </s-banner>
-        </div>
-        )}
-        <style>{`
-            @keyframes slideIn {
-                from {
-                    transform: translateY(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
-            }
-        `}</style>
     </s-page>
   );
 }

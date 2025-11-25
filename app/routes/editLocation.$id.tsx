@@ -2,6 +2,7 @@ import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useActionData, 
 import styles from "../css/addLocation.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
+import { useAppBridge } from "@shopify/app-bridge-react";
 
 export async function loader({params}:LoaderFunctionArgs) {
     const {id} = params;
@@ -60,20 +61,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       source: formData.get("source")?.toString() ?? "Manual",
       visibility: formData.get("visibility")?.toString() ?? "",
       time: {
-        mondayOpen: formData.get("monday-open")?.toString() ?? "",
-        mondayClose: formData.get("monday-close")?.toString() ?? "",
-        tuesdayOpen: formData.get("tuesday-open")?.toString() ?? "",
-        tuesdayClose: formData.get("tuesday-close")?.toString() ?? "",
-        wednesdayOpen: formData.get("wednesday-open")?.toString() ?? "",
-        wednesdayClose: formData.get("wednesday-close")?.toString() ?? "",
-        thursdayOpen: formData.get("thursday-open")?.toString() ?? "",
-        thursdayClose: formData.get("thursday-close")?.toString() ?? "",
-        fridayOpen: formData.get("friday-open")?.toString() ?? "",
-        fridayClose: formData.get("friday-close")?.toString() ?? "",
-        saturdayOpen: formData.get("saturday-open")?.toString() ?? "",
-        saturdayClose: formData.get("saturday-close")?.toString() ?? "",
-        sundayOpen: formData.get("sunday-open")?.toString() ?? "",
-        sundayClose: formData.get("sunday-close")?.toString() ?? "",
+        mondayOpen: formData.get("Monday-open")?.toString() ?? "",
+        mondayClose: formData.get("Monday-close")?.toString() ?? "",
+        tuesdayOpen: formData.get("Tuesday-open")?.toString() ?? "",
+        tuesdayClose: formData.get("Tuesday-close")?.toString() ?? "",
+        wednesdayOpen: formData.get("Wednesday-open")?.toString() ?? "",
+        wednesdayClose: formData.get("Wednesday-close")?.toString() ?? "",
+        thursdayOpen: formData.get("Thursday-open")?.toString() ?? "",
+        thursdayClose: formData.get("Thursday-close")?.toString() ?? "",
+        fridayOpen: formData.get("Friday-open")?.toString() ?? "",
+        fridayClose: formData.get("Friday-close")?.toString() ?? "",
+        saturdayOpen: formData.get("Saturday-open")?.toString() ?? "",
+        saturdayClose: formData.get("Saturday-close")?.toString() ?? "",
+        sundayOpen: formData.get("Sunday-open")?.toString() ?? "",
+        sundayClose: formData.get("Sunday-close")?.toString() ?? "",
       },
     },
   });
@@ -93,8 +94,11 @@ export default function EditLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [deleteContract, setDeleteContract] = useState<string[]>([]);
     const [error, setError] = useState(false)
-    const [showBanner, setShowBanner] = useState(false);
     const actionData = useActionData<typeof action>();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const formRef = useRef<HTMLFormElement>(null);
+    const [initialVisibility, setInitialVisibility] = useState<"visible" | "hidden">("hidden");
+    const [initialImage, setInitialImage] = useState<string | null>(null);
     const [formData, setFormData] = useState(() => ({
         storeName: "",
         address:  "",
@@ -115,8 +119,8 @@ export default function EditLocation () {
           thursdayClose: "",
           fridayOpen: "",
           fridayClose: "",
-          satudayOpen: "",
-          satudayClose: "",
+          saturdayOpen: "",
+          saturdayClose: "",
           sundayOpen: "",
           sundayClose: "",
         },
@@ -125,26 +129,146 @@ export default function EditLocation () {
         source:  "",
         visibility:  ""
     }));
+    const [formKey, setFormKey] = useState(0);
+
+    let shopify;
+    try {
+        shopify = useAppBridge();
+    } catch (error) {
+        console.warn('App Bridge not ready:', error);
+        shopify = null;
+    }
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Saturday', 'Sunday'];
+    
+    const [dayStatus, setDayStatus] = useState(
+        days.reduce((acc, day) => {
+        acc[day] = { disabled: false, valueOpen: "", valueClose: "" };
+        return acc;
+        }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+    );
+
+    const [initialDayStatus, setInitialDayStatus] = useState(
+        days.reduce((acc, day) => {
+            acc[day] = { disabled: false, valueOpen: "", valueClose: "" };
+            return acc;
+        }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+    );
 
     useEffect(() => {
-        if (actionData?.ok) {
-            setShowBanner(true);
+        if (store && store.time) {
+            const loadedDayStatus = days.reduce((acc, day) => {
+                const key = day.toLowerCase(); // Monday -> monday
+                const openValue = store.time[`${key}Open`] || "";
+                const closeValue = store.time[`${key}Close`] || "";
+                
+                acc[day] = {
+                    disabled: openValue === "close" && closeValue === "close",
+                    valueOpen: openValue,
+                    valueClose: closeValue
+                };
+                return acc;
+            }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>);
             
-            // Tự động ẩn sau 5 giây
-            const timer = setTimeout(() => {
-                setShowBanner(false);
-            }, 3000);
-
-            // Cleanup timer khi component unmount
-            return () => clearTimeout(timer);
+            setDayStatus(loadedDayStatus);
+            setInitialDayStatus(loadedDayStatus);
         }
-    }, [actionData]);
+    }, [store]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const handleClickDay = (day: string) => {
+        setDayStatus(prev => {
+            const isDisabled = prev[day].disabled;
+            const willBeDisabled = !isDisabled;
+            
+            return {
+                ...prev,
+                [day]: {
+                    disabled: willBeDisabled,
+                    valueOpen: willBeDisabled ? "close" : "",
+                    valueClose: willBeDisabled ? "close" : ""
+                }
+            };
+        });
+        
+        setTimeout(() => {
+            if (!formRef.current) return;
+            
+            // Tìm input của ngày đó
+            const openInput = formRef.current.elements.namedItem(`${day}-open`) as HTMLInputElement;
+            const closeInput = formRef.current.elements.namedItem(`${day}-close`) as HTMLInputElement;
+            
+            // Kiểm tra TẤT CẢ các ngày có trở về giá trị ban đầu không
+            const allDaysBackToInitial = days.every(d => {
+                const oInput = formRef.current!.elements.namedItem(`${d}-open`) as HTMLInputElement;
+                const cInput = formRef.current!.elements.namedItem(`${d}-close`) as HTMLInputElement;
+                return oInput?.value === initialDayStatus[d].valueOpen && 
+                    cInput?.value === initialDayStatus[d].valueClose;
+            });
+            
+            // Kiểm tra các field khác có thay đổi không
+            const visibilityInput = formRef.current.elements.namedItem("visibility") as HTMLInputElement;
+            const isVisibilityChanged = visibilityInput?.value !== initialVisibility;
+            const isImageChanged = preview !== initialImage;
+            
+            if (allDaysBackToInitial && !isVisibilityChanged && !isImageChanged) {
+                // Nếu TẤT CẢ về ban đầu -> reset form để ẩn save bar
+                const fakeEvent = new Event("input", { bubbles: true });
+                document.body.dispatchEvent(fakeEvent);
+            } else {
+                // Còn có thay đổi -> dispatch event để hiện/giữ save bar
+                if (openInput) {
+                    openInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    openInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                if (closeInput) {
+                    closeInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    closeInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            }
+        }, 50);
     };
 
+    useEffect(() => {
+        if (actionData?.ok && shopify) {
+        shopify.toast.show('Store edited successfully!')
+        }
+    }, [actionData, shopify]);
+
+    useEffect(() => {
+        if (store) {
+            const val = store.visibility === "visible" ? "visible" : "hidden";
+            setClick(store.visibility === "visible");
+            setInitialVisibility(val);
+            setInitialImage(store.image || null);
+        }
+    }, [store]);
+
+    const handleVisibilityToggle = () => {
+        const newClick = !click;
+        setClick(newClick);
+
+        if (!formRef.current) return;
+
+        const input = formRef.current.elements.namedItem("visibility") as HTMLInputElement;
+        if (!input) return;
+
+        const newVisibility = newClick ? "visible" : "hidden";
+        input.value = newVisibility;
+
+        // CHỈ THAY ĐỔI ĐOẠN NÀY – XÓA form.reset() ĐI!
+        if (newVisibility === initialVisibility) {
+            // KHÔNG dùng form.reset() → các ô khác KHÔNG bị mất dữ liệu
+            // Thay vào đó: dispatch 1 event "giả" để Shopify re-check form state
+            const fakeEvent = new Event("input", { bubbles: true });
+            document.body.dispatchEvent(fakeEvent);
+            // Hoặc đơn giản hơn: không làm gì cả → Shopify vẫn tự nhận ra (thường đủ)
+            return;
+        }
+
+        // Nếu khác giá trị ban đầu → dispatch bình thường
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+    };
     // Thêm hàm riêng cho social media
     const handleSocialChange = (key: string, index: number, newValue: string) => {
         setFormData(prev => {
@@ -208,24 +332,58 @@ export default function EditLocation () {
     }, [store]);
 
     const handleDiscard = () => {
-        if (!store) return;
+    if (!store) return;
 
-        // Reset formData về store
-        setFormData({
-            ...store,
-            time: { ...store.time },
-            contract: { ...store.contract },
-        });
+    // 1. Khôi phục dayStatus từ store (rất quan trọng!)
+    const loadedDayStatus = days.reduce((acc, day) => {
+        const key = day.toLowerCase();
+        const openValue = store.time[`${key}Open`] || "";
+        const closeValue = store.time[`${key}Close`] || "";
 
-        // Reset state phụ
-        setPreview(store.image || null);
-        setImageBase64(store.image || null);
-        setDeleteContract([]);
-        setCountSocial([]);
-        setClick(store.visibility === "visible");
-        setError(false);
-    }; 
+        acc[day] = {
+            disabled: openValue === "close" && closeValue === "close",
+            valueOpen: openValue,
+            valueClose: closeValue
+        };
+        return acc;
+    }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>);
 
+    setDayStatus(loadedDayStatus);
+    setInitialDayStatus(loadedDayStatus);
+
+    // 2. Khôi phục các state khác
+    setClick(store.visibility === "visible");
+    setPreview(store.image || null);
+    setImageBase64(store.image || null);
+    setDeleteContract([]);
+    setCountSocial([]);
+
+    // 3. Khôi phục formData (nếu cần)
+    setFormData({
+        storeName: store.storeName || "",
+        address: store.address || "",
+        city: store.city || "",
+        state: store.state || "",
+        code: store.code || "",
+        phone: store.phone || "",
+        image: store.image || "",
+        url: store.url || "",
+        directions: store.directions || "",
+        contract: store.contract || {},
+        source: store.source || "Manual",
+        visibility: store.visibility || "hidden",
+        time: { ...store.time },
+    });
+    setFormKey(prev => prev + 1);
+
+
+    // 4. QUAN TRỌNG: Không dùng form.reset() nữa!
+    // Thay vào đó: dispatch một event giả để Shopify Save Bar biết form đã "sạch"
+    setTimeout(() => {
+        const fakeEvent = new Event("input", { bubbles: true });
+        document.body.dispatchEvent(fakeEvent);
+    }, 100);
+};
     const handleSubmit = () => {
         const form = formRef.current;
         if (!form) return;
@@ -275,11 +433,13 @@ export default function EditLocation () {
         fetcher.submit(formData, { method: "post" });
     }
 
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const formRef = useRef<HTMLFormElement>(null);
-
     const handleClick = () => {
         fileInputRef.current?.click(); // Kích hoạt input file
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,6 +472,7 @@ export default function EditLocation () {
             }
         }
     };
+
     return (
         <s-page heading="Dynamic Store Locator">
             <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
@@ -331,7 +492,7 @@ export default function EditLocation () {
                     <s-box>
                         {
                             click ?
-                            <s-clickable onClick={() => setClick(!click)}>
+                            <s-clickable onClick={handleVisibilityToggle}>
                                 <s-badge tone="success">
                                     <s-stack direction="inline" alignItems="center">
                                         <s-icon type="eye-check-mark"/>
@@ -340,7 +501,7 @@ export default function EditLocation () {
                                 </s-badge>
                             </s-clickable>
                             :
-                            <s-clickable onClick={() => setClick(!click)}>
+                            <s-clickable onClick={handleVisibilityToggle}>
                                 <s-badge >
                                     <s-stack direction="inline" alignItems="center">
                                         <s-icon type="eye-check-mark" tone="info"/>
@@ -399,7 +560,7 @@ export default function EditLocation () {
                     }}
                     onReset={handleDiscard}
                 >
-                    <input type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
+                    <input key={click ? "visible" : "hidden"} type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
                     <s-stack gap="large-100">
                         <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-stack padding="small-200">
@@ -441,7 +602,7 @@ export default function EditLocation () {
                                     </s-box>
                                 
                                     <s-box>
-                                        <s-select label="State" name="state" error={error === true ? "State is required" : ""} value={formData.state}>
+                                        <s-select label="State" name="state" required error={error === true ? "State is required" : ""} value={formData.state}>
                                             <s-option value="AL">AL</s-option>
                                             <s-option value="AZ">AZ</s-option>
                                             <s-option value="AS">AS</s-option>
@@ -571,24 +732,51 @@ export default function EditLocation () {
                                 <s-box>Open</s-box>
                                 <s-box>Close</s-box>
                             </s-stack>
-                            {
-                                ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Satuday', 'Sunday'].map((item, index) => (
-                                    <s-stack direction="inline" justifyContent="space-between" paddingBlockEnd="small-200" key={index}>
-                                        <s-box inlineSize="10%">{item}</s-box>
-                                        <s-box>
-                                            <s-text-field name={`${item}-open`}/>
-                                        </s-box>
-                                        <s-box>
-                                            <s-text-field name={`${item}-close`}/>
-                                        </s-box>
-                                        <s-box>
-                                            <s-clickable>
-                                                <s-icon type="eye-check-mark"/>
-                                            </s-clickable>
-                                        </s-box>
-                                    </s-stack>
-                                ))
-                            }
+                            {days.map((item) => (
+                                <s-stack
+                                direction="inline"
+                                justifyContent="space-between"
+                                paddingBlockEnd="small-200"
+                                key={item}
+                                >
+                                <s-box inlineSize="10%">{item}</s-box>
+                                <s-box>
+                                    <s-text-field
+                                        key={`${item}-open-${formKey}`} 
+                                        name={`${item}-open`}
+                                        value={dayStatus[item].valueOpen}
+                                        defaultValue={store.time[`${item.toLowerCase()}Open`] || ""} // thêm dòng này
+                                        readOnly={dayStatus[item].disabled}
+                                        onChange={(e: any) =>
+                                            setDayStatus(prev => ({
+                                            ...prev,
+                                            [item]: { ...prev[item], valueOpen: e.target.value }
+                                            }))
+                                        }
+                                    />
+                                </s-box>
+                                <s-box>
+                                    <s-text-field
+                                        name={`${item}-close`}
+                                        key={`${item}-close-${formKey}`} 
+                                        value={dayStatus[item].valueClose}
+                                        defaultValue={store.time[`${item.toLowerCase()}Close`] || ""} // thêm dòng này
+                                        readOnly={dayStatus[item].disabled}
+                                        onChange={(e: any) =>
+                                            setDayStatus(prev => ({
+                                            ...prev,
+                                            [item]: { ...prev[item], valueClose: e.target.value }
+                                            }))
+                                        }
+                                    />
+                                </s-box>
+                                <s-box>
+                                    <s-clickable onClick={() => handleClickDay(item)}>
+                                        <s-icon type="eye-check-mark" />
+                                    </s-clickable>
+                                </s-box>
+                                </s-stack>
+                            ))}
                         </s-stack>   
                         <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
@@ -643,37 +831,6 @@ export default function EditLocation () {
                 </Form>
                 <img src="/place2.jpg" alt="demo" className={styles.boxImage}/>
             </s-stack>
-            {showBanner && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '20px',
-                    zIndex: 1000,
-                    minWidth: '400px',
-                    animation: 'slideIn 0.3s ease-out'
-                }}>
-                    <s-banner 
-                        heading="Store edited successfully" 
-                        tone="success" 
-                        dismissible={true}
-                        onDismiss={() => setShowBanner(false)}
-                    >
-                        Your store has been edited!
-                    </s-banner>
-                </div>
-            )}
-            <style>{`
-                @keyframes slideIn {
-                    from {
-                        transform: translateY(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateY(0);
-                        opacity: 1;
-                    }
-                }
-            `}</style>
         </s-page>
     );
 } 

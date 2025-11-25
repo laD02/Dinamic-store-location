@@ -1,7 +1,9 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useActionData, useFetcher, useNavigate, useNavigation, useSubmit } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useNavigate, useSubmit } from "react-router";
 import styles from "../css/addLocation.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
+import { useAppBridge } from '@shopify/app-bridge-react';
+import { getLatLngFromAddress } from "app/utils/geocode.server";
 
 export async function loader({request}:LoaderFunctionArgs) {
     return { };
@@ -11,27 +13,29 @@ export async function action({request}: ActionFunctionArgs) {
     const formData = await request.formData();
     const contract: Record<string, string[]> = {};
     const urls = formData.getAll("contract") as string[];
+    const address = formData.get("address")?.toString() ?? "";
+    const location = await getLatLngFromAddress(address);
 
-  urls.forEach((url) => {
-    const lower = url.toLowerCase();
-    if (lower.includes("facebook")) {
-      if (!contract.facebook) contract.facebook = [];
-      contract.facebook.push(url);
-    } else if (lower.includes("youtube")) {
-      if (!contract.youtube) contract.youtube = [];
-      contract.youtube.push(url);
-    } else if (lower.includes("linkedin")) {
-      if (!contract.linkedin) contract.linkedin = [];
-      contract.linkedin.push(url);
-    } else {
-      // fallback cho social khác
-      const key = "other";
-      if (!contract[key]) contract[key] = [];
-      contract[key].push(url);
-    }
-  });
+    urls.forEach((url) => {
+        const lower = url.toLowerCase();
+        if (lower.includes("facebook")) {
+        if (!contract.facebook) contract.facebook = [];
+        contract.facebook.push(url);
+        } else if (lower.includes("youtube")) {
+        if (!contract.youtube) contract.youtube = [];
+        contract.youtube.push(url);
+        } else if (lower.includes("linkedin")) {
+        if (!contract.linkedin) contract.linkedin = [];
+        contract.linkedin.push(url);
+        } else {
+        // fallback cho social khác
+        const key = "other";
+        if (!contract[key]) contract[key] = [];
+        contract[key].push(url);
+        }
+    });
 
-     await prisma.store.create({
+    await prisma.store.create({
         data: {
             storeName: formData.get("storeName")?.toString() ?? "",
             address: formData.get("address")?.toString() ?? "",
@@ -45,21 +49,23 @@ export async function action({request}: ActionFunctionArgs) {
             source: formData.get('source')?.toString() ?? "Manual",
             visibility: formData.get('visibility')?.toString() ?? "",
             time:{
-                mondayOpen: formData.get('monday-open')?.toString() ?? "",
-                mondayClose: formData.get('monday-close')?.toString() ?? "",
-                tuesdayOpen: formData.get('tuesday-open')?.toString() ?? "",
-                tuesdayClose: formData.get('tuesday-close')?.toString() ?? "",
-                fridayOpen: formData.get('friday-open')?.toString() ?? "",
-                fridayClose: formData.get('friday-close')?.toString() ?? "",
-                thursdayOpen: formData.get('thursday-open')?.toString() ?? "",
-                thursdayClose: formData.get('thursday-close')?.toString() ?? "",
-                wednesdayOpen: formData.get('wednesday-open')?.toString() ?? "",
-                wednesdayClose: formData.get('wednesday-close')?.toString() ?? "",
-                satudayOpen: formData.get('satuday-open')?.toString() ?? "",
-                satudayClose: formData.get('satuday-close')?.toString() ?? "",
-                sundayOpen: formData.get('sunday-open')?.toString() ?? "",
-                sundayClose: formData.get('sunday-close')?.toString() ?? "",
+                mondayOpen: formData.get('Monday-open')?.toString() ?? "",
+                mondayClose: formData.get('Monday-close')?.toString() ?? "",
+                tuesdayOpen: formData.get('Tuesday-open')?.toString() ?? "",
+                tuesdayClose: formData.get('Tuesday-close')?.toString() ?? "",
+                fridayOpen: formData.get('Friday-open')?.toString() ?? "",
+                fridayClose: formData.get('Friday-close')?.toString() ?? "",
+                thursdayOpen: formData.get('Thursday-open')?.toString() ?? "",
+                thursdayClose: formData.get('Thursday-close')?.toString() ?? "",
+                wednesdayOpen: formData.get('Wednesday-open')?.toString() ?? "",
+                wednesdayClose: formData.get('Wednesday-close')?.toString() ?? "",
+                saturdayOpen: formData.get('Saturday-open')?.toString() ?? "",
+                saturdayClose: formData.get('Saturday-close')?.toString() ?? "",
+                sundayOpen: formData.get('Sunday-open')?.toString() ?? "",
+                sundayClose: formData.get('Sunday-close')?.toString() ?? "",
             },
+            lat: location?.lat ?? null,
+            lng: location?.lng ?? null,
         },
     });
     return {ok: true}
@@ -74,22 +80,101 @@ export default function AddLocation () {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
-    const [showBanner, setShowBanner] = useState(false);
+    const [initialVisibility, setInitialVisibility] = useState<"visible" | "hidden">("hidden");
+    const [formKey, setFormKey] = useState(0);
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Saturday', 'Sunday'];
+
+    const [dayStatus, setDayStatus] = useState(
+        days.reduce((acc, day) => {
+        acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
+        return acc;
+        }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+    );
+
+    const [initialDayStatus] = useState(
+        days.reduce((acc, day) => {
+            acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
+            return acc;
+        }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+    );
+
+    const handleClickDay = (day: string) => {
+        setDayStatus(prev => {
+            const isDisabled = prev[day].disabled;
+            const willBeDisabled = !isDisabled;
+            
+            return {
+                ...prev,
+                [day]: {
+                    disabled: willBeDisabled,
+                    valueOpen: willBeDisabled ? "close" : "",
+                    valueClose: willBeDisabled ? "close" : ""
+                }
+            };
+        });
+        
+        // Trigger save bar sau khi state update
+        setTimeout(() => {
+            if (!formRef.current) return;
+
+            const openInput = formRef.current.elements.namedItem(`${day}-open`) as HTMLInputElement;
+            const closeInput = formRef.current.elements.namedItem(`${day}-close`) as HTMLInputElement;
+
+            // Luôn dispatch để Save Bar biết có thay đổi
+            [openInput, closeInput].forEach(input => {
+                if (input) {
+                    input.dispatchEvent(new Event("input", { bubbles: true }));
+                    input.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            });
+
+            // → XÓA TOÀN BỘ ĐOẠN KIỂM TRA allDaysBackToInitial, form.reset() ĐI!
+            // → Không cần ẩn Save Bar ở đây → Discard sẽ lo!
+        }, 0);
+    };
+    
+    let shopify;
+        try {
+            shopify = useAppBridge();
+        } catch (error) {
+            console.warn('App Bridge not ready:', error);
+            shopify = null;
+        }
 
     useEffect(() => {
-        if (actionData?.ok) {
-            setShowBanner(true);
-            
-            // Tự động ẩn sau 5 giây
-            const timer = setTimeout(() => {
-                setShowBanner(false);
-            }, 3000);
-
-            // Cleanup timer khi component unmount
-            return () => clearTimeout(timer);
+        if (actionData?.ok && shopify) {
+        shopify.toast.show('Store saved successfully!')
         }
-    }, [actionData]);
+    }, [actionData, shopify]);
+    
 
+    const handleVisibilityToggle = () => {
+        const newClick = !click;
+        setClick(newClick);
+
+        if (!formRef.current) return;
+
+        const input = formRef.current.elements.namedItem("visibility") as HTMLInputElement;
+        if (!input) return;
+
+        const newVisibility = newClick ? "visible" : "hidden";
+        input.value = newVisibility;
+
+        // CHỈ THAY ĐỔI ĐOẠN NÀY – XÓA form.reset() ĐI!
+        if (newVisibility === initialVisibility) {
+            // KHÔNG dùng form.reset() → các ô khác KHÔNG bị mất dữ liệu
+            // Thay vào đó: dispatch 1 event "giả" để Shopify re-check form state
+            const fakeEvent = new Event("input", { bubbles: true });
+            document.body.dispatchEvent(fakeEvent);
+            // Hoặc đơn giản hơn: không làm gì cả → Shopify vẫn tự nhận ra (thường đủ)
+            return;
+        }
+
+        // Nếu khác giá trị ban đầu → dispatch bình thường
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+    };
     const handleAdd = () => {
         const newItem = {};
         setCountSocial([...countSocial, newItem]);
@@ -160,7 +245,7 @@ export default function AddLocation () {
                     <s-box>
                         {
                             click ?
-                            <s-clickable onClick={() => setClick(!click)}>
+                            <s-clickable onClick={handleVisibilityToggle}>
                                 <s-badge tone="success">
                                     <s-stack direction="inline" alignItems="center">
                                         <s-icon type="eye-check-mark"/>
@@ -169,7 +254,7 @@ export default function AddLocation () {
                                 </s-badge>
                             </s-clickable>
                             :
-                            <s-clickable onClick={() => setClick(!click)}>
+                            <s-clickable onClick={handleVisibilityToggle}>
                                 <s-badge >
                                     <s-stack direction="inline" alignItems="center">
                                         <s-icon type="eye-check-mark" tone="info"/>
@@ -179,39 +264,6 @@ export default function AddLocation () {
                             </s-clickable>
                         }
                     </s-box>
-                </s-stack>
-                <s-stack direction="inline" justifyContent="space-between" gap="small-300">
-                    <s-button
-                        tone="critical"
-                        commandFor="delete-modal"
-                    >
-                        Delete
-                    </s-button>
-                    <s-modal id="delete-modal" heading="Delete Location">
-                        <s-text>
-                        Are you sure you want to delete the location? This action cannot be undone.
-                        </s-text>
-
-                        <s-button
-                            slot="secondary-actions"
-                            variant="secondary"
-                            commandFor="delete-modal"
-                            command="--hide"
-                        >
-                            Cancel
-                        </s-button>
-
-                        <s-button
-                            slot="primary-action"
-                            variant="primary"
-                            tone="critical"
-                            commandFor="delete-modal"
-                            command="--hide"
-                            onClick={() => navigate('/app')}
-                        >
-                            Delete 
-                        </s-button>
-                    </s-modal>
                 </s-stack>
             </s-stack>
 
@@ -225,9 +277,19 @@ export default function AddLocation () {
                         e.preventDefault(); // prevent default submit
                         handleSubmit();     // dùng hàm validate + submit chung
                     }}
-                    onReset={() => setPreview(null)}
+                    onReset={() => {
+                        setPreview(null)
+                        setClick(false)
+                        setDayStatus(
+                            days.reduce((acc, day) => {
+                                acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
+                                return acc;
+                            }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+                        );
+                        setFormKey(prev => prev + 1);
+                    }}
                 >
-                    <input type="hidden" name="visibility" value={click ? "visible" : "hidden"} />
+                    <input key={click ? "visible" : "hidden"} type="hidden" name="visibility" defaultValue={click ? "visible" : "hidden"} />
                     <s-stack gap="large-100">
                         <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-stack padding="small-200">
@@ -244,7 +306,7 @@ export default function AddLocation () {
                                         name = "storeName"
                                         error={ error === true ? "Location name is required" : ""}
                                         required       
-                                        value=""                          
+                                        defaultValue=""                          
                                     />
                                 </s-box>
                                 <s-box>
@@ -253,7 +315,7 @@ export default function AddLocation () {
                                         name = "address"
                                         error={error === true ? "Address line 1 is required" : ""}
                                         required       
-                                        value=""                             
+                                        defaultValue=""                             
                                     />
                                 </s-box>
                                 <s-stack direction="inline" justifyContent="space-between" gap="small-100">
@@ -264,12 +326,12 @@ export default function AddLocation () {
                                             name="city"
                                             error={ error === true ? "City is required" : ""}
                                             required
-                                            value=""
+                                            defaultValue=""
                                         />
                                     </s-box>
                                 
                                     <s-box>
-                                        <s-select label="State" name="state" error={error === true ? "State is required" : ""}>
+                                        <s-select label="State" name="state" required error={error === true ? "State is required" : ""}>
                                             <s-option value="AL">AL</s-option>
                                             <s-option value="AZ">AZ</s-option>
                                             <s-option value="AS">AS</s-option>
@@ -283,7 +345,7 @@ export default function AddLocation () {
                                             name="code"
                                             error={error === true ? "Zip code is required" : ""}
                                             required
-                                            value=""
+                                            defaultValue=""
                                         />
 
                                     </s-box>
@@ -294,7 +356,7 @@ export default function AddLocation () {
                                         <s-text-field 
                                             label="Phone Number"
                                             name="phone"
-                                            value=""
+                                            defaultValue=""
                                         />
                                     </s-box>
                                     
@@ -302,7 +364,7 @@ export default function AddLocation () {
                                         <s-text-field 
                                             label="Website"
                                             name="url"
-                                            value=""
+                                            defaultValue=""
                                         />
                                     </s-box>
                                 </s-stack>
@@ -310,7 +372,7 @@ export default function AddLocation () {
                                 <s-text-area 
                                     label="Direction"
                                     name="directions"
-                                    value=""
+                                    defaultValue=""
                                 />
                             </s-stack>
                         </s-stack>
@@ -336,7 +398,7 @@ export default function AddLocation () {
                                             <s-box inlineSize="33%">
                                                 <s-text-field 
                                                     name="contract"
-                                                    value=""
+                                                    defaultValue=""
                                                 />
                                             </s-box>
                                             <s-button icon="delete" onClick={() => handleRemove(index)}></s-button>
@@ -354,24 +416,49 @@ export default function AddLocation () {
                                 <s-box>Open</s-box>
                                 <s-box>Close</s-box>
                             </s-stack>
-                            {
-                                ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Satuday', 'Sunday'].map((item, index) => (
-                                    <s-stack direction="inline" justifyContent="space-between" paddingBlockEnd="small-200" key={index}>
-                                        <s-box inlineSize="10%">{item}</s-box>
-                                        <s-box>
-                                            <s-text-field name={`${item}-open`} value=""/>
-                                        </s-box>
-                                        <s-box>
-                                            <s-text-field name={`${item}-close`} value=""/>
-                                        </s-box>
-                                        <s-box>
-                                            <s-clickable>
-                                                <s-icon type="eye-check-mark"/>
-                                            </s-clickable>
-                                        </s-box>
-                                    </s-stack>
-                                ))
-                            }
+                            {days.map((item) => (
+                                <s-stack
+                                direction="inline"
+                                justifyContent="space-between"
+                                paddingBlockEnd="small-200"
+                                key={item}
+                                >
+                                <s-box inlineSize="10%">{item}</s-box>
+                                <s-box>
+                                    <s-text-field
+                                        key={`${item}-open-${formKey}`} 
+                                        name={`${item}-open`}
+                                        value={dayStatus[item].valueOpen}
+                                        readOnly={dayStatus[item].disabled}
+                                        onChange={(e: any) =>
+                                            setDayStatus(prev => ({
+                                            ...prev,
+                                            [item]: { ...prev[item], valueOpen: e.target.value }
+                                            }))
+                                        }
+                                    />
+                                </s-box>
+                                <s-box>
+                                    <s-text-field
+                                        key={`${item}-close-${formKey}`} 
+                                        name={`${item}-close`}
+                                        value={dayStatus[item].valueClose}
+                                        readOnly={dayStatus[item].disabled}
+                                        onChange={(e: any) =>
+                                            setDayStatus(prev => ({
+                                            ...prev,
+                                            [item]: { ...prev[item], valueClose: e.target.value }
+                                            }))
+                                        }
+                                    />
+                                </s-box>
+                                <s-box>
+                                    <s-clickable onClick={() => handleClickDay(item)}>
+                                    <s-icon type="eye-check-mark" />
+                                    </s-clickable>
+                                </s-box>
+                                </s-stack>
+                            ))}
                         </s-stack>   
                         <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
@@ -429,39 +516,6 @@ export default function AddLocation () {
                 </Form>
                 <img src="/place2.jpg" alt="demo" className={styles.boxImage}/>
             </s-stack>
-      
-           {showBanner && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '20px',
-                    zIndex: 1000,
-                    minWidth: '400px',
-                    animation: 'slideIn 0.3s ease-out'
-                }}>
-                    <s-banner 
-                        heading="Store added successfully" 
-                        tone="success" 
-                        dismissible={true}
-                        onDismiss={() => setShowBanner(false)}
-                    >
-                        Your store has been added!
-                    </s-banner>
-                </div>
-            )}
-            <style>{`
-                @keyframes slideIn {
-                    from {
-                        transform: translateY(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateY(0);
-                        opacity: 1;
-                    }
-                }
-            `}</style>
-
         </s-page>
     );
 }

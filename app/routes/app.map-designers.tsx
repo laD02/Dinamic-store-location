@@ -1,28 +1,15 @@
 // app/routes/app.help-center.tsx
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useLoaderData } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 import styles from "../css/mapDesigner.module.css"
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import prisma from "app/db.server";
 import 'leaflet/dist/leaflet.css';
 import MapGoogle from "../component/map";
 import MapDesigner from "../component/mapDesigner";
-import { getLatLngFromAddress } from "../utils/geocode.server";
+import { useAppBridge } from "@shopify/app-bridge-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const stores = await prisma.store.findMany();
-
-  for (const store of stores) {
-    if (!store.lat || !store.lng) {
-      const location = await getLatLngFromAddress(store.address);
-      if (location) {
-        await prisma.store.update({
-          where: { id: store.id },
-          data: { lat: location.lat, lng: location.lng },
-        });
-      }
-    }
-  }
-
   const config = await prisma.style.findFirst()
 
   return { stores, config };
@@ -84,6 +71,8 @@ export default function MapDesigners() {
   const { stores, config } = useLoaderData<typeof loader>();
   const [searchAddress, setSearchAddress] = useState<string>("");
   const listRef = useRef<HTMLDivElement>(null);
+  const actionData = useActionData<typeof action>();
+  const shopify = useAppBridge()
 
   // Giá trị mặc định
   const defaultTheme = {
@@ -114,6 +103,12 @@ export default function MapDesigners() {
     theme: defaultTheme,
     popup: defaultPopup
   });
+
+  useEffect(() => {
+        if (actionData?.ok) {
+          shopify.toast.show('Map designer edited successfully!')
+        }
+    }, [actionData]);
 
   // Load config từ database
   useEffect(() => {
@@ -155,6 +150,16 @@ export default function MapDesigners() {
     setPopup(savedConfigRef.current.popup);
   };
 
+  const search = useMemo(() => {
+    return stores.filter(stores => {
+      const matchesSearch =
+      stores.address.toLowerCase().includes(searchAddress.toLowerCase()) ||
+      stores.code.toLowerCase().includes(searchAddress.toLowerCase())
+
+      return matchesSearch
+    })
+  }, [stores, searchAddress])
+
   return (
     <s-page heading="Dynamic Store Locator" >
       <div className={styles.boxMap}>
@@ -188,7 +193,7 @@ export default function MapDesigners() {
           </s-stack>
           <div className={styles.information} ref={listRef}>
             {
-              stores.map((store: any, index: number) => (
+              search.map((store: any, index: number) => (
                 <div
                   key={store.id || index}
                   className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}

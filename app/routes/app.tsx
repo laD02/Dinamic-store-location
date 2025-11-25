@@ -2,8 +2,9 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData, useNavigation, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
-
+import { createApp } from '@shopify/app-bridge';
 import { authenticate } from "../shopify.server";
+import { useEffect } from "react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -20,6 +21,24 @@ export default function App() {
     navigation.state === "loading" ||
     navigation.state === "submitting";
 
+  useEffect(() => {
+    if (typeof window === "undefined") return; // Avoid SSR crash
+
+    const url = new URL(window.location.href);
+    const host = url.searchParams.get("host");
+    if (!host || !apiKey) {
+      console.warn("Missing host param, Shopify may force redirect.");
+      return;
+    }
+
+    createApp({
+      apiKey,
+      host,
+      forceRedirect: true,
+    });
+
+  }, [apiKey]); // Only re-init when apiKey changes
+
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
@@ -29,9 +48,10 @@ export default function App() {
         <s-link href="/app/settings">Settings</s-link>
         <s-link href="/app/help-center">Help Center</s-link>
       </s-app-nav>
+
       {isLoading ? (
-        <div  style={{display: "flex", alignItems:"center", justifyContent:'center', height:"100vh", width:"100vw"}}>
-          <s-spinner size="large" accessibilityLabel=""/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: 'center', height: "100vh", width: "100vw" }}>
+          <s-spinner size="large" accessibilityLabel="" />
           <s-text></s-text>
         </div>
       ) : (

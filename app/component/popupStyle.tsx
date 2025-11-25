@@ -56,7 +56,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
         onChange({backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius});
     }, [backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius])
     return (
-        <div className={styles.wrapper}>
+        <s-stack padding="large-200" borderRadius="large-200" background="base" inlineSize="100%">
             <div className={styles.leftBox}>
                 <h4>Popup Box</h4>
                 <div className={styles.backgroundColor} ref={backgroundPickerRef}>
@@ -252,6 +252,6 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     </div>
                 </div>
             </div>
-        </div>
+        </s-stack>
     )
 }

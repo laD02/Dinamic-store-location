@@ -1,4 +1,3 @@
-import styles from "../css/faire.module.css"
 
 export default function Faire () {
     return (

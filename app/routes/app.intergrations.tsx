@@ -19,7 +19,7 @@ export default function Intergrations() {
     <s-page heading="Dynamic Store Locator">
       <h2>Integrations</h2>
       <div className={styles.wrapper}>
-        <s-stack background="base" padding="base" borderRadius="large" inlineSize="50%" gap="small" borderWidth="base">
+        <s-stack background="base" padding="base" borderRadius="large" inlineSize="45%" gap="small" borderWidth="base">
           <s-text type="strong">Map Providers</s-text >
           <div className={`${styles.googleMap} ${number === 0 && styles.active}`} onClick={() => setNumber(0)}>
             <i className="fa-solid fa-location-dot"></i>
@@ -36,7 +36,7 @@ export default function Intergrations() {
             <span>Shopify B2B</span>
           </div>
         </s-stack>
-        <s-stack>
+        <s-stack inlineSize="100%">
           {number === 0 && <GoogleMap />}
           {number === 1 && <Faire />}
           {number === 2 && <ShopifyB2B />}
