@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
   });
 
-  return storeData.map(s => ({
+  return storeData.map((s: any) => ({
     ...s,
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
@@ -247,7 +247,7 @@ export default function AllLocation() {
                   Delete 
               </s-button>
           </s-modal>
-          <Link to="/addLocation" >
+          <Link to="/app/addLocation" >
             <s-button variant="primary" icon="plus-circle">Add Product</s-button>
           </Link>
         </s-stack>
@@ -390,7 +390,7 @@ export default function AllLocation() {
                         </s-table-cell>
                         <s-table-cell>{index + 1}</s-table-cell>
                         <s-table-cell>
-                          <s-link href={`/editLocation/${store.id}`}>  
+                          <s-link href={`/app/editLocation/${store.id}`}>  
                             <s-box>{store.storeName}</s-box>
                             <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
                           </s-link>
@@ -407,17 +407,43 @@ export default function AllLocation() {
                         <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>
-                          <s-clickable
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleDeleteTrash(store.id);
-                            }}
+                          <s-button 
+                            variant="tertiary" 
+                            icon="delete"
+                            commandFor="deleteId-modal"
                           >
-                            <s-icon type="delete"></s-icon>
-                          </s-clickable>
+                          </s-button>
+                          <s-modal id="deleteId-modal" heading="Delete Location">
+                            <s-text>
+                                Are you sure you want to delete this store? This action cannot be undone.
+                            </s-text>
+
+                            <s-button
+                              slot="secondary-actions"
+                              variant="secondary"
+                              commandFor="deleteId-modal"
+                              command="--hide"
+                            >
+                              Cancel
+                            </s-button>
+
+                            <s-button
+                              slot="primary-action"
+                              variant="primary"
+                              tone="critical"
+                              commandFor="deleteId-modal"
+                              command="--hide"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleDeleteTrash(store.id);
+                              }}
+                            >
+                              Delete 
+                            </s-button>
+                        </s-modal>
                         </s-table-cell>
                         <s-table-cell>
-                          <s-link href={`/editLocation/${store.id}`}>Edit</s-link>
+                          <s-link href={`/app/editLocation/${store.id}`}>Edit</s-link>
                         </s-table-cell>
                       </s-table-row> 
                     ))
@@ -443,7 +469,7 @@ export default function AllLocation() {
             )
           }        
         </s-table>
-        {filteredStores.length > 0 && (
+        {/* {filteredStores.length > 0 && (
           <s-stack direction="inline" justifyContent="center" padding="small" gap="base" alignItems="center">
             <s-text>
               Page {currentPage} of {totalPages}
@@ -453,7 +479,7 @@ export default function AllLocation() {
               Showing {startIndex + 1}-{Math.min(endIndex, filteredStores.length)} of {filteredStores.length} 
             </s-text>
           </s-stack>
-        )}
+        )} */}
       </s-stack>
     </s-page>
   );

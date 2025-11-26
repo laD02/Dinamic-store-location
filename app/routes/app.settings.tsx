@@ -1,8 +1,8 @@
 // app/routes/app.help-center.tsx
 
-import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useLocation, useNavigate, useNavigation } from "react-router";
 import styles from "../css/setting.module.css"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Display from "app/component/display";
 import SearchFilter from "app/component/searchFilter";
 import Installation from "app/component/installation";

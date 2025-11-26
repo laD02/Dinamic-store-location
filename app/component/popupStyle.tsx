@@ -56,7 +56,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
         onChange({backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius});
     }, [backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius])
     return (
-        <s-stack padding="large-200" borderRadius="large-200" background="base" inlineSize="100%">
+        <s-stack padding="large-200" borderRadius="large-200" background="base" inlineSize="100%" direction="inline" justifyContent="space-between">
             <div className={styles.leftBox}>
                 <h4>Popup Box</h4>
                 <div className={styles.backgroundColor} ref={backgroundPickerRef}>
@@ -101,7 +101,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         <span>{cornerRadius}pt</span>
                     </div>
                 </div>
-                <hr className={styles.hrRow}/>
+                <s-divider />
                 <h4>Font Color</h4>
                 <div className={styles.backgroundColor} ref={colorPickerRef}>
                     <div 
@@ -152,7 +152,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     </div>
                 </div>
             </div>
-            <hr className={styles.hrColum} />
+            <s-divider direction="block"/>
             <div className={styles.rightBox}>
                 <h4>Drop Shadow</h4>
                 <div className={styles.backgroundColor} ref={shadowPickerRef}>

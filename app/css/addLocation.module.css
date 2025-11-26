@@ -230,12 +230,10 @@ table {
 }
 
 .boxImage {
-    position: fixed;
-    right: 0;
-    top: 50;
-    width: 450px;  /* thay theo ý bạn */
-    height: 400px;
-    width: 35%;
+    width: 32%;
+    position: sticky;
+    top: 24px; /* khoảng cách từ top */
+    height: fit-content;
 }
 
 .unShow {

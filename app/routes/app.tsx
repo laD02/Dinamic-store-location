@@ -15,8 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
-   const navigation = useNavigation();
-
+  const navigation = useNavigation();
   const isLoading =
     navigation.state === "loading" ||
     navigation.state === "submitting";
@@ -52,7 +51,6 @@ export default function App() {
       {isLoading ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: 'center', height: "100vh", width: "100vw" }}>
           <s-spinner size="large" accessibilityLabel="" />
-          <s-text></s-text>
         </div>
       ) : (
         <Outlet />

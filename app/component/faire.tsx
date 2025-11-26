@@ -6,7 +6,9 @@ export default function Faire () {
                 <h2>Faire</h2>
                 <s-paragraph>Automatically diss-paragraphlay and update the information for your Faire retailers on your map. The last 6 months of orders will be automatically synced after authentication. For ongoing updates, you can choose to initiate manual syncs or automatically sync every 24 hours using the settings below.</s-paragraph>
                 <s-box inlineSize="100%" >
-                    <s-button tone="critical" >Faire Account Login</s-button>
+                    <s-link href="https://www.faire.com/?signIn=1&redirected=1">
+                        <s-button tone="critical" >Faire Account Login</s-button>
+                    </s-link>
                 </s-box>
             </s-stack>
 

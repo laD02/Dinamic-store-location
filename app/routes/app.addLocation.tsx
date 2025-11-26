@@ -266,8 +266,8 @@ export default function AddLocation () {
                     </s-box>
                 </s-stack>
             </s-stack>
-
-            <s-stack>
+            
+            <s-stack direction="inline" justifyContent="space-between" gap="base">
                 <Form 
                     ref={formRef} 
                     className={styles.information} 

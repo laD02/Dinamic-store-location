@@ -1,15 +1,70 @@
 // app/routes/app.help-center.tsx
 
-import { LoaderFunctionArgs } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import styles from "../css/intergration.module.css"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GoogleMap from "app/component/googleMap";
 import Faire from "app/component/faire";
 import ShopifyB2B from "app/component/shopifyB2B";
-
+import prisma from "app/db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return null; // hoặc return {}
+  const apiKey = process.env.API_KEY
+  const key = await prisma.key.findFirst()
+  return {key, apiKey}; // hoặc return {}
+}
+
+export async function action({request}: ActionFunctionArgs) {
+  const formData = await request.formData()
+  const actionType = formData.get('actionType') as string
+
+  if (actionType === 'saveGGKey') {
+    const exitkey = await prisma.key.findFirst()
+    if (!exitkey) {
+      await prisma.key.create({
+        data: {
+          ggKey: formData.get('ggKey')?.toString() ?? '',
+          b2bKey: '',
+          url: ''
+        }
+      })
+    } else {
+      await prisma.key.update({
+        where: { id: exitkey.id },
+        data: {
+          ...exitkey,
+          ggKey: formData.get('ggKey')?.toString() ?? '',
+        }
+      })
+    }
+    return {ok: true}
+  }
+
+  if (actionType === 'save') {
+    const save = formData.get('save') as string
+    const saveField = JSON.parse(save) as {url: string, b2b: string}
+    const exitkey = await prisma.key.findFirst()
+    if (!exitkey) {
+      await prisma.key.create({
+        data: {
+          ggKey: '',
+          b2bKey:saveField.b2b,
+          url: saveField.url
+        }
+      })
+    } else {
+      await prisma.key.update({
+        where: {id: exitkey.id},
+        data: {
+          ...exitkey,
+          b2bKey: saveField.b2b,
+          url: saveField.url
+        }
+      })
+    }
+    return {ok: true}
+  }
+  return {}
 }
 
 export default function Intergrations() {

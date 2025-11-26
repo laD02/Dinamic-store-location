@@ -3,6 +3,7 @@ import styles from "../css/addLocation.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { getLatLngFromAddress } from "app/utils/geocode.server";
 
 export async function loader({params}:LoaderFunctionArgs) {
     const {id} = params;
@@ -19,8 +20,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const actionType = formData.get('actionType')
   const deleted = JSON.parse(formData.get("deleteContract")?.toString() || "[]") as string[];
   const { id } = params;
-
   const contract: Record<string, string[]> = {};
+  const address = formData.get("address")?.toString() ?? ""
+  const location = await getLatLngFromAddress(address)
 
   // ✅ gom social, bỏ qua những cái nằm trong deleteContract
   urls.forEach((url, idx) => {
@@ -49,33 +51,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
   await prisma.store.update({
     where: { id },
     data: {
-      storeName: formData.get("storeName")?.toString() ?? "",
-      address: formData.get("address")?.toString() ?? "",
-      city: formData.get("city")?.toString() ?? "",
-      state: formData.get("state")?.toString() ?? "",
-      code: formData.get("code")?.toString() ?? "",
-      phone: formData.get("phone")?.toString() ?? "",
-      image: formData.get("image")?.toString() ?? "",
-      directions: formData.get("directions")?.toString() ?? "",
-      contract,
-      source: formData.get("source")?.toString() ?? "Manual",
-      visibility: formData.get("visibility")?.toString() ?? "",
-      time: {
-        mondayOpen: formData.get("Monday-open")?.toString() ?? "",
-        mondayClose: formData.get("Monday-close")?.toString() ?? "",
-        tuesdayOpen: formData.get("Tuesday-open")?.toString() ?? "",
-        tuesdayClose: formData.get("Tuesday-close")?.toString() ?? "",
-        wednesdayOpen: formData.get("Wednesday-open")?.toString() ?? "",
-        wednesdayClose: formData.get("Wednesday-close")?.toString() ?? "",
-        thursdayOpen: formData.get("Thursday-open")?.toString() ?? "",
-        thursdayClose: formData.get("Thursday-close")?.toString() ?? "",
-        fridayOpen: formData.get("Friday-open")?.toString() ?? "",
-        fridayClose: formData.get("Friday-close")?.toString() ?? "",
-        saturdayOpen: formData.get("Saturday-open")?.toString() ?? "",
-        saturdayClose: formData.get("Saturday-close")?.toString() ?? "",
-        sundayOpen: formData.get("Sunday-open")?.toString() ?? "",
-        sundayClose: formData.get("Sunday-close")?.toString() ?? "",
-      },
+        storeName: formData.get("storeName")?.toString() ?? "",
+        address: formData.get("address")?.toString() ?? "",
+        city: formData.get("city")?.toString() ?? "",
+        state: formData.get("state")?.toString() ?? "",
+        code: formData.get("code")?.toString() ?? "",
+        phone: formData.get("phone")?.toString() ?? "",
+        image: formData.get("image")?.toString() ?? "",
+        directions: formData.get("directions")?.toString() ?? "",
+        contract,
+        source: formData.get("source")?.toString() ?? "Manual",
+        visibility: formData.get("visibility")?.toString() ?? "",
+        time: {
+            mondayOpen: formData.get("Monday-open")?.toString() ?? "",
+            mondayClose: formData.get("Monday-close")?.toString() ?? "",
+            tuesdayOpen: formData.get("Tuesday-open")?.toString() ?? "",
+            tuesdayClose: formData.get("Tuesday-close")?.toString() ?? "",
+            wednesdayOpen: formData.get("Wednesday-open")?.toString() ?? "",
+            wednesdayClose: formData.get("Wednesday-close")?.toString() ?? "",
+            thursdayOpen: formData.get("Thursday-open")?.toString() ?? "",
+            thursdayClose: formData.get("Thursday-close")?.toString() ?? "",
+            fridayOpen: formData.get("Friday-open")?.toString() ?? "",
+            fridayClose: formData.get("Friday-close")?.toString() ?? "",
+            saturdayOpen: formData.get("Saturday-open")?.toString() ?? "",
+            saturdayClose: formData.get("Saturday-close")?.toString() ?? "",
+            sundayOpen: formData.get("Sunday-open")?.toString() ?? "",
+            sundayClose: formData.get("Sunday-close")?.toString() ?? "",
+        },
+        lat: location?.lat ?? null,
+        lng: location?.lng ?? null,
     },
   });
 
@@ -547,7 +551,7 @@ export default function EditLocation () {
                 </s-stack>
             </s-stack>
 
-            <s-stack>
+            <s-stack direction="inline" justifyContent="space-between">
                 <Form 
                     ref={formRef} 
                     className={styles.information} 

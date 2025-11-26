@@ -69,3 +69,10 @@ model Attribute {
   id              String    @id @default(cuid())
   filter          String
 }
+
+model Key {
+  id              String     @id @default(cuid())
+  ggKey           String
+  b2bKey          String
+  url             String
+}

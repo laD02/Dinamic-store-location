@@ -16,7 +16,7 @@ export default function Plan () {
                     <div className={styles.pricing}>Free</div>
                     <div className={styles.info}></div>
                     <div>
-                        <s-button variant="primary">Select</s-button>
+                        <s-button variant="primary" disabled>Select</s-button>
                     </div>
                     <div className={styles.list}>
                         <span>

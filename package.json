@@ -27,7 +27,6 @@
     "@fortawesome/free-regular-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.0",
-    "@prisma/client": "^6.16.3",
     "@react-google-maps/api": "^2.20.7",
     "@react-router/dev": "^7.9.3",
     "@react-router/fs-routes": "^7.9.3",
@@ -42,7 +41,6 @@
     "@shopify/ui-extensions": "~2025.10.0",
     "isbot": "^5.1.31",
     "leaflet": "^1.9.4",
-    "prisma": "^6.16.3",
     "react": "^18.3.1",
     "react-colorful": "^5.6.1",
     "react-dom": "^18.3.1",
@@ -52,6 +50,7 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
+    "@prisma/client": "^6.19.0",
     "@shopify/api-codegen-preset": "^1.2.0",
     "@shopify/app-bridge-types": "^0.5.3",
     "@shopify/polaris-types": "^1.0.1",
@@ -70,6 +69,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "graphql-config": "^5.1.1",
     "prettier": "^3.6.2",
+    "prisma": "^6.19.0",
     "typescript": "^5.9.3",
     "vite": "^6.3.6"
   },
