@@ -121,9 +121,9 @@ export default function MapGoogle({
   if (!isLoaded) return <p>⏳ Đang tải bản đồ...</p>;
 
   return (
-    <div style={{ width: "100%", height: "500px", borderRadius: "10px" }}>
+    <div style={{ width: "100%", height: "500px" }}>
       <GoogleMap
-        mapContainerStyle={{ width: "100%", height: "100%", borderRadius: "10px" }}
+        mapContainerStyle={{ width: "100%", height: "100%" }}
         center={center}
         zoom={16}
         onLoad={onLoad}

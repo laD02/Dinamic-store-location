@@ -2,7 +2,7 @@
 
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import styles from "../css/intergration.module.css"
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import GoogleMap from "app/component/googleMap";
 import Faire from "app/component/faire";
 import ShopifyB2B from "app/component/shopifyB2B";

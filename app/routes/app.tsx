@@ -4,7 +4,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { createApp } from '@shopify/app-bridge';
 import { authenticate } from "../shopify.server";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -16,9 +16,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Khi loader trả dữ liệu, tắt initial loading
+  useEffect(() => {
+    if (apiKey) {
+      setIsInitialLoading(false);
+    }
+  }, [apiKey]);
+
   const isLoading =
-    navigation.state === "loading" ||
-    navigation.state === "submitting";
+    isInitialLoading || navigation.state === "loading" || navigation.state === "submitting";
 
   useEffect(() => {
     if (typeof window === "undefined") return; // Avoid SSR crash
