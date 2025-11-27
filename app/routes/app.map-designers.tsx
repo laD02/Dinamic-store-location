@@ -11,8 +11,9 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 export async function loader({ request }: LoaderFunctionArgs) {
   const stores = await prisma.store.findMany();
   const config = await prisma.style.findFirst()
+  const googleMapsApiKey = process.env.GOOGLE_MAP_KEY
 
-  return { stores, config };
+  return { stores, config, googleMapsApiKey };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
