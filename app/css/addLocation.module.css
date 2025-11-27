@@ -86,9 +86,9 @@ h4, p {
     height: 100%;
 }
 
-.information {
-    width: 65%;
-}
+/* .information {
+    width: 100%;
+} */
 
 .shared {
     padding: 16px;

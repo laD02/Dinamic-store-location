@@ -2,10 +2,9 @@
 
 import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useLocation, useNavigate, useNavigation } from "react-router";
 import styles from "../css/setting.module.css"
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Display from "app/component/display";
 import SearchFilter from "app/component/searchFilter";
-import Installation from "app/component/installation";
 import prisma from "app/db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -61,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Settings() {
   const fetcher = useFetcher()
   const navigate = useNavigate()
-  const listBlock  = ["Display", "Search Filters", "Plans", "Installation"]
+  const listBlock  = ["Display", "Search Filters", "Plans"]
   const [active, setActive] = useState(0)
   const filter = useLoaderData<typeof loader>()
 
@@ -99,8 +98,13 @@ export default function Settings() {
         </s-stack>
         {active === 0 && <Display />}
         {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>}
-        {active === 3 && <Installation />}
-
+      </s-stack>
+      <s-stack alignItems="center" paddingBlock="base">
+        <p>
+          ©2025
+          <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
+          All Rights Reserved.
+        </p>
       </s-stack>
     </s-page>
   );

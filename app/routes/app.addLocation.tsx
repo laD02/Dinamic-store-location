@@ -267,7 +267,7 @@ export default function AddLocation () {
                 </s-stack>
             </s-stack>
             
-            <s-stack direction="inline" justifyContent="space-between" gap="base">
+            <s-stack>
                 <Form 
                     ref={formRef} 
                     className={styles.information} 
@@ -412,53 +412,53 @@ export default function AddLocation () {
                             <s-box>
                                 <s-text type="strong">Hours of Operation</s-text>
                             </s-box>
-                            <s-stack direction="inline" justifyContent="space-around">
-                                <s-box>Open</s-box>
-                                <s-box>Close</s-box>
-                            </s-stack>
-                            {days.map((item) => (
-                                <s-stack
-                                direction="inline"
-                                justifyContent="space-between"
-                                paddingBlockEnd="small-200"
-                                key={item}
-                                >
-                                <s-box inlineSize="10%">{item}</s-box>
-                                <s-box>
-                                    <s-text-field
-                                        key={`${item}-open-${formKey}`} 
-                                        name={`${item}-open`}
-                                        value={dayStatus[item].valueOpen}
-                                        readOnly={dayStatus[item].disabled}
-                                        onChange={(e: any) =>
-                                            setDayStatus(prev => ({
-                                            ...prev,
-                                            [item]: { ...prev[item], valueOpen: e.target.value }
-                                            }))
-                                        }
-                                    />
-                                </s-box>
-                                <s-box>
-                                    <s-text-field
-                                        key={`${item}-close-${formKey}`} 
-                                        name={`${item}-close`}
-                                        value={dayStatus[item].valueClose}
-                                        readOnly={dayStatus[item].disabled}
-                                        onChange={(e: any) =>
-                                            setDayStatus(prev => ({
-                                            ...prev,
-                                            [item]: { ...prev[item], valueClose: e.target.value }
-                                            }))
-                                        }
-                                    />
-                                </s-box>
-                                <s-box>
-                                    <s-clickable onClick={() => handleClickDay(item)}>
-                                    <s-icon type="eye-check-mark" />
-                                    </s-clickable>
-                                </s-box>
-                                </s-stack>
-                            ))}
+                
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td></td>
+                                        <td align="center">Open</td>
+                                        <td align="center">Close</td>
+                                        <td></td>
+                                    </tr>                       
+                                    {days.map((item) => (
+                                        <tr>
+                                            <td>{item}</td>
+                                            <td>
+                                                <s-text-field
+                                                    key={`${item}-open-${formKey}`} 
+                                                    name={`${item}-open`}
+                                                    value={dayStatus[item].valueOpen}
+                                                    readOnly={dayStatus[item].disabled}
+                                                    onChange={(e: any) =>
+                                                        setDayStatus(prev => ({
+                                                        ...prev,
+                                                        [item]: { ...prev[item], valueOpen: e.target.value }
+                                                        }))
+                                                    }
+                                                />
+                                            </td>
+                                            <td>
+                                                <s-text-field
+                                                    key={`${item}-close-${formKey}`} 
+                                                    name={`${item}-close`}
+                                                    value={dayStatus[item].valueClose}
+                                                    readOnly={dayStatus[item].disabled}
+                                                    onChange={(e: any) =>
+                                                        setDayStatus(prev => ({
+                                                        ...prev,
+                                                        [item]: { ...prev[item], valueClose: e.target.value }
+                                                        }))
+                                                    }
+                                                />
+                                            </td>
+                                            <td>
+                                                <s-button icon="eye-check-mark" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </s-stack>   
                         <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
@@ -466,7 +466,7 @@ export default function AddLocation () {
                                 <s-paragraph>Customize your location information</s-paragraph>  
                             </s-box>
                             <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" >
-                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="48%">
+                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
                                     {preview ? (
                                         <s-stack justifyContent="center" alignItems="center">
                                             <s-box inlineSize="60px" blockSize="60px">
@@ -506,7 +506,7 @@ export default function AddLocation () {
                                 />
                                 <input type="hidden" name="image" value={imageBase64 ?? ""} />
                                 
-                                <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box>
+                                {/* <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box> */}
                             </s-stack>
                         </s-stack>
                     </s-stack>
@@ -514,7 +514,14 @@ export default function AddLocation () {
                          
                     </div> */}
                 </Form>
-                <img src="/place2.jpg" alt="demo" className={styles.boxImage}/>
+                {/* <img src="/place2.jpg" alt="demo" className={styles.boxImage}/> */}
+            </s-stack>
+            <s-stack alignItems="center" paddingBlock="base">
+                <s-text>
+                ©2025
+                <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
+                All Rights Reserved.
+                </s-text>
             </s-stack>
         </s-page>
     );

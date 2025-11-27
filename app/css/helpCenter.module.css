@@ -3,8 +3,7 @@
 .boxWrapper {
     display: flex;
     justify-content: space-evenly;
-    gap: 16px;
-
+    gap: 16px
 }
 
 .boxLeft {
@@ -17,6 +16,7 @@
 
 .boxRight {
     flex: 1;
+    gap: 16px
 }
 
 .helpChat {
@@ -73,7 +73,6 @@
     display: flex;
     justify-content: space-around;
     gap: 8px;
-    margin-top: 16px;
 }
 
 .toggle1 {

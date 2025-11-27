@@ -237,6 +237,13 @@ export default function MapDesigners() {
         <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
         <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
       </Form>
+      <s-stack alignItems="center" paddingBlock="base">
+        <p>
+          ©2025
+          <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
+          All Rights Reserved.
+        </p>
+      </s-stack>
     </s-page> 
   );
 }

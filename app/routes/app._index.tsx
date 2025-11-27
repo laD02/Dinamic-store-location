@@ -216,10 +216,10 @@ export default function AllLocation() {
 
   return (
     <s-page heading="Dynamic Store Locator">
-      <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="large-100" paddingBlockEnd="large-200">
-        <s-heading>
+      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+        <h2>
           All Locations
-        </s-heading>
+        </h2>
         <s-stack direction="inline" gap="base">
             <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} >Export</s-button> 
             <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete">Delete</s-button>
@@ -480,6 +480,13 @@ export default function AllLocation() {
             </s-text>
           </s-stack>
         )} */}
+      </s-stack>
+      <s-stack alignItems="center" paddingBlock="base">
+        <s-text>
+          ©2025 
+           <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
+          All Rights Reserved.
+        </s-text>
       </s-stack>
     </s-page>
   );
