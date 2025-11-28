@@ -15,7 +15,7 @@ App Information:
 
 Thank you!`);
   
-  const url = `https://mail.google.com/mail/?view=cm&fs=1&to=h1-store-locator@h1-web-development.helpscoutapp.com&su=${subject}&body=${body}`;
+  const url = `https://mail.google.com/mail/?view=cm&fs=1&to=lehoang10112002@gmail.com&su=${subject}&body=${body}`;
   
   window.open(
     url, 

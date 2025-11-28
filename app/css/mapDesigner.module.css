@@ -7,7 +7,7 @@
 .boxInfo {
     background-color: white;
     padding: 20px;
-    width: 25%;
+    width: 30%;
     height: 460px;
 }
 
@@ -62,12 +62,13 @@
     border-radius: 4px;
     margin-top: 4px;
     height: 85%;
-    height: 400px; /* hoặc auto kèm max-height */
+    height: 370px; /* hoặc auto kèm max-height */
     max-height: 400px; /* chiều cao tối đa của khung */
     overflow-y: auto;  /* bật thanh cuộn dọc */
     overflow-x: hidden; /* ẩn cuộn ngang nếu có */
     padding-right: 6px; /* chừa chỗ cho scrollbar */
     box-sizing: border-box;
+    align-items: center;
 }
 
 .information::-webkit-scrollbar {

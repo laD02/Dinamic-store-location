@@ -7,89 +7,93 @@ import { getLatLngFromAddress } from "app/utils/geocode.server";
 
 export async function loader({params}:LoaderFunctionArgs) {
     const {id} = params;
+    const filter = await prisma.attribute.findMany()
     const store = await prisma.store.findUnique({
         where: { id },
     });
 
-  return store;
+  return {store, filter};
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const urls = formData.getAll("contract") as string[];
-  const actionType = formData.get('actionType')
-  const deleted = JSON.parse(formData.get("deleteContract")?.toString() || "[]") as string[];
-  const { id } = params;
-  const contract: Record<string, string[]> = {};
-  const address = formData.get("address")?.toString() ?? ""
-  const location = await getLatLngFromAddress(address)
+    const formData = await request.formData();
+    const urls = formData.getAll("contract") as string[];
+    const actionType = formData.get('actionType')
+    const deleted = JSON.parse(formData.get("deleteContract")?.toString() || "[]") as string[];
+    const { id } = params;
+    const contract: Record<string, string[]> = {};
+    const address = formData.get("address")?.toString() ?? ""
+    const location = await getLatLngFromAddress(address)
+    const tagsString = formData.get("tags")?.toString() ?? "";
+    const tags = tagsString ? JSON.parse(tagsString) : [];
 
   // ✅ gom social, bỏ qua những cái nằm trong deleteContract
-  urls.forEach((url, idx) => {
-    const lower = url.toLowerCase();
-    let key = "";
+    urls.forEach((url, idx) => {
+        const lower = url.toLowerCase();
+        let key = "";
 
-    if (lower.includes("facebook")) key = "facebook";
-    else if (lower.includes("youtube")) key = "youtube";
-    else if (lower.includes("linkedin")) key = "linkedin";
-    else key = "other";
+        if (lower.includes("facebook")) key = "facebook";
+        else if (lower.includes("youtube")) key = "youtube";
+        else if (lower.includes("linkedin")) key = "linkedin";
+        else key = "other";
 
-    const contractId = `${key}-${idx}`;
-    if (deleted.includes(contractId)) return; // ✅ bỏ qua
+        const contractId = `${key}-${idx}`;
+        if (deleted.includes(contractId)) return; // ✅ bỏ qua
 
-    if (!contract[key]) contract[key] = [];
-    contract[key].push(url);
-  });
+        if (!contract[key]) contract[key] = [];
+        contract[key].push(url);
+    });
 
-  if (actionType === "deleteId") {
-    const id = formData.get("id") as string;
-    await prisma.store.delete({ where: { id } });
-    return redirect("/app?message=deleted");
-  }
+    if (actionType === "deleteId") {
+        const id = formData.get("id") as string;
+        await prisma.store.delete({ where: { id } });
+        return redirect("/app?message=deleted");
+    }
 
   // ✅ Cập nhật vào database
-  await prisma.store.update({
-    where: { id },
-    data: {
-        storeName: formData.get("storeName")?.toString() ?? "",
-        address: formData.get("address")?.toString() ?? "",
-        city: formData.get("city")?.toString() ?? "",
-        state: formData.get("state")?.toString() ?? "",
-        code: formData.get("code")?.toString() ?? "",
-        phone: formData.get("phone")?.toString() ?? "",
-        image: formData.get("image")?.toString() ?? "",
-        directions: formData.get("directions")?.toString() ?? "",
-        contract,
-        source: formData.get("source")?.toString() ?? "Manual",
-        visibility: formData.get("visibility")?.toString() ?? "",
-        time: {
-            mondayOpen: formData.get("Monday-open")?.toString() ?? "",
-            mondayClose: formData.get("Monday-close")?.toString() ?? "",
-            tuesdayOpen: formData.get("Tuesday-open")?.toString() ?? "",
-            tuesdayClose: formData.get("Tuesday-close")?.toString() ?? "",
-            wednesdayOpen: formData.get("Wednesday-open")?.toString() ?? "",
-            wednesdayClose: formData.get("Wednesday-close")?.toString() ?? "",
-            thursdayOpen: formData.get("Thursday-open")?.toString() ?? "",
-            thursdayClose: formData.get("Thursday-close")?.toString() ?? "",
-            fridayOpen: formData.get("Friday-open")?.toString() ?? "",
-            fridayClose: formData.get("Friday-close")?.toString() ?? "",
-            saturdayOpen: formData.get("Saturday-open")?.toString() ?? "",
-            saturdayClose: formData.get("Saturday-close")?.toString() ?? "",
-            sundayOpen: formData.get("Sunday-open")?.toString() ?? "",
-            sundayClose: formData.get("Sunday-close")?.toString() ?? "",
+    await prisma.store.update({
+        where: { id },
+        data: {
+            storeName: formData.get("storeName")?.toString() ?? "",
+            address: formData.get("address")?.toString() ?? "",
+            city: formData.get("city")?.toString() ?? "",
+            state: formData.get("state")?.toString() ?? "",
+            code: formData.get("code")?.toString() ?? "",
+            phone: formData.get("phone")?.toString() ?? "",
+            image: formData.get("image")?.toString() ?? "",
+            directions: formData.get("directions")?.toString() ?? "",
+            contract,
+            source: formData.get("source")?.toString() ?? "Manual",
+            visibility: formData.get("visibility")?.toString() ?? "",
+            time: {
+                mondayOpen: formData.get("Monday-open")?.toString() ?? "",
+                mondayClose: formData.get("Monday-close")?.toString() ?? "",
+                tuesdayOpen: formData.get("Tuesday-open")?.toString() ?? "",
+                tuesdayClose: formData.get("Tuesday-close")?.toString() ?? "",
+                wednesdayOpen: formData.get("Wednesday-open")?.toString() ?? "",
+                wednesdayClose: formData.get("Wednesday-close")?.toString() ?? "",
+                thursdayOpen: formData.get("Thursday-open")?.toString() ?? "",
+                thursdayClose: formData.get("Thursday-close")?.toString() ?? "",
+                fridayOpen: formData.get("Friday-open")?.toString() ?? "",
+                fridayClose: formData.get("Friday-close")?.toString() ?? "",
+                saturdayOpen: formData.get("Saturday-open")?.toString() ?? "",
+                saturdayClose: formData.get("Saturday-close")?.toString() ?? "",
+                sundayOpen: formData.get("Sunday-open")?.toString() ?? "",
+                sundayClose: formData.get("Sunday-close")?.toString() ?? "",
+            },
+            tags,
+            lat: location?.lat ?? null,
+            lng: location?.lng ?? null,
         },
-        lat: location?.lat ?? null,
-        lng: location?.lng ?? null,
-    },
-  });
+    });
 
-  return {ok: true};
+    return {ok: true};
 }
 
 
 export default function EditLocation () {
     const fetcher = useFetcher()
-    const store = useLoaderData()
+    const {store, filter} = useLoaderData()
     const submit = useSubmit();
     const navigate = useNavigate();
     const [click, setClick] = useState(false)
@@ -103,6 +107,7 @@ export default function EditLocation () {
     const formRef = useRef<HTMLFormElement>(null);
     const [initialVisibility, setInitialVisibility] = useState<"visible" | "hidden">("hidden");
     const [initialImage, setInitialImage] = useState<string | null>(null);
+    const [tags, setTags] = useState<string[]>([])
     const [formData, setFormData] = useState(() => ({
         storeName: "",
         address:  "",
@@ -128,6 +133,7 @@ export default function EditLocation () {
           sundayOpen: "",
           sundayClose: "",
         },
+        tags: {},
         directions:  "",
         contract:  {} as Record<string, string[]>,
         source:  "",
@@ -320,6 +326,7 @@ export default function EditLocation () {
                 sundayOpen: "",
                 sundayClose: "",
             },
+            tags: store.tags || {},
             directions: store.directions || "",
             contract: store.contract || {},
             source: store.source || "",
@@ -332,6 +339,7 @@ export default function EditLocation () {
             setPreview(store.image || null); // nếu có ảnh cũ thì hiện lại
             setImageBase64(store.image || null);
             setDeleteContract([]); // bỏ các dòng bị đánh dấu xóa tạm
+            setTags(Array.isArray(store.tags) ? store.tags : []);
         }
     }, [store]);
 
@@ -361,7 +369,8 @@ export default function EditLocation () {
     setImageBase64(store.image || null);
     setDeleteContract([]);
     setCountSocial([]);
-
+    setTags(Array.isArray(store.tags) ? store.tags : []);
+    
     // 3. Khôi phục formData (nếu cần)
     setFormData({
         storeName: store.storeName || "",
@@ -377,6 +386,7 @@ export default function EditLocation () {
         source: store.source || "Manual",
         visibility: store.visibility || "hidden",
         time: { ...store.time },
+        tags: {...store.tags}
     });
     setFormKey(prev => prev + 1);
 
@@ -444,6 +454,16 @@ export default function EditLocation () {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const triggerSaveBar = () => {
+        if (!formRef.current) return;
+        
+        const tagsInput = formRef.current.elements.namedItem("tags") as HTMLInputElement;
+        if (tagsInput) {
+            tagsInput.dispatchEvent(new Event("input", { bubbles: true }));
+            tagsInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -833,10 +853,60 @@ export default function EditLocation () {
                                 {/* <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box> */}
                             </s-stack>
                         </s-stack>
-                    </s-stack>
-                    {/* <div className={styles.shared}>
-                         
-                    </div> */}
+                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                            <s-stack direction="inline" justifyContent="space-between">
+                                <s-box >
+                                    <s-text type="strong">Tags</s-text>
+                                    <s-paragraph color="subdued">Add tags to help filter your location</s-paragraph>
+                                </s-box>
+                                <s-stack>
+                                    <s-button commandFor="tags">Add Tags</s-button>
+                                    <s-popover id="tags">
+                                        <s-stack direction="block" alignItems="center">
+                                            {Object.values(filter).map((item: any, index: number) => {
+                                                const label = String(item.filter)
+                                                const selected = tags.includes(label)
+                                                return (
+                                                    <s-button 
+                                                        key={index} 
+                                                        variant="tertiary" 
+                                                        disabled={selected} 
+                                                        onClick={() => {
+                                                            setTags([...tags, label ])
+                                                            setTimeout(() => {
+                                                                triggerSaveBar();
+                                                            }, 0);
+                                                        }}>
+                                                        {item.filter}
+                                                    </s-button>
+                                                )
+                                            })}
+                                        </s-stack>
+                                    </s-popover>
+                                </s-stack>
+                            </s-stack>
+                            <s-stack direction="inline" justifyContent="start" gap="base" paddingBlockStart="small" >
+                                {
+                                    tags.map((item: any, index: any) => (
+                                        <s-box key={index} background="subdued" borderRadius="small" paddingInlineStart="small-200">
+                                            {item}
+                                            <s-button 
+                                                variant="tertiary" 
+                                                onClick={() => {
+                                                    setTags((prev: any) => prev.filter((_: any, i: any) => i !== index))
+                                                    setTimeout(() => {
+                                                        triggerSaveBar();
+                                                    }, 0);
+                                                }}>
+                                                <s-icon type="x" size="small"/>
+                                            </s-button>
+                                        </s-box>
+                                    ))
+                                }
+                            </s-stack>
+                            <input type="hidden" name="tags" value={JSON.stringify(tags)} />
+                        </s-stack>
+                    </s-stack>   
                 </Form>
                 {/* <img src="/place2.jpg" alt="demo" className={styles.boxImage}/> */}
             </s-stack>

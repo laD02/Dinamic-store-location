@@ -370,7 +370,8 @@ export default function AllLocation() {
                     <s-table-header listSlot="kicker">No</s-table-header>
                     <s-table-header listSlot="inline">Store Name</s-table-header>
                     <s-table-header listSlot="labeled">Source</s-table-header>
-                    <s-table-header listSlot="labeled">Map Maker</s-table-header>
+                    {/* <s-table-header listSlot="labeled">Map Maker</s-table-header> */}
+                    <s-table-header listSlot="labeled">Tags</s-table-header>
                     <s-table-header listSlot="labeled">Visibility</s-table-header>
                     <s-table-header listSlot="labeled">Added</s-table-header>
                     <s-table-header listSlot="labeled">Update</s-table-header>
@@ -398,8 +399,22 @@ export default function AllLocation() {
                         <s-table-cell>
                           <s-badge tone="info">{store.source}</s-badge>
                         </s-table-cell>
-                        <s-table-cell>
+                        {/* <s-table-cell>
                           <s-icon type="location"/>
+                        </s-table-cell> */}
+                        <s-table-cell>
+                          <s-tooltip id={`tags-${index}`}>
+                            <s-text>
+                              {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
+                            </s-text>
+                          </s-tooltip>
+                          <s-text interestFor={`tags-${index}`}>   
+                            <div style={{width:'100px'}}>
+                              <s-paragraph lineClamp={1}>
+                                {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
+                              </s-paragraph>
+                            </div>
+                          </s-text>
                         </s-table-cell>
                         <s-table-cell>
                           <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
@@ -469,17 +484,6 @@ export default function AllLocation() {
             )
           }        
         </s-table>
-        {/* {filteredStores.length > 0 && (
-          <s-stack direction="inline" justifyContent="center" padding="small" gap="base" alignItems="center">
-            <s-text>
-              Page {currentPage} of {totalPages}
-            </s-text>
-            <s-text color="subdued">•</s-text>
-            <s-text>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredStores.length)} of {filteredStores.length} 
-            </s-text>
-          </s-stack>
-        )} */}
       </s-stack>
       <s-stack alignItems="center" paddingBlock="base">
         <s-text>

@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useNavigate, useSubmit } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useLoaderData, useNavigate, useSubmit } from "react-router";
 import styles from "../css/addLocation.module.css"
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
@@ -6,7 +6,8 @@ import { useAppBridge } from '@shopify/app-bridge-react';
 import { getLatLngFromAddress } from "app/utils/geocode.server";
 
 export async function loader({request}:LoaderFunctionArgs) {
-    return { };
+    const filter = await prisma.attribute.findMany()
+    return filter;
 }
 
 export async function action({request}: ActionFunctionArgs) {
@@ -15,6 +16,8 @@ export async function action({request}: ActionFunctionArgs) {
     const urls = formData.getAll("contract") as string[];
     const address = formData.get("address")?.toString() ?? "";
     const location = await getLatLngFromAddress(address);
+    const tagsString = formData.get("tags")?.toString() ?? "";
+    const tags = tagsString ? JSON.parse(tagsString) : [];
 
     urls.forEach((url) => {
         const lower = url.toLowerCase();
@@ -64,6 +67,7 @@ export async function action({request}: ActionFunctionArgs) {
                 sundayOpen: formData.get('Sunday-open')?.toString() ?? "",
                 sundayClose: formData.get('Sunday-close')?.toString() ?? "",
             },
+            tags,
             lat: location?.lat ?? null,
             lng: location?.lng ?? null,
         },
@@ -74,6 +78,7 @@ export async function action({request}: ActionFunctionArgs) {
 export default function AddLocation () {
     const submit = useSubmit();
     const navigate = useNavigate();
+    const filter = useLoaderData()
     const actionData = useActionData<typeof action>();
     const [click, setClick] = useState(false)
     const [countSocial, setCountSocial] = useState([{},{}]);
@@ -82,6 +87,7 @@ export default function AddLocation () {
     const [error, setError] = useState(false)
     const [initialVisibility, setInitialVisibility] = useState<"visible" | "hidden">("hidden");
     const [formKey, setFormKey] = useState(0);
+    const [tags, setTags] = useState<string[]>([])
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Saturday', 'Sunday'];
 
@@ -207,6 +213,15 @@ export default function AddLocation () {
             reader.readAsDataURL(file);
         }
     };
+    const triggerSaveBar = () => {
+        if (!formRef.current) return;
+        
+        const tagsInput = formRef.current.elements.namedItem("tags") as HTMLInputElement;
+        if (tagsInput) {
+            tagsInput.dispatchEvent(new Event("input", { bubbles: true }));
+            tagsInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+    };
 
     const handleSubmit = () => {
         if (!formRef.current) return;
@@ -286,6 +301,7 @@ export default function AddLocation () {
                                 return acc;
                             }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
                         );
+                        setTags([])
                         setFormKey(prev => prev + 1);
                     }}
                 >
@@ -508,6 +524,59 @@ export default function AddLocation () {
                                 
                                 {/* <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box> */}
                             </s-stack>
+                        </s-stack>
+                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                            <s-stack direction="inline" justifyContent="space-between">
+                                <s-box >
+                                    <s-text type="strong">Tags</s-text>
+                                    <s-paragraph color="subdued">Add tags to help filter your location</s-paragraph>
+                                </s-box>
+                                <s-stack>
+                                    <s-button commandFor="tags">Add Tags</s-button>
+                                    <s-popover id="tags">
+                                        <s-stack direction="block" alignItems="center">
+                                            {Object.values(filter).map((item: any, index: number) => {
+                                                const label = String(item.filter)
+                                                const selected = tags.includes(label)
+                                                return (
+                                                    <s-button 
+                                                        key={index} 
+                                                        variant="tertiary" 
+                                                        disabled={selected} 
+                                                        onClick={() => {
+                                                            setTags([...tags, label ])
+                                                            setTimeout(() => {
+                                                                triggerSaveBar();
+                                                            }, 0);
+                                                        }}>
+                                                        {item.filter}
+                                                    </s-button>
+                                                )
+                                            })}
+                                        </s-stack>
+                                    </s-popover>
+                                </s-stack>
+                            </s-stack>
+                            <s-stack direction="inline" justifyContent="start" gap="base" paddingBlockStart="small" >
+                                {
+                                    tags.map((item: any, index: any) => (
+                                        <s-box key={index} background="subdued" borderRadius="small" paddingInlineStart="small-200">
+                                            {item}
+                                            <s-button 
+                                                variant="tertiary" 
+                                                onClick={() => {
+                                                    setTags(prev => prev.filter((_, i) => i !== index))
+                                                    setTimeout(() => {
+                                                        triggerSaveBar();
+                                                    }, 0);
+                                                }}>
+                                                <s-icon type="x" size="small"/>
+                                            </s-button>
+                                        </s-box>
+                                    ))
+                                }
+                            </s-stack>
+                            <input type="hidden" name="tags" value={JSON.stringify(tags)} />
                         </s-stack>
                     </s-stack>
                     {/* <div className={styles.shared}>

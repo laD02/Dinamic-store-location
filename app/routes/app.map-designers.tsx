@@ -9,7 +9,11 @@ import MapDesigner from "../component/mapDesigner";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const stores = await prisma.store.findMany();
+  const stores = await prisma.store.findMany({
+    orderBy: {
+      createdAt: 'desc', // mới nhất lên đầu
+    },
+  });
   const config = await prisma.style.findFirst()
   const googleMapsApiKey = process.env.GOOGLE_MAP_KEY
 
@@ -173,7 +177,7 @@ export default function MapDesigners() {
               setSearchAddress(target.value)
             }}
           />
-          <s-stack direction="inline" justifyContent="space-between" gap="small">
+          <s-stack direction="inline" justifyContent="space-between" gap="small" paddingBlock="small-200">
             <s-stack direction="inline" alignItems="center" background="strong" borderRadius="large" paddingInline="small">   
               <s-box>
                 <s-icon type="menu" />
@@ -204,6 +208,15 @@ export default function MapDesigners() {
                   <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>{store.storeName}</h4>
                   <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>{store.address}, {store.city}, {store.state}, {store.code}<br/></span>
                   <span style={{color: theme.secondaryColor}}>{store.phone}</span>
+                  <s-stack direction="inline" justifyContent="start" gap="small-500">
+                    {
+                      (store.tags || []).map((item: any, index: any) => (
+                        <s-badge tone="info">
+                          <text style={{fontSize:'6px'}}>{item}</text>
+                        </s-badge>
+                      ))
+                    }
+                  </s-stack>
                 </div>
               ))
             }     
