@@ -594,7 +594,7 @@ export default function EditLocation () {
                                 </s-stack>
                                 <s-paragraph >Customize your location information</s-paragraph>
                             </s-stack>
-                            <s-stack padding="small-200" gap="small-200">
+                            <s-stack padding="small" gap="small-200">
                                 <s-box>
                                     <s-text-field 
                                         label="Location Name"
@@ -613,9 +613,9 @@ export default function EditLocation () {
                                         defaultValue={formData.address}
                                     />
                                 </s-box>
-                                <s-stack direction="inline" justifyContent="space-between" gap="small-100">
+                                <s-stack direction="inline" justifyContent="space-between" >
                                 
-                                    <s-box>
+                                    <s-box inlineSize="32%">
                                         <s-text-field 
                                             label="City"
                                             name="city"
@@ -625,7 +625,7 @@ export default function EditLocation () {
                                         />
                                     </s-box>
                                 
-                                    <s-box>
+                                    <s-box inlineSize="32%">
                                         <s-select label="State" name="state" required error={error === true ? "State is required" : ""} value={formData.state}>
                                             <s-option value="AL">AL</s-option>
                                             <s-option value="AZ">AZ</s-option>
@@ -634,7 +634,7 @@ export default function EditLocation () {
                                         </s-select>
                                     </s-box>
                                     
-                                    <s-box>
+                                    <s-box inlineSize="32%">
                                         <s-text-field 
                                             label="Zip Code"
                                             name="code"
@@ -644,9 +644,9 @@ export default function EditLocation () {
                                         />
                                     </s-box>
                                 </s-stack>
-                                <s-stack direction="inline" justifyContent="space-between" gap="small-100">
+                                <s-stack direction="inline" justifyContent="space-between" >
                                 
-                                    <s-box>
+                                    <s-box inlineSize="49%">
                                         <s-text-field 
                                             label="Phone Number"
                                             name="phone"
@@ -654,7 +654,7 @@ export default function EditLocation () {
                                         />
                                     </s-box>
                                     
-                                    <s-box>
+                                    <s-box inlineSize="49%">
                                         <s-text-field 
                                             label="Website"
                                             name="url"
@@ -678,7 +678,7 @@ export default function EditLocation () {
                                 </s-stack>
                                 <s-paragraph>Customize your location information</s-paragraph>
                             </s-stack>
-                            <s-stack paddingBlock="small-200" paddingInlineStart="small-200">
+                            <s-stack paddingBlock="small-200" paddingInlineStart="small">
                                 {
                                 (Object.entries(formData.contract) as [string, string[]][]).flatMap(([key, values]) =>
                                     values.map((value: string, index: number) => {
@@ -752,67 +752,69 @@ export default function EditLocation () {
                             <s-box>
                                 <s-text type="strong" >Hours of Operation</s-text>
                             </s-box>
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <td></td>
-                                        <td align="center">Open</td>
-                                        <td align="center">Close</td>
-                                        <td></td>
-                                    </tr>                       
-                                    {days.map((item) => (
-                                        // <s-stack
-                                        // direction="inline"
-                                        // justifyContent="space-between"
-                                        // paddingBlockEnd="small-200"
-                                        // key={item}
-                                        // >
+                            <s-stack paddingInline="small">
+                                <table>
+                                    <tbody>
                                         <tr>
-                                            <td>{item}</td>
-                                            <td>
-                                                <s-text-field
-                                                    key={`${item}-open-${formKey}`} 
-                                                    name={`${item}-open`}
-                                                    value={dayStatus[item].valueOpen}
-                                                    defaultValue={store.time[`${item.toLowerCase()}Open`] || ""} // thêm dòng này
-                                                    readOnly={dayStatus[item].disabled}
-                                                    onChange={(e: any) =>
-                                                        setDayStatus(prev => ({
-                                                        ...prev,
-                                                        [item]: { ...prev[item], valueOpen: e.target.value }
-                                                        }))
-                                                    }
-                                                />
-                                            </td>
-                                            <td>
-                                                <s-text-field
-                                                    name={`${item}-close`}
-                                                    key={`${item}-close-${formKey}`} 
-                                                    value={dayStatus[item].valueClose}
-                                                    defaultValue={store.time[`${item.toLowerCase()}Close`] || ""} // thêm dòng này
-                                                    readOnly={dayStatus[item].disabled}
-                                                    onChange={(e: any) =>
-                                                        setDayStatus(prev => ({
-                                                        ...prev,
-                                                        [item]: { ...prev[item], valueClose: e.target.value }
-                                                        }))
-                                                    }
-                                                />
-                                            </td>
-                                            <td>
-                                                <s-button icon="eye-check-mark" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                            <td></td>
+                                            <td align="center">Open</td>
+                                            <td align="center">Close</td>
+                                            <td></td>
+                                        </tr>                       
+                                        {days.map((item) => (
+                                            // <s-stack
+                                            // direction="inline"
+                                            // justifyContent="space-between"
+                                            // paddingBlockEnd="small-200"
+                                            // key={item}
+                                            // >
+                                            <tr>
+                                                <td>{item}</td>
+                                                <td>
+                                                    <s-text-field
+                                                        key={`${item}-open-${formKey}`} 
+                                                        name={`${item}-open`}
+                                                        value={dayStatus[item].valueOpen}
+                                                        defaultValue={store.time[`${item.toLowerCase()}Open`] || ""} // thêm dòng này
+                                                        readOnly={dayStatus[item].disabled}
+                                                        onChange={(e: any) =>
+                                                            setDayStatus(prev => ({
+                                                            ...prev,
+                                                            [item]: { ...prev[item], valueOpen: e.target.value }
+                                                            }))
+                                                        }
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <s-text-field
+                                                        name={`${item}-close`}
+                                                        key={`${item}-close-${formKey}`} 
+                                                        value={dayStatus[item].valueClose}
+                                                        defaultValue={store.time[`${item.toLowerCase()}Close`] || ""} // thêm dòng này
+                                                        readOnly={dayStatus[item].disabled}
+                                                        onChange={(e: any) =>
+                                                            setDayStatus(prev => ({
+                                                            ...prev,
+                                                            [item]: { ...prev[item], valueClose: e.target.value }
+                                                            }))
+                                                        }
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <s-button icon="eye-check-mark" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </s-stack>
                         </s-stack>   
                         <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-box>
                                 <s-text type="strong">Add a logo for this location</s-text>                                          
                                 <s-paragraph>Customize your location information</s-paragraph>  
                             </s-box>
-                            <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" >
+                            <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
                                 <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
 
                                     {preview ? (
@@ -860,7 +862,7 @@ export default function EditLocation () {
                                     <s-paragraph color="subdued">Add tags to help filter your location</s-paragraph>
                                 </s-box>
                                 <s-stack>
-                                    <s-button commandFor="tags">Add Tags</s-button>
+                                    <s-button commandFor="tags" icon="product">Add Tags</s-button>
                                     <s-popover id="tags">
                                         <s-stack direction="block" alignItems="center">
                                             {Object.values(filter).map((item: any, index: number) => {
@@ -885,7 +887,7 @@ export default function EditLocation () {
                                     </s-popover>
                                 </s-stack>
                             </s-stack>
-                            <s-stack direction="inline" justifyContent="start" gap="base" paddingBlockStart="small" >
+                            <s-stack direction="inline" justifyContent="start" gap="base" paddingBlockStart="small" paddingInline="small">
                                 {
                                     tags.map((item: any, index: any) => (
                                         <s-box key={index} background="subdued" borderRadius="small" paddingInlineStart="small-200">

@@ -1,6 +1,18 @@
+import { useAppBridge } from "@shopify/app-bridge-react"
 
 
 export default function Installation () {
+    const code = `<div class="store-locator-block page-width" data-block-id="embed-locator" data-google-api-key="AIzaSyBmjzIkjmS4_-NRI1eXb2d9QeakFrd5FnM" data-enable-search="true" data-enable-filters="true" data-default-zoom="12" data-shop-domain="my-app-2779073.myshopify.com">...</div>`
+    const shopify = useAppBridge()
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code).then(() => {
+            // Có thể thêm thông báo "Copied!" ở đây
+            shopify.toast.show('Copied into clipboard!')
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    }
 
     return (
         <s-page heading="Dynamic Store Locator">
@@ -82,19 +94,42 @@ export default function Installation () {
                         </s-box>
                         <s-paragraph>Copy and paste the code snippet into an HTML block of the page where you wish the store locator to be visible.</s-paragraph>
                     </s-stack>
-            
-                    <s-stack direction="inline" justifyContent="space-between" inlineSize="62%" background="base" padding="large-300" borderRadius="large" gap="small" borderWidth="base">
-                        <s-stack gap="small">
-                            <s-box>Step 1</s-box>
-                            <s-box>
-                                <s-text type="strong">Copy the Embed Code</s-text>
-                            </s-box>
-                        </s-stack>
 
-                        <s-box inlineSize="64%">
-                            Copy and paste the code snippet below into an HTML block of the page where you wish the store locator to be visible.    
-                        </s-box>
-                    </s-stack>    
+                    <s-stack inlineSize="62%" background="base" padding="large-300" borderRadius="large" gap="small" borderWidth="base">
+                        <s-stack direction="inline" justifyContent="space-between" >
+                            <s-stack gap="small">
+                                <s-box>Step 1</s-box>
+                                <s-box>
+                                    <s-text type="strong">Copy the Embed Code</s-text>
+                                </s-box>
+                            </s-stack>
+
+                            <s-box inlineSize="64%">
+                                Copy and paste the code snippet below into an HTML block of the page where you wish the store locator to be visible.    
+                            </s-box>
+                        </s-stack>   
+
+                        <s-stack background="subdued" borderRadius="large" padding="base" direction="inline" justifyContent="space-between" gap="small">
+                            <s-stack inlineSize="90%">
+                                <pre style={{ 
+                                    margin: 0, 
+                                    whiteSpace: 'pre-wrap', 
+                                    wordBreak: 'break-word',
+                                    overflow: 'auto',
+                                }}>
+                                    <code>&lt;div class="store-locator-block page-width" data-block-id="embed-locator" data-google-api-key="AIzaSyBmjzIkjmS4_-NRI1eXb2d9QeakFrd5FnM" data-enable-search="true" data-enable-filters="true" data-default-zoom="12" data-shop-domain="my-app-2779073.myshopify.com"&gt;...&lt;/div&gt;</code>
+                                </pre>
+                            </s-stack>
+                            <s-stack>
+                                <s-button 
+                                    icon="paste" 
+                                    variant="tertiary"
+                                    onClick={() => handleCopy()}
+                                >
+                                </s-button>
+                            </s-stack>
+                        </s-stack>
+                    </s-stack> 
                 </s-stack>
             </s-stack>
             <s-stack alignItems="center" paddingBlock="base">
