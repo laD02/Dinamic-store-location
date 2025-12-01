@@ -8,7 +8,7 @@ export async function getLatLngFromAddress(address: string) {
   try {
     const res = await fetch(url, {
       headers: {
-        "User-Agent": "MyApp/1.0 (your_email@example.com)", // Nominatim yêu cầu header này
+        "User-Agent": "MyApp/1.0 (lehoang10112002@gmail.com)", // Nominatim yêu cầu header này
       },
     });
 
