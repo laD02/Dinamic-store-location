@@ -9,6 +9,7 @@
     padding: 20px;
     width: 30%;
     height: 460px;
+    gap: 20px;
 }
 
 .search i {
@@ -61,14 +62,14 @@
     border: 1px solid rgb(210, 207, 207);
     border-radius: 4px;
     margin-top: 4px;
-    height: 85%;
-    height: 370px; /* hoặc auto kèm max-height */
+    height: 90%;
+    height: 420px; /* hoặc auto kèm max-height */
     max-height: 400px; /* chiều cao tối đa của khung */
     overflow-y: auto;  /* bật thanh cuộn dọc */
     overflow-x: hidden; /* ẩn cuộn ngang nếu có */
     padding-right: 6px; /* chừa chỗ cho scrollbar */
     box-sizing: border-box;
-    align-items: center;
+    margin-top: 20px;
 }
 
 .information::-webkit-scrollbar {

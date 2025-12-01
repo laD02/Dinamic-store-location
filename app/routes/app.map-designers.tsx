@@ -177,7 +177,7 @@ export default function MapDesigners() {
               setSearchAddress(target.value)
             }}
           />
-          <s-stack direction="inline" justifyContent="space-between" gap="small" paddingBlock="small-200">
+          {/* <s-stack direction="inline" justifyContent="space-between" gap="small" paddingBlock="small-200">
             <s-stack direction="inline" alignItems="center" background="strong" borderRadius="large" paddingInline="small">   
               <s-box>
                 <s-icon type="menu" />
@@ -195,7 +195,7 @@ export default function MapDesigners() {
                 <s-option value="100">100 miles</s-option>      
               </s-select>
             </s-stack>
-          </s-stack>
+          </s-stack> */}
           <div className={styles.information} ref={listRef}>
             {
               search.map((store: any, index: number) => (
