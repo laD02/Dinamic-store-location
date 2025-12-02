@@ -167,7 +167,35 @@ export default function MapDesigners() {
 
   return (
     <s-page heading="Dynamic Store Locator" >
+      <h2>Map Designer</h2>
       <div className={styles.boxMap}>
+        <s-box inlineSize="50%">
+          <Form 
+            method="post" 
+            data-save-bar
+            onReset={(e) => {
+              e.preventDefault();
+              handleReset();
+            }}
+          >
+            <MapDesigner 
+              onThemeChange={setTheme}
+              onPopupChange={setPopup}
+              config={{theme, popup}}
+            />
+
+            <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
+            <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
+          </Form>
+        </s-box>
+        <div className={styles.map}>
+          <MapGoogle 
+            stores={stores ?? []} 
+            selectedIndex={selectedIndex}  
+            searchAddress={searchAddress}
+            popupStyle={popup}
+          />
+        </div>  
         <div className={styles.boxInfo}>
           <s-search-field 
             placeholder="Enter Address or Zip code"
@@ -177,25 +205,7 @@ export default function MapDesigners() {
               setSearchAddress(target.value)
             }}
           />
-          {/* <s-stack direction="inline" justifyContent="space-between" gap="small" paddingBlock="small-200">
-            <s-stack direction="inline" alignItems="center" background="strong" borderRadius="large" paddingInline="small">   
-              <s-box>
-                <s-icon type="menu" />
-              </s-box>
-              <s-box>
-                <s-text>All Tag</s-text>       
-              </s-box>
-            </s-stack>
-            <s-stack>
-              <s-select>
-                <s-option value="5">5 miles</s-option>
-                <s-option value="10">10 miles</s-option>
-                <s-option value="25">25 miles</s-option>
-                <s-option value="50">50 miles</s-option>
-                <s-option value="100">100 miles</s-option>      
-              </s-select>
-            </s-stack>
-          </s-stack> */}
+
           <div className={styles.information} ref={listRef}>
             {
               search.map((store: any, index: number) => (
@@ -222,34 +232,9 @@ export default function MapDesigners() {
             }     
           </div>
         </div>
-
-        <div className={styles.map}>
-          <MapGoogle 
-            stores={stores ?? []} 
-            selectedIndex={selectedIndex}  
-            searchAddress={searchAddress}
-            popupStyle={popup}
-          />
-        </div>  
       </div>
 
-      <Form 
-        method="post" 
-        data-save-bar
-        onReset={(e) => {
-          e.preventDefault();
-          handleReset();
-        }}
-      >
-        <MapDesigner 
-          onThemeChange={setTheme}
-          onPopupChange={setPopup}
-          config={{theme, popup}}
-        />
-
-        <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
-        <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
-      </Form>
+      
       <s-stack alignItems="center" paddingBlock="base">
         <p>
           ©2025

@@ -67,7 +67,6 @@
     max-height: 400px; /* chiều cao tối đa của khung */
     overflow-y: auto;  /* bật thanh cuộn dọc */
     overflow-x: hidden; /* ẩn cuộn ngang nếu có */
-    padding-right: 6px; /* chừa chỗ cho scrollbar */
     box-sizing: border-box;
     margin-top: 20px;
 }

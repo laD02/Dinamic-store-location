@@ -11,11 +11,22 @@
   gap: 12px
 }
 
+.maxBlockSize {
+    border-radius: 4px;
+    height: 90%;
+    height: 600px; /* hoặc auto kèm max-height */
+    max-height: 500px; /* chiều cao tối đa của khung */
+    overflow-y: auto;  /* bật thanh cuộn dọc */
+    overflow-x: hidden; /* ẩn cuộn ngang nếu có */
+    box-sizing: border-box;
+    padding-right: 12px;
+}
+
 .leftBox {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    width: 48%;
+    width: 100%;
 }
 
 .colorBox {
@@ -120,6 +131,6 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 48%;
+  width: 100%;
 }
 

@@ -26,6 +26,8 @@ button {
 .body {
     display: flex;
     justify-content: space-between;
+    height: 460px;
+    width: 100%;
 }
 
 .list {

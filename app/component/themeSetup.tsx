@@ -43,9 +43,8 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   }, [primaryColor, secondaryColor, primaryFont, secondaryFont]);
 
   return (
-    <s-stack padding="large-200" borderRadius="large-200" background="base" inlineSize="100%">
-      <h4>Theme Colors</h4>
-
+    <s-stack padding="small" background="base" inlineSize="100%">
+      <s-text type="strong">Theme Color</s-text>
       {/* Primary color */}
       <s-stack direction="inline" gap="small" paddingBlockStart="small" >
         <div className={styles.colorBoxWrapper} ref={primaryPickerRef}>
