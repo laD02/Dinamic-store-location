@@ -279,7 +279,7 @@ export default function MapDesigners() {
         <div
           onMouseDown={handleMouseDown}
           style={{
-            width: '8px',
+            width: '16px',
             cursor: 'col-resize',
             // background: isResizing ? '#0066ff' : 'transparent',
             transition: isResizing ? 'none' : 'background 0.2s',
@@ -293,8 +293,8 @@ export default function MapDesigners() {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '4px',
-              height: '40px',
+              // width: '4px',
+              // height: '40px',
               background: '#ddd',
               borderRadius: '2px',
               pointerEvents: 'none'
