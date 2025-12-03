@@ -7,7 +7,7 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   const [secondaryColor, setSecondaryColor] = useState(config?.secondaryColor ?? "#000");
   const [activePicker, setActivePicker] = useState(null); // "primary" | "secondary" | null
   const [primaryFont, setPrimaryFont] = useState(config?.primaryFont ?? "Roboto");
-  const [secondaryFont, setSecondaryFont] = useState(config?.secondary ?? "Open Sans");
+  const [secondaryFont, setSecondaryFont] = useState(config?.secondaryFont?? "Open Sans");
 
   const primaryPickerRef = useRef<HTMLDivElement | null>(null);
   const secondaryPickerRef = useRef<HTMLDivElement | null>(null);
@@ -43,7 +43,7 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   }, [primaryColor, secondaryColor, primaryFont, secondaryFont]);
 
   return (
-    <s-stack padding="small" background="base" inlineSize="100%">
+    <s-stack padding="base" background="base" inlineSize="100%" borderWidth="none small small small" borderRadius="none none large-100 large-100">
       <s-text type="strong">Theme Color</s-text>
       {/* Primary color */}
       <s-stack direction="inline" gap="small" paddingBlockStart="small" >

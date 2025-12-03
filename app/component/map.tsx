@@ -123,9 +123,9 @@ export default function MapGoogle({
   if (!isLoaded) return <p>⏳ Đang tải bản đồ...</p>;
 
   return (
-    <div style={{ width: "100%", height: "500px" }}>
+    <s-stack inlineSize="100%" blockSize="100%">
       <GoogleMap
-        mapContainerStyle={{ width: "100%", height: "100%" }}
+        mapContainerStyle={{ width: "100%", height: "100%", borderRadius:'12px'}}
         center={center}
         zoom={16}
         onLoad={onLoad}
@@ -182,6 +182,6 @@ export default function MapGoogle({
           </OverlayView>
         )}
       </GoogleMap>
-    </div>
+    </s-stack>
   );
 }

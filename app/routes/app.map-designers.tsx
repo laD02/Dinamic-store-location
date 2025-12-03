@@ -11,7 +11,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 export async function loader({ request }: LoaderFunctionArgs) {
   const stores = await prisma.store.findMany({
     orderBy: {
-      createdAt: 'desc', // mới nhất lên đầu
+      createdAt: 'desc',
     },
   });
   const config = await prisma.style.findFirst()
@@ -78,8 +78,10 @@ export default function MapDesigners() {
   const listRef = useRef<HTMLDivElement>(null);
   const actionData = useActionData<typeof action>();
   const shopify = useAppBridge()
+  const [leftWidth, setLeftWidth] = useState<number>(49);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Giá trị mặc định
   const defaultTheme = {
     primaryColor: "#000",
     secondaryColor: "#000",
@@ -99,23 +101,20 @@ export default function MapDesigners() {
     cornerRadius: 3
   };
 
-  // State hiện tại
   const [theme, setTheme] = useState(defaultTheme);
   const [popup, setPopup] = useState(defaultPopup);
 
-  // Ref để lưu giá trị đã save (từ database)
   const savedConfigRef = useRef({
     theme: defaultTheme,
     popup: defaultPopup
   });
 
   useEffect(() => {
-        if (actionData?.ok) {
-          shopify.toast.show('Map designer edited successfully!')
-        }
-    }, [actionData]);
+    if (actionData?.ok) {
+      shopify.toast.show('Map designer edited successfully!')
+    }
+  }, [actionData]);
 
-  // Load config từ database
   useEffect(() => {
     if (config) {
       const loadedTheme = {
@@ -137,23 +136,53 @@ export default function MapDesigners() {
         cornerRadius: config.cornerRadius,
       };
 
-      // Lưu vào ref
       savedConfigRef.current = {
         theme: loadedTheme,
         popup: loadedPopup
       };
 
-      // Set state
       setTheme(loadedTheme);
       setPopup(loadedPopup);
     }
   }, [config]);
 
-  // Hàm reset về giá trị đã lưu
   const handleReset = () => {
     setTheme(savedConfigRef.current.theme);
     setPopup(savedConfigRef.current.popup);
   };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !containerRef.current) return;
+      
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      // Giới hạn từ 25% đến 80%
+      if (newWidth >= 28 && newWidth <= 72) {
+        setLeftWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   const search = useMemo(() => {
     return stores.filter(stores => {
@@ -168,73 +197,127 @@ export default function MapDesigners() {
   return (
     <s-page heading="Dynamic Store Locator" >
       <h2>Map Designer</h2>
-      <div className={styles.boxMap}>
-        <s-box inlineSize="50%">
-          <Form 
-            method="post" 
-            data-save-bar
-            onReset={(e) => {
-              e.preventDefault();
-              handleReset();
-            }}
-          >
-            <MapDesigner 
-              onThemeChange={setTheme}
-              onPopupChange={setPopup}
-              config={{theme, popup}}
+      <div 
+        ref={containerRef}
+        style={{ 
+          display: 'flex', 
+          gap: '0px',
+          position: 'relative',
+          width: '100%',
+          userSelect: isResizing ? 'none' : 'auto'
+        }}
+      >
+        {/* Cột bên trái */}
+        <div 
+          style={{
+            width: `${leftWidth}%`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            position: 'relative'
+          }}
+        >
+          <s-stack>
+            <Form 
+              method="post" 
+              data-save-bar
+              onReset={(e) => {
+                e.preventDefault();
+                handleReset();
+              }}
+            >
+              <MapDesigner 
+                onThemeChange={setTheme}
+                onPopupChange={setPopup}
+                config={{theme, popup}}
+              />
+
+              <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
+              <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
+            </Form>
+          </s-stack>  
+          
+          <s-stack padding="base" background="base" gap="small-500" borderRadius="large-100" borderWidth="small">
+            <s-search-field 
+              placeholder="Enter Address or Zip code"
+              value={searchAddress}
+              onInput={(e) => {
+                const target = e.target as any;
+                setSearchAddress(target.value)
+              }}
             />
 
-            <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
-            <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
-          </Form>
-        </s-box>
-        <div className={styles.map}>
+            <div className={styles.information} ref={listRef}>
+              {
+                search.map((store: any, index: number) => (
+                  <div
+                    key={store.id || index}
+                    className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}
+                    onClick={() => setSelectedIndex(index)}
+                    style={{border: `1px solid ${theme.secondaryColor}`}}
+                  >
+                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>{store.storeName}</h4>
+                    <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>{store.address}, {store.city}, {store.state}, {store.code}<br/></span>
+                    <span style={{color: theme.secondaryColor}}>{store.phone}</span>
+                    <s-stack direction="inline" justifyContent="start" gap="small-500">
+                      {
+                        (store.tags || []).map((item: any, index: any) => (
+                          <s-badge tone="info" key={index}>
+                            <text style={{fontSize:'6px'}}>{item}</text>
+                          </s-badge>
+                        ))
+                      }
+                    </s-stack>
+                  </div>
+                ))
+              }     
+            </div>
+          </s-stack>
+        </div>
+
+        {/* Thanh kéo resize */}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            width: '8px',
+            cursor: 'col-resize',
+            // background: isResizing ? '#0066ff' : 'transparent',
+            transition: isResizing ? 'none' : 'background 0.2s',
+            position: 'relative',
+            flexShrink: 0
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '4px',
+              height: '40px',
+              background: '#ddd',
+              borderRadius: '2px',
+              pointerEvents: 'none'
+            }}
+          />
+        </div>
+
+        {/* Cột bên phải - Map */}
+        <div 
+          style={{
+            width: `${100 - leftWidth}%`,
+            flexShrink: 0
+          }}
+        >
           <MapGoogle 
             stores={stores ?? []} 
             selectedIndex={selectedIndex}  
             searchAddress={searchAddress}
             popupStyle={popup}
           />
-        </div>  
-        <div className={styles.boxInfo}>
-          <s-search-field 
-            placeholder="Enter Address or Zip code"
-            value={searchAddress}
-            onInput={(e) => {
-              const target = e.target as any;
-              setSearchAddress(target.value)
-            }}
-          />
-
-          <div className={styles.information} ref={listRef}>
-            {
-              search.map((store: any, index: number) => (
-                <div
-                  key={store.id || index}
-                  className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}
-                  onClick={() => setSelectedIndex(index)}
-                  style={{borderColor: theme.secondaryColor}}
-                >
-                  <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>{store.storeName}</h4>
-                  <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>{store.address}, {store.city}, {store.state}, {store.code}<br/></span>
-                  <span style={{color: theme.secondaryColor}}>{store.phone}</span>
-                  <s-stack direction="inline" justifyContent="start" gap="small-500">
-                    {
-                      (store.tags || []).map((item: any, index: any) => (
-                        <s-badge tone="info">
-                          <text style={{fontSize:'6px'}}>{item}</text>
-                        </s-badge>
-                      ))
-                    }
-                  </s-stack>
-                </div>
-              ))
-            }     
-          </div>
         </div>
       </div>
 
-      
       <s-stack alignItems="center" paddingBlock="base">
         <p>
           ©2025

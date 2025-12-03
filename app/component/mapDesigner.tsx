@@ -25,26 +25,7 @@ export default function MapDesigner ({
 
     return (
         <s-stack>
-            {/* <s-stack>
-                <div className={styles.header}>
-                    <h2>Map Designer</h2>
-                </div>
-
-                <div className={styles.list}>
-                    {
-                        listDesign.map((item, index) => (
-                            <div 
-                                className={`${styles.listItem} ${selected === index ? styles.active : ""}`} 
-                                key={index} 
-                                onClick={() => setSeleceted(index)}
-                            >
-                                {item}
-                            </div>
-                        ))
-                    }
-                </div>
-            </s-stack> */}
-            <s-stack direction="inline" justifyContent="space-between" background="base" inlineSize="100%" paddingInline="small" paddingBlockStart="small" alignItems="center">
+            <s-stack direction="inline" justifyContent="space-between" background="base" inlineSize="100%" paddingInline="small" paddingBlockStart="small" alignItems="center" borderRadius="large-100 large-100 none none" borderWidth="small small none small">
                 <s-box></s-box>
                 <s-box>
                     <s-heading>{selected === 0 ? 'Theme Setup' : 'Popup Style'}</s-heading>

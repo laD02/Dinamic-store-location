@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router"
+import { Link, useNavigate } from "react-router"
 import styles from "../css/plan.module.css"
 
 export default function Plan () {
@@ -15,7 +15,12 @@ export default function Plan () {
                     <div className={styles.title}>Basic</div>
                     <div className={styles.pricing}>Free</div>
                     <div className={styles.info}></div>
-                    <s-box blockSize="10%"></s-box>
+                    {/* <s-box blockSize="10%"></s-box> */}
+                    <div>
+                        <s-link href='/app/charges/basic'>
+                            <s-button variant="primary">Select</s-button>
+                        </s-link>
+                    </div>
                     <div className={styles.list}>
                         <span>
                             <i className="fa-solid fa-check"></i>
@@ -36,7 +41,9 @@ export default function Plan () {
                     <div className={styles.pricing}>$30 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
                     <div>
-                        <s-button variant="primary" disabled>Select</s-button>
+                        <s-link href='/app/charges/advanced'>
+                            <s-button variant="primary" >Select</s-button>
+                        </s-link>
                     </div>
                     <div className={styles.list}>
                         <span>
@@ -66,7 +73,9 @@ export default function Plan () {
                     <div className={styles.pricing}>$50 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
                     <div>
-                        <s-button variant="primary" disabled>Select</s-button>
+                        <s-link href='/app/charges/plus'>
+                            <s-button variant="primary" >Select</s-button>
+                        </s-link>
                     </div>
                     <div className={styles.list}>
                         <span>
