@@ -163,8 +163,8 @@ export default function MapDesigners() {
       const containerRect = containerRef.current.getBoundingClientRect();
       const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
       
-      // Giới hạn từ 25% đến 80%
-      if (newWidth >= 28 && newWidth <= 72) {
+      // Giới hạn từ 30% đến 80%
+      if (newWidth >= 30 && newWidth <= 70) {
         setLeftWidth(newWidth);
       }
     };
