@@ -99,11 +99,6 @@ export default function Settings() {
         {active === 0 && <Display />}
         {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>}
       </s-stack>
-      <s-stack alignItems="center" paddingBlock="base">
-        <s-text>
-          Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>
-        </s-text>
-      </s-stack>
     </s-page>
   );
 }

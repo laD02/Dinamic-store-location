@@ -102,11 +102,6 @@ export default function HelpCenter() {
           </div>
         </div>
       </div>
-      <s-stack alignItems="center" paddingBlock="base">
-        <s-text>
-          Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>    
-        </s-text>
-      </s-stack>
       {/* <div className={styles.message} onClick={() => setIcon(icon === false ? true : false)}>    
         <div>
           skjdfnkwjf

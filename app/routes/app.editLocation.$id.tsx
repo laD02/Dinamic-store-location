@@ -912,11 +912,6 @@ export default function EditLocation () {
                 </Form>
                 {/* <img src="/place2.jpg" alt="demo" className={styles.boxImage}/> */}
             </s-stack>
-            <s-stack alignItems="center" paddingBlock="base">
-                <s-text>
-                    Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>
-                </s-text>
-            </s-stack>
         </s-page>
     );
 } 

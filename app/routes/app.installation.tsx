@@ -132,11 +132,6 @@ export default function Installation () {
                     </s-stack> 
                 </s-stack>
             </s-stack>
-            <s-stack alignItems="center" paddingBlock="base">
-                <s-text>
-                    Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>  
-                </s-text>
-            </s-stack>
         </s-page>
     )
 }
