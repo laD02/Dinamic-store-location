@@ -257,15 +257,15 @@ export default function MapDesigners() {
                     // onClick={() => setSelectedIndex(index)}
                     style={{border: `1px solid ${theme.secondaryColor}`}}
                   >
-                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>jwenvk</h4>
-                    <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>Thái Thụy, Hưng Yên, AL, w2324<br/></span>
-                    <span style={{color: theme.secondaryColor}}>0393549658</span>
+                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont, whiteSpace: "normal", wordBreak: "break-word"}}>Trường Đại học Sư phạm Thái Nguyên</h4>
+                    <p style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>20 Lương Ngọc Quyến, Phường Phan Đình Phùng, Thành phố Thái Nguyên, Thái Nguyên, Việt Nam<br/></p>
+                    <p style={{color: theme.secondaryColor}}>02083902903</p>
                     <s-stack direction="inline" justifyContent="start" gap="small-500">
                       {/* {
                         (store.tags || []).map((item: any, index: any) => ( */}
-                          <s-badge tone="info">
+                          {/* <s-badge tone="info">
                             <text style={{fontSize:'6px'}}>qkjwnf</text>
-                          </s-badge>
+                          </s-badge> */}
                         {/* ))
                       } */}
                     </s-stack>
@@ -320,11 +320,9 @@ export default function MapDesigners() {
       </div>
 
       <s-stack alignItems="center" paddingBlock="base">
-        <p>
-          ©2025
-          <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
-          All Rights Reserved.
-        </p>
+        <s-text>
+          Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>
+        </s-text>
       </s-stack>
     </s-page> 
   );

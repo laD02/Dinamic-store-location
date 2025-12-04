@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Settings() {
   const fetcher = useFetcher()
   const navigate = useNavigate()
-  const listBlock  = ["Display", "Search Filters", "Plans"]
+  const listBlock  = ["Display", "Search Filters"]
   const [active, setActive] = useState(0)
   const filter = useLoaderData<typeof loader>()
 
@@ -100,11 +100,9 @@ export default function Settings() {
         {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>}
       </s-stack>
       <s-stack alignItems="center" paddingBlock="base">
-        <p>
-          ©2025
-          <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
-          All Rights Reserved.
-        </p>
+        <s-text>
+          Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>
+        </s-text>
       </s-stack>
     </s-page>
   );

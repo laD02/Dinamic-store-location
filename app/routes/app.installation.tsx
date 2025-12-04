@@ -134,9 +134,7 @@ export default function Installation () {
             </s-stack>
             <s-stack alignItems="center" paddingBlock="base">
                 <s-text>
-                    ©2025
-                    <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
-                    All Rights Reserved.
+                    Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>  
                 </s-text>
             </s-stack>
         </s-page>

@@ -10,8 +10,9 @@ import prisma from "app/db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const apiKey = process.env.API_KEY
+  const plan = await prisma.plan.findFirst()
   const key = await prisma.key.findFirst()
-  return {key, apiKey}; // hoặc return {}
+  return {key, plan, apiKey}; // hoặc return {}
 }
 
 export async function action({request}: ActionFunctionArgs) {
@@ -80,7 +81,7 @@ export default function Intergrations() {
             <i className="fa-solid fa-location-dot"></i>
             <span>Googles Map</span>
           </div>
-          <s-divider/>
+          {/* <s-divider/>
           <s-text type="strong">Connected Integrations</s-text >
           <div className={`${styles.googleMap} ${number === 1 && styles.active}`} onClick={() => setNumber(1)}>
             <i className="fa-solid fa-gear"></i>
@@ -89,7 +90,7 @@ export default function Intergrations() {
           <div className={`${styles.googleMap} ${number === 2 && styles.active}`} onClick={() => setNumber(2)}>
             <i className="fa-solid fa-gear"></i>
             <span>Shopify B2B</span>
-          </div>
+          </div> */}
         </s-stack>
         <s-stack inlineSize="100%">
           {number === 0 && <GoogleMap />}
@@ -99,9 +100,7 @@ export default function Intergrations() {
       </div>
       <s-stack alignItems="center" paddingBlock="base">
         <s-text>
-          ©2025
-          <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
-          All Rights Reserved.
+          Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>
         </s-text>
       </s-stack>
     </s-page>

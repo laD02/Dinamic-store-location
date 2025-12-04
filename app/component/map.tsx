@@ -168,13 +168,13 @@ export default function MapGoogle({
             >
               {/* {
                 selected.image && */}
-                <s-thumbnail alt="No image available" size="base" />
+                <s-thumbnail src="https://dean1665.vn/uploads/school/dhsp-thai-nguyen.jpg" size="large" />
               {/* }   */}
-              <h3>jwenvk</h3>
-              <p>Thái Thụy, Hưng Yên, AL, w2324</p>
+              <h3 style={{whiteSpace: "normal",  wordBreak: "break-word"}}>Trường Đại học Sư phạm Thái Nguyên</h3>
+              <p style={{whiteSpace: "normal",  wordBreak: "break-word"}}>20 Lương Ngọc Quyến, Phường Phan Đình Phùng, Thành phố Thái Nguyên, Thái Nguyên, Việt Nam</p>
               <span>
                 <i className="fa-solid fa-phone" style={{color: popupStyle.iconColor}}></i>
-                0393549658
+                02083902903
               </span>       
             </div>
           </OverlayView>

@@ -104,9 +104,7 @@ export default function HelpCenter() {
       </div>
       <s-stack alignItems="center" paddingBlock="base">
         <s-text>
-          ©2025
-          <s-link href="https://www.h1-apps.com/"> H1 Web Development.  </s-link>
-          All Rights Reserved.
+          Learn more about <s-link href="https://www.h1-apps.com/"> Review section.</s-link>    
         </s-text>
       </s-stack>
       {/* <div className={styles.message} onClick={() => setIcon(icon === false ? true : false)}>    

@@ -81,7 +81,7 @@ export default function Plan () {
                         :
                             <div>
                                 <s-link href='/app/charges/advanced'>
-                                    <s-button variant="primary">Select</s-button>
+                                    <s-button variant="primary" disabled>Select</s-button>
                                 </s-link>
                             </div>
                     }
@@ -127,7 +127,7 @@ export default function Plan () {
                         :
                             <div>
                                 <s-link href='/app/charges/plus'>
-                                    <s-button variant="primary">Select</s-button>
+                                    <s-button variant="primary" disabled>Select</s-button>
                                 </s-link>
                             </div>
                     }
