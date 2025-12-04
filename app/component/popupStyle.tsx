@@ -106,31 +106,33 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
             <div className={styles.maxBlockSize}>
                 <div className={styles.leftBox}>
                     <s-text type="strong">Popup Box</s-text>
-                    <div className={styles.backgroundColor} ref={backgroundPickerRef}>
-                        <div 
-                            className={styles.colorBox}
-                            style={{ backgroundColor: backgroundColor}}
-                            onClick={() => togglePicker("backgroundColor")}
-                        />
-                        {activePicker === "backgroundColor" && (
-                            <div className={styles.pickerWrapper}>
-                                {/* <HexColorPicker color={backgroundColor} onChange={setBackgroundColor} /> */}
-                                <s-box padding="small" border="base" borderRadius="base" background="subdued">
-                                    <s-color-picker 
-                                    value={backgroundColor} 
-                                    alpha
-                                    onInput={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setBackgroundColor(target.value)
-                                    }}
-                                    onChange={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setBackgroundColor(target.value)
-                                    }}
-                                    />
-                                </s-box>
-                            </div>
-                        )}
+                    <div className={styles.backgroundColor}>
+                        <div ref={backgroundPickerRef}>
+                            <div 
+                                className={styles.colorBox}
+                                style={{ backgroundColor: backgroundColor}}
+                                onClick={() => togglePicker("backgroundColor")}
+                            />
+                            {activePicker === "backgroundColor" && (
+                                <div className={styles.pickerWrapper}>
+                                    {/* <HexColorPicker color={backgroundColor} onChange={setBackgroundColor} /> */}
+                                    <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                        <s-color-picker 
+                                        value={backgroundColor} 
+                                        alpha
+                                        onInput={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setBackgroundColor(target.value)
+                                        }}
+                                        onChange={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setBackgroundColor(target.value)
+                                        }}
+                                        />
+                                    </s-box>
+                                </div>
+                            )}
+                        </div>
                         <div className={styles.colorInfo}> 
                             <strong>Background Color</strong>
                             <span>{backgroundColor}</span>
@@ -156,61 +158,65 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                     </div>
                     {/* <s-divider /> */}
                     <s-text type="strong">Font Color</s-text>
-                    <div className={styles.backgroundColor} ref={colorPickerRef}>
-                        <div 
-                            className={styles.colorBox}
-                            style={{ backgroundColor: color}}
-                            onClick={() => togglePicker("color")}
-                        />
-                        {activePicker === "color" && (
-                            <div className={styles.pickerWrapper}>
-                                {/* <HexColorPicker color={color} onChange={setColor} /> */}
-                                <s-box padding="small" border="base" borderRadius="base" background="subdued">
-                                    <s-color-picker 
-                                    value={color} 
-                                    alpha
-                                    onInput={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setColor(target.value)
-                                    }}
-                                    onChange={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setColor(target.value)
-                                    }}
-                                    />
-                                </s-box>
-                            </div>
-                        )}
+                    <div className={styles.backgroundColor} >
+                        <div ref={colorPickerRef}>
+                            <div 
+                                className={styles.colorBox}
+                                style={{ backgroundColor: color}}
+                                onClick={() => togglePicker("color")}
+                            />
+                            {activePicker === "color" && (
+                                <div className={styles.pickerWrapper}>
+                                    {/* <HexColorPicker color={color} onChange={setColor} /> */}
+                                    <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                        <s-color-picker 
+                                        value={color} 
+                                        alpha
+                                        onInput={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setColor(target.value)
+                                        }}
+                                        onChange={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setColor(target.value)
+                                        }}
+                                        />
+                                    </s-box>
+                                </div>
+                            )}
+                        </div>
                         <div className={styles.colorInfo}> 
                             <strong>Color</strong>
                             <span>{color}</span>
                         </div>
                     </div>
-                    <div className={styles.backgroundColor} ref={iconPickerRef}>
-                        <div 
-                            className={styles.colorBox}
-                            style={{ backgroundColor: iconColor}}
-                            onClick={() => togglePicker("iconColor")}
-                        />
-                        {activePicker === "iconColor" && (
-                            <div className={styles.pickerWrapper}>
-                                {/* <HexColorPicker color={iconColor} onChange={setIconColor} /> */}
-                                <s-box padding="small" border="base" borderRadius="base" background="subdued">
-                                    <s-color-picker 
-                                    value={iconColor} 
-                                    alpha
-                                    onInput={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setIconColor(target.value)
-                                    }}
-                                    onChange={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setIconColor(target.value)
-                                    }}
-                                    />
-                                </s-box>
+                    <div className={styles.backgroundColor}>
+                        <div ref={iconPickerRef}>
+                            <div 
+                                className={styles.colorBox}
+                                style={{ backgroundColor: iconColor}}
+                                onClick={() => togglePicker("iconColor")}
+                            />
+                            {activePicker === "iconColor" && (
+                                <div className={styles.pickerWrapper}>
+                                    {/* <HexColorPicker color={iconColor} onChange={setIconColor} /> */}
+                                    <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                        <s-color-picker 
+                                        value={iconColor} 
+                                        alpha
+                                        onInput={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setIconColor(target.value)
+                                        }}
+                                        onChange={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setIconColor(target.value)
+                                        }}
+                                        />
+                                    </s-box>
+                                </div>
+                            )}
                             </div>
-                        )}
                         <div className={styles.colorInfo}> 
                             <strong>Icon Color</strong>
                             <span>{iconColor}</span>
@@ -220,31 +226,33 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                 <s-divider direction="block"/>
                 <div className={styles.rightBox}> */}
                     <s-text type="strong">Drop Shadow</s-text>
-                    <div className={styles.backgroundColor} ref={shadowPickerRef}>
-                        <div 
-                            className={styles.colorBox}
-                            style={{ backgroundColor: shadowColor}}
-                            onClick={() => togglePicker("shadowColor")}
-                        />
-                        {activePicker === "shadowColor" && (
-                            <div className={styles.pickerWrapper}>
-                                {/* <HexColorPicker color={iconColor} onChange={setShadowColor} /> */}
-                                <s-box padding="small" border="base" borderRadius="base" background="subdued">
-                                    <s-color-picker 
-                                    value={shadowColor} 
-                                    alpha
-                                    onInput={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setShadowColor(target.value)
-                                    }}
-                                    onChange={(e) => {
-                                        const target = e.currentTarget as any;
-                                        setShadowColor(target.value)
-                                    }}
-                                    />
-                                </s-box>
-                            </div>
-                        )}
+                    <div className={styles.backgroundColor} >
+                        <div ref={shadowPickerRef}>
+                            <div 
+                                className={styles.colorBox}
+                                style={{ backgroundColor: shadowColor}}
+                                onClick={() => togglePicker("shadowColor")}
+                            />
+                            {activePicker === "shadowColor" && (
+                                <div className={styles.pickerWrapper}>
+                                    {/* <HexColorPicker color={iconColor} onChange={setShadowColor} /> */}
+                                    <s-box padding="small" border="base" borderRadius="base" background="subdued">
+                                        <s-color-picker 
+                                        value={shadowColor} 
+                                        alpha
+                                        onInput={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setShadowColor(target.value)
+                                        }}
+                                        onChange={(e) => {
+                                            const target = e.currentTarget as any;
+                                            setShadowColor(target.value)
+                                        }}
+                                        />
+                                    </s-box>
+                                </div>
+                            )}
+                        </div>
                         <div className={styles.colorInfo}> 
                             <strong>Shadow Color</strong>
                             <span>{shadowColor}</span>
