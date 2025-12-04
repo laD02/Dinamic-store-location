@@ -5,14 +5,17 @@ import { fontList } from "app/utils/primaryFont";
 export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any) => void, config: any }) {
   const [primaryColor, setPrimaryColor] = useState(config?.primaryColor ?? "#000");
   const [secondaryColor, setSecondaryColor] = useState(config?.secondaryColor ?? "#000");
-  const [activePicker, setActivePicker] = useState(null); // "primary" | "secondary" | null
+  const [activePicker, setActivePicker] = useState<"primary" | "secondary" | null>(null);
   const [primaryFont, setPrimaryFont] = useState(config?.primaryFont ?? "Roboto");
   const [secondaryFont, setSecondaryFont] = useState(config?.secondaryFont?? "Open Sans");
 
   const primaryPickerRef = useRef<HTMLDivElement | null>(null);
   const secondaryPickerRef = useRef<HTMLDivElement | null>(null);
+  const lastSentRef = useRef<string>("");
+  // Ref để track xem đang sync từ config hay không
+  const isSyncingRef = useRef(false);
 
-  const togglePicker = (picker: any) => {
+  const togglePicker = (picker: "primary" | "secondary") => {
     setActivePicker(activePicker === picker ? null : picker);
   };
 
@@ -32,14 +35,44 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   }, [activePicker]);
 
   useEffect(() => {
-    if (config?.primaryColor) setPrimaryColor(config.primaryColor);
-    if (config?.secondaryColor) setSecondaryColor(config.secondaryColor);
-    if (config?.primaryFont) setPrimaryFont(config.primaryFont);
-    if (config?.secondaryFont) setSecondaryFont(config.secondaryFont);
+    if (!config) return;
+    
+    isSyncingRef.current = true;
+    
+    if (config?.primaryColor && config.primaryColor !== primaryColor) 
+      setPrimaryColor(config.primaryColor);
+    if (config?.secondaryColor && config.secondaryColor !== secondaryColor) 
+      setSecondaryColor(config.secondaryColor);
+    if (config?.primaryFont && config.primaryFont !== primaryFont) 
+      setPrimaryFont(config.primaryFont);
+    if (config?.secondaryFont && config.secondaryFont !== secondaryFont) 
+      setSecondaryFont(config.secondaryFont);
+    
+    console.log('Config changed:', config);
+    
+    // Reset flag sau một chút
+    setTimeout(() => {
+      isSyncingRef.current = false;
+    }, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   useEffect(() => {
-    onChange({ primaryColor, secondaryColor, primaryFont, secondaryFont });
+    // Không gọi nếu đang sync từ config
+    if (isSyncingRef.current) {
+      console.log('Skipping onChange - syncing from config');
+      return;
+    }
+
+    const currentValue = JSON.stringify({ primaryColor, secondaryColor, primaryFont, secondaryFont });
+    
+    // Chỉ gọi onChange nếu giá trị khác với lần trước
+    if (currentValue !== lastSentRef.current) {
+      console.log('123 - calling onChange');
+      lastSentRef.current = currentValue;
+      onChange({ primaryColor, secondaryColor, primaryFont, secondaryFont });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryColor, secondaryColor, primaryFont, secondaryFont]);
 
   return (
@@ -57,11 +90,17 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
             <div className={styles.pickerWrapper}>
               <s-box padding="small" border="base" borderRadius="base" background="subdued">
                 <s-color-picker 
+                  alpha
                   value={primaryColor} 
+                  onInput={(e) => {
+                    const target = e.currentTarget as any;
+                    setPrimaryColor(target.value)
+                  }}
                   onChange={(e) => {
                     const target = e.currentTarget as any;
                     setPrimaryColor(target.value)
-                  }}/>
+                  }}
+                />
               </s-box>
             </div>
           )}
@@ -89,10 +128,16 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
               <s-box padding="small" border="base" borderRadius="base" background="subdued">
                 <s-color-picker 
                   value={secondaryColor} 
+                  alpha
+                  onInput={(e) => {
+                    const target = e.currentTarget as any;
+                    setSecondaryColor(target.value)
+                  }}
                   onChange={(e) => {
                     const target = e.currentTarget as any;
                     setSecondaryColor(target.value)
-                  }}/>
+                  }}
+                />
               </s-box>
             </div>
           )}

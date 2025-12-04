@@ -1,7 +1,14 @@
-import { Link, useNavigate } from "react-router"
+import { LoaderFunctionArgs, useLoaderData, useNavigate } from "react-router"
 import styles from "../css/plan.module.css"
+import prisma from "app/db.server"
+
+export async function loader({request}: LoaderFunctionArgs) {
+    const level = await prisma.plan.findFirst()
+    return level?.level
+}
 
 export default function Plan () {
+    const level = useLoaderData()
     const navigate = useNavigate()
 
     return (
@@ -12,15 +19,34 @@ export default function Plan () {
             </h3>
             <s-stack direction="inline" justifyContent="space-between">
                 <s-stack padding="large-200" background="base" borderRadius="large-200" borderWidth="base" inlineSize="30%">
-                    <div className={styles.title}>Basic</div>
+                    <s-stack direction="inline" justifyContent="space-between">
+                        <div className={styles.title}>Basic</div>
+                        {
+                            level === 'basic' &&
+                                <s-box>
+                                    <s-badge tone="info">Current</s-badge>
+                                </s-box>
+                        }
+                    </s-stack>
                     <div className={styles.pricing}>Free</div>
                     <div className={styles.info}></div>
-                    {/* <s-box blockSize="10%"></s-box> */}
+                    {
+                        level === 'basic' 
+                        ?
+                            <s-box blockSize="10%"></s-box>
+                        :
+                            <div>
+                                <s-link href='/app/charges/basic'>
+                                    <s-button variant="primary">Select</s-button>
+                                </s-link>
+                            </div>
+                    }
+                    {/* <s-box blockSize="10%"></s-box>
                     <div>
                         <s-link href='/app/charges/basic'>
                             <s-button variant="primary">Select</s-button>
                         </s-link>
-                    </div>
+                    </div> */}
                     <div className={styles.list}>
                         <span>
                             <i className="fa-solid fa-check"></i>
@@ -37,14 +63,28 @@ export default function Plan () {
                     </div>
                 </s-stack>
                 <s-stack padding="large-200" background="base" borderRadius="large-200" borderWidth="base" inlineSize="30%">
-                    <div className={styles.title}>Advanced</div>
+                    <s-stack direction="inline" justifyContent="space-between">
+                        <div className={styles.title}>Advanced</div>
+                        {
+                            level === 'advanced' &&
+                                <s-box>
+                                    <s-badge tone="info">Current</s-badge>
+                                </s-box>
+                        }
+                    </s-stack>
                     <div className={styles.pricing}>$30 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
-                    <div>
-                        <s-link href='/app/charges/advanced'>
-                            <s-button variant="primary" >Select</s-button>
-                        </s-link>
-                    </div>
+                    {
+                        level === 'advanced' 
+                        ?
+                            <s-box blockSize="10%"></s-box>
+                        :
+                            <div>
+                                <s-link href='/app/charges/advanced'>
+                                    <s-button variant="primary">Select</s-button>
+                                </s-link>
+                            </div>
+                    }
                     <div className={styles.list}>
                         <span>
                             <i className="fa-solid fa-check"></i>
@@ -69,14 +109,28 @@ export default function Plan () {
                     </div>
                 </s-stack>
                 <s-stack padding="large-200" background="base" borderRadius="large-200" borderWidth="base" inlineSize="30%">
-                    <div className={styles.title}>Business Plus</div>
+                    <s-stack direction="inline" justifyContent="space-between">
+                        <div className={styles.title}>Business Plus</div>
+                        {
+                            level === 'plus' &&
+                                <s-box>
+                                    <s-badge tone="info">Current</s-badge>
+                                </s-box>
+                        }
+                    </s-stack>
                     <div className={styles.pricing}>$50 <span>/ 30 days</span></div>
                     <div className={styles.info}>3 trial days remaining</div>
-                    <div>
-                        <s-link href='/app/charges/plus'>
-                            <s-button variant="primary" >Select</s-button>
-                        </s-link>
-                    </div>
+                    {
+                        level === 'plus' 
+                        ?
+                            <s-box blockSize="10%"></s-box>
+                        :
+                            <div>
+                                <s-link href='/app/charges/plus'>
+                                    <s-button variant="primary">Select</s-button>
+                                </s-link>
+                            </div>
+                    }
                     <div className={styles.list}>
                         <span>
                             <i className="fa-solid fa-check"></i>

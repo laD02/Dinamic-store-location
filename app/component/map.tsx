@@ -166,17 +166,15 @@ export default function MapGoogle({
                 boxShadow: `${popupStyle.anchorx}px ${popupStyle.anchory}px ${popupStyle.blur}px ${hexToRgba(popupStyle.shadowColor, popupStyle.transparency / 100)}`
               }}
             >
-              {
-                selected.image &&
-                <img 
-                  src={selected.image}
-                />
-              }  
-              <h3>{selected.storeName}</h3>
-              <p>{selected.address}, {selected.city}, {selected.state}, {selected.code}</p>
+              {/* {
+                selected.image && */}
+                <s-thumbnail alt="No image available" size="base" />
+              {/* }   */}
+              <h3>jwenvk</h3>
+              <p>Thái Thụy, Hưng Yên, AL, w2324</p>
               <span>
                 <i className="fa-solid fa-phone" style={{color: popupStyle.iconColor}}></i>
-                {selected.phone}
+                0393549658
               </span>       
             </div>
           </OverlayView>

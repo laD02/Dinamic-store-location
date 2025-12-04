@@ -11,27 +11,30 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
     const [anchorx, setAnchorx] = useState<number>(config?.anchorx ?? -2)
     const [anchory, setAnchory] = useState<number>(config?.anchory ?? -2)
     const [cornerRadius, setCornerRadius] = useState<number>(config?.cornerRadius ?? 3)
-    const [activePicker, setActivePicker] = useState(null); 
+    const [activePicker, setActivePicker] = useState<"backgroundColor" | "color" | "iconColor" | "shadowColor" | null>(null);
 
     const backgroundPickerRef = useRef<HTMLDivElement | null>(null);
     const colorPickerRef = useRef<HTMLDivElement | null>(null);
     const iconPickerRef = useRef<HTMLDivElement | null>(null);
     const shadowPickerRef = useRef<HTMLDivElement | null>(null);
+     // Ref để lưu giá trị đã gửi lần cuối
+    const lastSentRef = useRef<string>("");
+    // Ref để track xem đang sync từ config hay không
+    const isSyncingRef = useRef(false);
 
-    const togglePicker = (picker: any) => {
+    const togglePicker = (picker: "backgroundColor" | "color" | "iconColor" | "shadowColor" ) => {
         setActivePicker(activePicker === picker ? null : picker);
     };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            const refs = [
-                backgroundPickerRef.current,
-                colorPickerRef.current,
-                iconPickerRef.current,
-                shadowPickerRef.current
-            ];
-
-            if (activePicker && !refs.some(ref => ref?.contains(event.target as Node))) {
+            if (
+                activePicker &&
+                !backgroundPickerRef.current?.contains(event.target as Node) &&
+                !colorPickerRef.current?.contains(event.target as Node) &&
+                !iconPickerRef.current?.contains(event.target as Node) &&
+                !shadowPickerRef.current?.contains(event.target as Node)
+            ) {
                 setActivePicker(null);
             }
         };
@@ -41,20 +44,63 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
     }, [activePicker]);
 
     useEffect(() => {
-        if (config?.backgroundColor) setBackgroundColor(config.backgroundColor)
-        if (config?.color) setColor(config.color)
-        if (config?.iconColor) setIconColor(config.iconColor)
-        if (config?.shadowColor) setShadowColor(config.shadowColor)
-        if (config?.transparency) setTransparency(config.transparency)
-        if (config?.blur) setBlur(config.blur)
-        if (config?.anchorx) setAnchorx(config.anchorx)
-        if (config?.anchory) setAnchory(config.anchory)
-        if (config?.cornerRadius) setCornerRadius(config.cornerRadius)  
-    },[config])
+        if (!config) return;
+        
+        isSyncingRef.current = true;
+        
+        if (config?.backgroundColor && config.backgroundColor !== backgroundColor) 
+            setBackgroundColor(config.backgroundColor);
+        if (config?.color && config.color !== color) 
+            setColor(config.color);
+        if (config?.iconColor && config.iconColor !== iconColor) 
+            setIconColor(config.iconColor);
+        if (config?.shadowColor && config.shadowColor !== shadowColor) 
+            setShadowColor(config.shadowColor);
+        if (config?.transparency !== undefined && config.transparency !== transparency) 
+            setTransparency(config.transparency);
+        if (config?.blur !== undefined && config.blur !== blur) 
+            setBlur(config.blur);
+        if (config?.anchorx !== undefined && config.anchorx !== anchorx) 
+            setAnchorx(config.anchorx);
+        if (config?.anchory !== undefined && config.anchory !== anchory) 
+            setAnchory(config.anchory);
+        if (config?.cornerRadius !== undefined && config.cornerRadius !== cornerRadius) 
+            setCornerRadius(config.cornerRadius);
+        
+        // Reset flag sau một chút
+        setTimeout(() => {
+            isSyncingRef.current = false;
+        }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [config]);
 
+    // Gọi onChange chỉ khi giá trị thực sự thay đổi
     useEffect(() => {
-        onChange({backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius});
-    }, [backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius])
+        // Không gọi nếu đang sync từ config
+        if (isSyncingRef.current) {
+            return;
+        }
+
+        const currentValue = JSON.stringify({
+            backgroundColor, 
+            color, 
+            iconColor, 
+            shadowColor, 
+            transparency, 
+            blur, 
+            anchorx, 
+            anchory, 
+            cornerRadius
+        });
+        
+        // Chỉ gọi onChange nếu giá trị khác với lần trước
+        if (currentValue !== lastSentRef.current) {
+            lastSentRef.current = currentValue;
+            onChange({backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius});
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius]);
+
     return (
         <s-stack padding="base" background="base" inlineSize="100%" borderWidth="none small small small" borderRadius="none none large-100 large-100">
             <div className={styles.maxBlockSize}>
@@ -72,10 +118,16 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                                 <s-box padding="small" border="base" borderRadius="base" background="subdued">
                                     <s-color-picker 
                                     value={backgroundColor} 
+                                    alpha
+                                    onInput={(e) => {
+                                        const target = e.currentTarget as any;
+                                        setBackgroundColor(target.value)
+                                    }}
                                     onChange={(e) => {
                                         const target = e.currentTarget as any;
                                         setBackgroundColor(target.value)
-                                    }}/>
+                                    }}
+                                    />
                                 </s-box>
                             </div>
                         )}
@@ -116,10 +168,16 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                                 <s-box padding="small" border="base" borderRadius="base" background="subdued">
                                     <s-color-picker 
                                     value={color} 
+                                    alpha
+                                    onInput={(e) => {
+                                        const target = e.currentTarget as any;
+                                        setColor(target.value)
+                                    }}
                                     onChange={(e) => {
                                         const target = e.currentTarget as any;
                                         setColor(target.value)
-                                    }}/>
+                                    }}
+                                    />
                                 </s-box>
                             </div>
                         )}
@@ -140,10 +198,16 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                                 <s-box padding="small" border="base" borderRadius="base" background="subdued">
                                     <s-color-picker 
                                     value={iconColor} 
+                                    alpha
+                                    onInput={(e) => {
+                                        const target = e.currentTarget as any;
+                                        setIconColor(target.value)
+                                    }}
                                     onChange={(e) => {
                                         const target = e.currentTarget as any;
                                         setIconColor(target.value)
-                                    }}/>
+                                    }}
+                                    />
                                 </s-box>
                             </div>
                         )}
@@ -168,10 +232,16 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                                 <s-box padding="small" border="base" borderRadius="base" background="subdued">
                                     <s-color-picker 
                                     value={shadowColor} 
+                                    alpha
+                                    onInput={(e) => {
+                                        const target = e.currentTarget as any;
+                                        setShadowColor(target.value)
+                                    }}
                                     onChange={(e) => {
                                         const target = e.currentTarget as any;
                                         setShadowColor(target.value)
-                                    }}/>
+                                    }}
+                                    />
                                 </s-box>
                             </div>
                         )}

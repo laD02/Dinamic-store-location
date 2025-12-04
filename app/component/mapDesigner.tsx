@@ -14,8 +14,6 @@ export default function MapDesigner ({
     config: any,
 }) {
 
-    const listDesign = ["Theme Setup", "Popup Style"]
-    const [title, setTitle] = useState('Theme Setup')
     const [selected, setSeleceted] = useState<number>(0)
 
     const handleSwap = () => {

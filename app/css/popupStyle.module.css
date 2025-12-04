@@ -11,16 +11,16 @@
   gap: 12px
 }
 
-.maxBlockSize {
+/* .maxBlockSize {
     border-radius: 4px;
+    height: 600px; 
     height: 90%;
-    height: 600px; /* hoặc auto kèm max-height */
-    max-height: 500px; /* chiều cao tối đa của khung */
-    overflow-y: auto;  /* bật thanh cuộn dọc */
-    overflow-x: hidden; /* ẩn cuộn ngang nếu có */
+    max-height: 500px; 
+    overflow-y: auto;  
+    overflow-x: hidden; 
     box-sizing: border-box;
     padding-right: 12px;
-}
+} */
 
 .leftBox {
     display: flex;

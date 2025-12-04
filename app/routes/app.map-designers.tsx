@@ -238,40 +238,41 @@ export default function MapDesigners() {
           </s-stack>  
           
           <s-stack padding="base" background="base" gap="small-500" borderRadius="large-100" borderWidth="small">
-            <s-search-field 
+            {/* <s-search-field 
               placeholder="Enter Address or Zip code"
               value={searchAddress}
               onInput={(e) => {
                 const target = e.target as any;
                 setSearchAddress(target.value)
               }}
-            />
-
-            <div className={styles.information} ref={listRef}>
-              {
-                search.map((store: any, index: number) => (
+            /> */}
+        
+            {/* <div className={styles.information} ref={listRef}> */}
+              {/* {
+                search.map((store: any, index: number) => ( */}
                   <div
-                    key={store.id || index}
-                    className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}
-                    onClick={() => setSelectedIndex(index)}
+                    // key={store.id || index}
+                    // className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}
+                    className={styles.inforItem}
+                    // onClick={() => setSelectedIndex(index)}
                     style={{border: `1px solid ${theme.secondaryColor}`}}
                   >
-                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>{store.storeName}</h4>
-                    <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>{store.address}, {store.city}, {store.state}, {store.code}<br/></span>
-                    <span style={{color: theme.secondaryColor}}>{store.phone}</span>
+                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont}}>jwenvk</h4>
+                    <span style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>Thái Thụy, Hưng Yên, AL, w2324<br/></span>
+                    <span style={{color: theme.secondaryColor}}>0393549658</span>
                     <s-stack direction="inline" justifyContent="start" gap="small-500">
-                      {
-                        (store.tags || []).map((item: any, index: any) => (
-                          <s-badge tone="info" key={index}>
-                            <text style={{fontSize:'6px'}}>{item}</text>
+                      {/* {
+                        (store.tags || []).map((item: any, index: any) => ( */}
+                          <s-badge tone="info">
+                            <text style={{fontSize:'6px'}}>qkjwnf</text>
                           </s-badge>
-                        ))
-                      }
+                        {/* ))
+                      } */}
                     </s-stack>
                   </div>
-                ))
-              }     
-            </div>
+                {/* ))
+              }      */}
+            {/* </div> */}
           </s-stack>
         </div>
 
