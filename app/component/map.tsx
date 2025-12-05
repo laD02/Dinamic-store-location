@@ -168,7 +168,7 @@ export default function MapGoogle({
             >
               {/* {
                 selected.image && */}
-                <s-thumbnail src="https://dean1665.vn/uploads/school/dhsp-thai-nguyen.jpg" size="large" />
+                <s-thumbnail src="https://placehold.co/600x400" size="large" />
               {/* }   */}
               <h3 style={{whiteSpace: "normal",  wordBreak: "break-word"}}>Apple Park</h3>
               <p style={{whiteSpace: "normal",  wordBreak: "break-word"}}> 1 Apple Park Way, Cupertino, CA 95014, USA</p>

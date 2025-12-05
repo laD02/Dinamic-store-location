@@ -527,7 +527,7 @@ export default function AddLocation () {
                                 {/* <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box> */}
                             </s-stack>
                         </s-stack>
-                        <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                        {/* <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
                             <s-stack direction="inline" justifyContent="space-between">
                                 <s-box >
                                     <s-text type="strong">Tags</s-text>
@@ -579,7 +579,7 @@ export default function AddLocation () {
                                 }
                             </s-stack>
                             <input type="hidden" name="tags" value={JSON.stringify(tags)} />
-                        </s-stack>
+                        </s-stack> */}
                     </s-stack>
                     {/* <div className={styles.shared}>
                          
