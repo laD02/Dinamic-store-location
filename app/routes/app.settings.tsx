@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Settings() {
   const fetcher = useFetcher()
   const navigate = useNavigate()
-  const listBlock  = ["Display", "Search Filters"]
+  const listBlock  = ["Display"]
   const [active, setActive] = useState(0)
   const filter = useLoaderData<typeof loader>()
 
@@ -97,7 +97,7 @@ export default function Settings() {
           }
         </s-stack>
         {active === 0 && <Display />}
-        {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>}
+        {/* {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>} */}
       </s-stack>
     </s-page>
   );

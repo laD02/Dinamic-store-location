@@ -208,7 +208,7 @@ export default function AddLocation () {
             // Đọc file thành base64
             const reader = new FileReader();
             reader.onloadend = () => {
-            setImageBase64(reader.result as string);
+                setImageBase64(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
@@ -284,6 +284,7 @@ export default function AddLocation () {
             
             <s-stack>
                 <Form 
+                    key={formKey}
                     ref={formRef} 
                     className={styles.information} 
                     method="post" 

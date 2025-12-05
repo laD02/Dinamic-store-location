@@ -170,11 +170,11 @@ export default function MapGoogle({
                 selected.image && */}
                 <s-thumbnail src="https://dean1665.vn/uploads/school/dhsp-thai-nguyen.jpg" size="large" />
               {/* }   */}
-              <h3 style={{whiteSpace: "normal",  wordBreak: "break-word"}}>Trường Đại học Sư phạm Thái Nguyên</h3>
-              <p style={{whiteSpace: "normal",  wordBreak: "break-word"}}>20 Lương Ngọc Quyến, Phường Phan Đình Phùng, Thành phố Thái Nguyên, Thái Nguyên, Việt Nam</p>
+              <h3 style={{whiteSpace: "normal",  wordBreak: "break-word"}}>Apple Park</h3>
+              <p style={{whiteSpace: "normal",  wordBreak: "break-word"}}> 1 Apple Park Way, Cupertino, CA 95014, USA</p>
               <span>
                 <i className="fa-solid fa-phone" style={{color: popupStyle.iconColor}}></i>
-                02083902903
+                +1 408-996-1010
               </span>       
             </div>
           </OverlayView>

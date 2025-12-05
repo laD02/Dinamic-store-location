@@ -139,7 +139,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         </div>
                     </div>
                     <div className={styles.corner}>
-                        <label>corner radius</label>
+                        <s-text type="strong">Corner radius</s-text>
                         <div className={styles.inputRange}>
                             <span>0</span>
                             <input 
@@ -259,7 +259,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         </div>
                     </div>
                     <div className={styles.corner}>
-                        <label>transparency</label>
+                        <strong>Transparency</strong>
                         <div className={styles.inputRange}>
                             <span>0%</span>
                             <input 
@@ -277,7 +277,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         </div>
                     </div>
                     <div className={styles.corner}>
-                        <label>blur radius</label>
+                        <strong>Blur radius</strong>
                         <div className={styles.inputRange}>
                             <span>0</span>
                             <input 
@@ -295,7 +295,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         </div>
                     </div>
                     <div className={styles.corner}>
-                        <label>anchor x coordinate</label>
+                        <strong>Anchor x coordinate</strong>
                         <div className={styles.inputRange}>
                             <span>-10</span>
                             <input 
@@ -313,7 +313,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
                         </div>
                     </div>
                     <div className={styles.corner}>
-                        <label>anchor y coordinate</label>
+                        <strong>Anchor y coordinate</strong>
                         <div className={styles.inputRange}>
                             <span>-10</span>
                             <input 

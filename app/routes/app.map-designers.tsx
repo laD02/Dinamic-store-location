@@ -257,9 +257,9 @@ export default function MapDesigners() {
                     // onClick={() => setSelectedIndex(index)}
                     style={{border: `1px solid ${theme.secondaryColor}`}}
                   >
-                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont, whiteSpace: "normal", wordBreak: "break-word"}}>Trường Đại học Sư phạm Thái Nguyên</h4>
-                    <p style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}>20 Lương Ngọc Quyến, Phường Phan Đình Phùng, Thành phố Thái Nguyên, Thái Nguyên, Việt Nam<br/></p>
-                    <p style={{color: theme.secondaryColor}}>02083902903</p>
+                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont, whiteSpace: "normal", wordBreak: "break-word"}}>Apple Park</h4>
+                    <p style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}> 1 Apple Park Way, Cupertino, CA 95014, USA<br/></p>
+                    <p style={{color: theme.secondaryColor}}>+1 408-996-1010</p>
                     <s-stack direction="inline" justifyContent="start" gap="small-500">
                       {/* {
                         (store.tags || []).map((item: any, index: any) => ( */}

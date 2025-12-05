@@ -94,8 +94,8 @@ export default function Intergrations() {
         </s-stack>
         <s-stack inlineSize="100%">
           {number === 0 && <GoogleMap />}
-          {number === 1 && <Faire />}
-          {number === 2 && <ShopifyB2B />}
+          {/* {number === 1 && <Faire />}
+          {number === 2 && <ShopifyB2B />} */}
         </s-stack>
       </div>
     </s-page>

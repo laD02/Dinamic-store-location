@@ -253,7 +253,7 @@ export default function AllLocation() {
         </s-stack>
       </s-stack>
 
-      <s-stack background="base" padding="small-100" borderRadius="large-100" >
+      <s-stack background="base" borderRadius="large-100" >
         <s-table 
           paginate 
           hasPreviousPage={currentPage > 1}  // Thay vì filteredStores.length > 5
@@ -370,8 +370,8 @@ export default function AllLocation() {
                     <s-table-header listSlot="kicker">No</s-table-header>
                     <s-table-header listSlot="inline">Store Name</s-table-header>
                     <s-table-header listSlot="labeled">Source</s-table-header>
-                    {/* <s-table-header listSlot="labeled">Map Maker</s-table-header> */}
-                    <s-table-header listSlot="labeled">Tags</s-table-header>
+                    <s-table-header listSlot="labeled">Map Maker</s-table-header>
+                    {/* <s-table-header listSlot="labeled">Tags</s-table-header> */}
                     <s-table-header listSlot="labeled">Visibility</s-table-header>
                     <s-table-header listSlot="labeled">Added</s-table-header>
                     <s-table-header listSlot="labeled">Update</s-table-header>
@@ -399,23 +399,23 @@ export default function AllLocation() {
                         <s-table-cell>
                           <s-badge tone="info">{store.source}</s-badge>
                         </s-table-cell>
-                        {/* <s-table-cell>
-                          <s-icon type="location"/>
-                        </s-table-cell> */}
                         <s-table-cell>
+                          <s-icon type="location"/>
+                        </s-table-cell>
+                        {/* <s-table-cell>
                           <s-tooltip id={`tags-${index}`}>
                             <s-text>
                               {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
                             </s-text>
                           </s-tooltip>
                           <s-text interestFor={`tags-${index}`}>   
-                            <div style={{width:'100px'}}>
+                            <div style={{width:'80px'}}>
                               <s-paragraph lineClamp={1}>
                                 {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
                               </s-paragraph>
                             </div>
                           </s-text>
-                        </s-table-cell>
+                        </s-table-cell> */}
                         <s-table-cell>
                           <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
                         </s-table-cell>

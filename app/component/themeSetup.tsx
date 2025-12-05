@@ -151,21 +151,27 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
       <s-stack gap="small" paddingBlockStart="large">
         <s-text type="strong">Theme Fonts</s-text>
         <s-stack gap="small-100">
-          <s-select label="Primary Font Family" value={primaryFont} onChange={(e) => setPrimaryFont(e.currentTarget.value)}>
-            {fontList.map((font) => (
-                <s-option key={font} value={font} >
-                  {font}
-                </s-option>
-              ))}
-          </s-select>
+          <s-stack>
+            <s-text type="strong">Primary Font Family</s-text>
+            <s-select value={primaryFont} onChange={(e) => setPrimaryFont(e.currentTarget.value)}>
+              {fontList.map((font) => (
+                  <s-option key={font} value={font}>
+                    {font}
+                  </s-option>
+                ))}
+            </s-select>
+          </s-stack>
           
-          <s-select label="Secondary Font Family" value={secondaryFont} onChange={(e) => setSecondaryFont(e.currentTarget.value)}>
-            {fontList.map((font) => (
-                <s-option key={font} value={font} >
-                  {font}
-                </s-option>
-              ))}
-          </s-select>   
+          <s-stack>
+            <s-text type="strong">Secondary Font Family</s-text>
+            <s-select value={secondaryFont} onChange={(e) => setSecondaryFont(e.currentTarget.value)}>
+              {fontList.map((font) => (
+                  <s-option key={font} value={font} >
+                    {font}
+                  </s-option>
+                ))}
+            </s-select> 
+          </s-stack>  
         </s-stack>
       </s-stack>
     </s-stack>

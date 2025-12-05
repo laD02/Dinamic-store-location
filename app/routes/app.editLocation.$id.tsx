@@ -573,6 +573,7 @@ export default function EditLocation () {
 
             <s-stack inlineSize="100%">
                 <Form 
+                    key={formKey}
                     ref={formRef} 
                     className={styles.information} 
                     method="post" 
@@ -851,7 +852,7 @@ export default function EditLocation () {
                                     onChange={handleFileChange}
                                     style={{ display: "none" }}
                                 />
-                                <input type="hidden" name="image" value={imageBase64 ?? ""} onChange={handleChange}/>
+                                <input type="hidden" name="image" value={imageBase64 ?? ""}/>
                                 {/* <s-box inlineSize="48%">We support .gif, .jpg, .png, and .svg files up to 3MB</s-box> */}
                             </s-stack>
                         </s-stack>
