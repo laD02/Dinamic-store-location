@@ -1,0 +1,164 @@
+{% schema %}
+{
+  "name": "Store Locator",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Dislay Settings"
+    },
+    {
+      "type": "text",
+      "id": "google_api_key",
+      "label": "Google Map API Key"
+    },
+    {
+      "type": "text",
+      "id": "height",
+      "label": "Height",
+      "default": "400px"
+    },
+    {
+      "type": "range",
+      "id": "top_margin",
+      "label": "Top Margin",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "bottom_margin",
+      "label": "Bottom Margin",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "checkbox",
+      "id": "show_sidebar",
+      "label": "Show Sidebar",
+      "default": true,
+      "info": "Display the locations list sidebar"
+    },
+
+    {
+      "type": "header",
+      "content": "Features"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_location_search",
+      "label": "Enable Location Search",
+      "default": true,
+      "info": "Allow users to search for locations by address"
+    },
+    {
+      "type": "text",
+      "id": "search_placeholder_text",
+      "label": "Search Placeholder Text",
+      "default": "Enter Address or Zip Code"
+    },
+
+    {
+      "type": "header",
+      "content": "Styling"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "primary_accent_color",
+      "label": "Primary Accent Color",
+      "default": "#3B82F6",
+      "info": "Used for focus states and selection"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#E5E7EB"
+    },
+  ]
+}
+{% endschema %}
+
+<div class="sl-wrapper"
+  style="margin-top: {{ block.settings.top_margin }}px;
+         margin-bottom: {{ block.settings.bottom_margin }}px;
+         height: {{ block.settings.height }};
+         border-radius: 12px;
+         box-shadow: -1px 1px 10px 0px #e2e2e2ff;
+        "
+>
+  <div class="sl-container">
+
+    {% if block.settings.show_sidebar %}
+      <div class="sl-left" style="border-right: 1px solid {{ block.settings.border_color }}; background-color: {{ block.settings.background_color }}">
+        {% if block.settings.enable_location_search %}
+          <input 
+            id="sl-address" 
+            placeholder="{{ block.settings.search_placeholder_text }}"
+            style="border-color: {{ block.settings.primary_accent_color }};"
+          />
+        {% endif %}
+        <div id="store-list-loading" style="
+          padding: 40px 20px;
+          text-align: center;
+          color: #999;
+          font-size: 14px;
+        ">
+          Loading locations...
+        </div>
+        <div id="store-list" style="font-size: 12px"></div>
+      </div>
+    {% endif %}
+
+    {% if block.settings.google_api_key != blank %}
+      <!-- Nếu có API key thì hiện map -->
+      <div id="map-loading" style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f5f5f5;
+        z-index: 10;
+        color: #999;
+        font-size: 16px;
+      ">
+        Loading map...
+      </div>
+      <div id="sl-map" class="sl-map"></div>
+      <script src="{{ 'google-map.js' | asset_url }}" defer></script>
+
+      {% render 'google-map-loader', api_key: block.settings.google_api_key, callback: 'initStoreLocatorMap' %}
+
+    {% else %}
+      <!-- Nếu không có API key -->
+      <div class="sl-map sl-no-key" style="display:flex; justify-content:center; align-items:center; text-align:center;">
+        <p style="padding:20px; text-align:center; opacity:0.7;">
+          Google Maps API key is missing.<br>
+          Please add your key in the section settings.
+        </p>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script src="{{ 'store-locator.js' | asset_url }}" defer></script>
+<link rel="stylesheet" href="{{ 'store-locator.css' | asset_url }}">
+<!-- Thêm vào <head> của HTML -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
