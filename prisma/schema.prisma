@@ -27,6 +27,7 @@ model Session {
 
 model Store {
   id         String   @id @default(cuid())
+  shop       String?
   storeName  String
   address    String
   city       String
@@ -49,6 +50,7 @@ model Store {
 
 model Style {
   id              String   @id @default(cuid())
+  shop            String?
   primaryColor    String
   secondaryColor  String
   primaryFont     String

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { useAppBridge } from '@shopify/app-bridge-react';
 import { getLatLngFromAddress } from "app/utils/geocode.server";
+import { authenticate } from "../shopify.server";
 
 export async function loader({request}:LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -18,7 +19,9 @@ export async function action({request}: ActionFunctionArgs) {
     const location = await getLatLngFromAddress(address);
     const tagsString = formData.get("tags")?.toString() ?? "";
     const tags = tagsString ? JSON.parse(tagsString) : [];
-
+    const { session } = await authenticate.admin(request);
+    const shop = session?.shop;
+    
     urls.forEach((url) => {
         const lower = url.toLowerCase();
         if (lower.includes("facebook")) {
@@ -40,6 +43,7 @@ export async function action({request}: ActionFunctionArgs) {
 
     await prisma.store.create({
         data: {
+            shop,
             storeName: formData.get("storeName")?.toString() ?? "",
             address: formData.get("address")?.toString() ?? "",
             city: formData.get("city")?.toString() ?? "",

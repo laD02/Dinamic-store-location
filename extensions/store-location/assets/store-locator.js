@@ -69,10 +69,10 @@ async function loadStores() {
         // Lọc stores theo tên, địa chỉ, thành phố, state, zip code
         const filteredStores = stores.filter(store => {
           return (
-            store.storeName?.toLowerCase().includes(searchTerm) ||
+            // store.storeName?.toLowerCase().includes(searchTerm) ||
             store.address?.toLowerCase().includes(searchTerm) ||
-            store.city?.toLowerCase().includes(searchTerm) ||
-            store.state?.toLowerCase().includes(searchTerm) ||
+            // store.city?.toLowerCase().includes(searchTerm) ||
+            // store.state?.toLowerCase().includes(searchTerm) ||
             store.code?.toLowerCase().includes(searchTerm)
           );
         });

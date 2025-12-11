@@ -7,20 +7,27 @@ import 'leaflet/dist/leaflet.css';
 import MapGoogle from "../component/map";
 import MapDesigner from "../component/mapDesigner";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { authenticate } from "../shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const { session } = await authenticate.admin(request);
+  const shop = session?.shop;
   const stores = await prisma.store.findMany({
     orderBy: {
       createdAt: 'desc',
     },
   });
-  const config = await prisma.style.findFirst()
+  const config = await prisma.style.findFirst({
+    where: {shop}
+  })
   const googleMapsApiKey = process.env.GOOGLE_MAP_KEY
 
   return { stores, config, googleMapsApiKey };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const { session } = await authenticate.admin(request);
+  const shop = session?.shop;
   const formData = await request.formData();
   const theme = JSON.parse(formData.get("theme") as string);
   const popup = JSON.parse(formData.get("popup") as string);
@@ -30,6 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!exist) {
     await prisma.style.create({
       data: {
+        shop,
         primaryColor: theme.primaryColor,
         secondaryColor: theme.secondaryColor,
         primaryFont: theme.primaryFont,

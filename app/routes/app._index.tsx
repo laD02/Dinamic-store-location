@@ -11,9 +11,13 @@ import prisma from "app/db.server";
 import { Store } from "@prisma/client";
 import { exportStoresToCSV } from "../utils/exportCSV";
 import { useAppBridge } from '@shopify/app-bridge-react';
+import { authenticate } from "../shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const { session } = await authenticate.admin(request);
+  const shop = session?.shop;
   const storeData = await prisma.store.findMany({
+    where: {shop},
     orderBy: {
       createdAt: 'desc', // mới nhất lên đầu
     },
