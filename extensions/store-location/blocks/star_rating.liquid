@@ -140,11 +140,14 @@
       ">
         Loading map...
       </div>
-      <div id="sl-map" class="sl-map"></div>
+      <div
+        id="sl-map"
+        class="sl-map"
+        data-gmap-key="{{ block.settings.google_api_key }}"
+      ></div>
+
       <script src="{{ 'google-map.js' | asset_url }}" defer></script>
-
-      {% render 'google-map-loader', api_key: block.settings.google_api_key, callback: 'initStoreLocatorMap' %}
-
+      {% comment %} {% render 'google-map-loader', api_key: block.settings.google_api_key, callback: 'initStoreLocatorMap' %} {% endcomment %}
     {% else %}
       <!-- Nếu không có API key -->
       <div class="sl-map sl-no-key" style="display:flex; justify-content:center; align-items:center; text-align:center;">
@@ -154,7 +157,6 @@
         </p>
       </div>
     {% endif %}
-
   </div>
 </div>
 

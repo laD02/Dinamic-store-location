@@ -10,6 +10,39 @@ const hexToRgba = (hex, alpha) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+function loadGoogleMaps(apiKey) {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.maps) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = resolve;
+    script.onerror = reject;
+
+    document.head.appendChild(script);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const mapEl = document.getElementById("sl-map");
+  if (!mapEl) return;
+
+  const apiKey = mapEl.dataset.gmapKey;
+  if (!apiKey) {
+    console.warn("Missing Google Maps API key");
+    return;
+  }
+
+  await loadGoogleMaps(apiKey);
+  googleMap(); // hàm bạn đã viết sẵn
+});
+
 async function googleMap() {
     try {
         const mapLoading = document.getElementById("map-loading");
@@ -214,4 +247,4 @@ window.selectStoreByIndex = function(storeIndex) {
 // Export để có thể gọi từ HTML
 window.closeOverlay = closeOverlay;
 
-googleMap();
+// googleMap();
