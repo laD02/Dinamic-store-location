@@ -124,27 +124,29 @@
 
     {% if block.settings.google_api_key != blank %}
       <!-- Nếu có API key thì hiện map -->
-      <div id="map-loading" style="
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #f5f5f5;
-        z-index: 10;
-        color: #999;
-        font-size: 16px;
-      ">
-        Loading map...
-      </div>
+      
       <div
         id="sl-map"
         class="sl-map"
         data-gmap-key="{{ block.settings.google_api_key }}"
-      ></div>
+      >
+        <div id="map-loading" style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: #f5f5f5;
+          z-index: 10;
+          color: #999;
+          font-size: 16px;
+        ">
+          Loading map...
+        </div>
+      </div>
 
       <script src="{{ 'google-map.js' | asset_url }}" defer></script>
       {% comment %} {% render 'google-map-loader', api_key: block.settings.google_api_key, callback: 'initStoreLocatorMap' %} {% endcomment %}

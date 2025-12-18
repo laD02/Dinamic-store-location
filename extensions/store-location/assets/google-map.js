@@ -18,7 +18,7 @@ function loadGoogleMaps(apiKey) {
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
 
@@ -53,7 +53,7 @@ async function googleMap() {
         map = new google.maps.Map(document.getElementById("sl-map"), {
             center: { lat: 0, lng: 0 },
             zoom: 10,
-            styles: style || [],
+            styles: Array.isArray(style) ? style : []
         });
 
         const bounds = new google.maps.LatLngBounds();
