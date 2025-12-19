@@ -203,7 +203,7 @@ export default function MapDesigners() {
   }, [stores, searchAddress])
 
   return (
-    <s-page heading="Dynamic Store Locator" >
+    <s-page heading="Store Locator" >
       <h2>Map Designer</h2>
       <div 
         ref={containerRef}

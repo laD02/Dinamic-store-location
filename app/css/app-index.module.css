@@ -1,0 +1,22 @@
+
+.title {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    cursor: pointer;
+    align-items: center;
+}
+
+.title.open {
+    background-color: #f0f0f0;
+}
+
+.content.open {
+    max-height: 1000px; 
+}
+
+.content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.8s ease
+}

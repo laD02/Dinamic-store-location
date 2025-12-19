@@ -254,7 +254,7 @@ export default function AddLocation () {
                             background="strong" 
                             borderRadius="small-100" 
                             blockSize="50%"
-                            onClick={() => navigate("/app")}
+                            onClick={() => navigate(-1)}
                             padding="small-300"
                         >
                             <s-icon type="arrow-left"/>

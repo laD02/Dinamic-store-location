@@ -2,11 +2,12 @@
 
 import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useLocation, useNavigate, useNavigation } from "react-router";
 import styles from "../css/setting.module.css"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Display from "app/component/display";
 import SearchFilter from "app/component/searchFilter";
 import prisma from "app/db.server";
 import GoogleMap from "app/component/googleMap";
+import { useSearchParams } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // const filter = await prisma.attribute.findMany()
@@ -118,12 +119,20 @@ export default function Settings() {
   const listBlock  = ["Display", "Google API"]
   const [active, setActive] = useState(0)
   const filter = useLoaderData<typeof loader>()
+  const [searchParams] = useSearchParams() // Thêm này
 
   const handleDelete = (id: string | number) => {
     const formData = new FormData();
     formData.append("deleteFilter", JSON.stringify(id))
     fetcher.submit(formData, {method: "delete"})
   }
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'googleMap') {
+      setActive(1)
+    }
+  }, [searchParams])
 
   const handleClick = (index: string | number) => {
     if (index === 2) {
@@ -132,7 +141,7 @@ export default function Settings() {
   }
 
   return (
-    <s-page heading="Dynamic Store Locator">
+    <s-page heading="Store Locator">
       <s-stack gap="small">
         <h2>Settings</h2>
         <s-stack direction="inline" gap="large">
