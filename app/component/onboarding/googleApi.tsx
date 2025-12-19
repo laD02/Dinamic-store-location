@@ -15,7 +15,7 @@ export default function GoogleApi () {
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
                     <s-text type="strong">Google Maps</s-text>
-                    <s-paragraph>This app requires a Google Maps API Key in order to work correctly. Once you have your API Key, paste it in the Google Maps section on the Integrations Tab. If you need assistance setting up an API click, click the help article below.</s-paragraph>
+                    <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
                     <s-link href="/app/settings?tab=googleMap">
                         <s-button>Input API Key</s-button>
                     </s-link>
@@ -28,7 +28,7 @@ export default function GoogleApi () {
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
                     <s-text type="strong">Manual Upload</s-text>
-                    <s-paragraph>This app requires a Google Maps API Key in order to work correctly. Once you have your API Key, paste it in the Google Maps section on the Integrations Tab. If you need assistance setting up an API click, click the help article below.</s-paragraph>
+                    <s-paragraph>If you have a list of retailers that you would like to upload manually, download the CSV template by clicking the button below. After filling in the required fields, go to the All Locations tab, click Bulk Upload, and upload your completed file from there.</s-paragraph>
                     <s-stack direction="inline" justifyContent="start" gap="base">
                         <s-button onClick={() => handleExport()}>Bulk Upload Template</s-button>
                         <s-link href="/app/allLocation">

@@ -7,7 +7,7 @@ export default function DesignMap () {
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
                     <s-text type="strong">Select Map Design Options</s-text>
-                    <s-paragraph>In the Map Designer tab, you can select your primary map colors and fonts and determine your map size and load location. You can also set a universal map marker and style your popup to make it easier to create a cohesive looking map for all locations.</s-paragraph>
+                    <s-paragraph>In the Map Designer tab, you can customize your primary map colors and fonts, as well as set the map size and default load location. You can also define a universal map marker and style the location popups, making it easy to create a cohesive and consistent map design across all locations.</s-paragraph>
                     <s-link href="/app/map-designers">
                         <s-button>Go to Map Designer</s-button>
                     </s-link>

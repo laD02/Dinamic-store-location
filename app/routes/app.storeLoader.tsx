@@ -14,7 +14,10 @@ export async function loader({request}: LoaderFunctionArgs) {
     shop = url.searchParams.get("shop")
   }
   const stores = await prisma.store.findMany({
-    where: {shop},
+    where: {
+      shop,
+      visibility: 'visible'
+    },
     orderBy: {
       createdAt: 'desc', // mới nhất lên đầu
     },

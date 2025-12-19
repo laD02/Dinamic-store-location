@@ -7,7 +7,7 @@ export default function ManageLocation () {
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
                     <s-text type="strong">Review Synced Locations</s-text>
-                    <s-paragraph>In the All Locations table, review the data that has been synced through 3rd party integrations and hide certain locations or bulk update the tags for better search and filtering on your map.</s-paragraph>
+                    <s-paragraph>In the All Locations table, you can review data synced from third-party integrations, hide specific locations, and bulk update tags to improve search and filtering on your map.</s-paragraph>
                     <s-link href="/app/allLocation">
                         <s-button>View All Locations</s-button>
                     </s-link>
@@ -20,7 +20,7 @@ export default function ManageLocation () {
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
                     <s-text type="strong">Update Individual Locations</s-text>
-                    <s-paragraph>Click into individual locations to add to or update any imported or synced data to ensure your store locator is as accurate as possible, or review how a location will look on your live site.</s-paragraph>
+                    <s-paragraph>Click on individual locations to add or update imported or synced data, ensuring your store locator remains accurate. You can also preview how each location will appear on your live site.</s-paragraph>
                     <s-link href="/app/allLocation">
                         <s-button>View All Locations</s-button>
                     </s-link>
