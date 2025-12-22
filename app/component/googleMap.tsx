@@ -18,8 +18,8 @@ export default function GoogleMap () {
     }, [fetcher.data, shopify]);
 
     useEffect(() => {
-        setValue(key.ggKey || "")
-    }, [key.ggKey])
+        setValue(key?.ggKey ?? "")
+    }, [key])
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

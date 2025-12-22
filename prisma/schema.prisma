@@ -27,7 +27,7 @@ model Session {
 
 model Store {
   id         String   @id @default(cuid())
-  shop       String?
+  shop       String   
   storeName  String
   address    String
   city       String
@@ -50,7 +50,7 @@ model Store {
 
 model Style {
   id              String   @id @default(cuid())
-  shop            String?
+  shop            String   
   primaryColor    String
   secondaryColor  String
   primaryFont     String
@@ -68,16 +68,22 @@ model Style {
   updatedAt       DateTime @default(now()) @updatedAt
 }
 
+model OnBoard {
+  id              String @id @default(cuid())
+  shop            String @unique
+  onBoarding       Json?
+}
+
 model Attribute {
   id              String @id @default(cuid())
   filter          String
 }
 
 model Key {
-  id              String @id @default(cuid())
-  ggKey           String
-  b2bKey          String
-  url             String
+  id     String @id @default(cuid())
+  url    String? @unique
+  ggKey  String? @default("")
+  b2bKey String? @default("")
 }
 
 model Plan {
