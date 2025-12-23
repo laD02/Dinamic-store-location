@@ -1,6 +1,6 @@
 import { useAppBridge } from "@shopify/app-bridge-react"
 import { useEffect } from "react"
-import { useActionData, useFetcher } from "react-router"
+import { useFetcher } from "react-router"
 
 export default function AddMapToStore ({
     themeEditorUrl,
@@ -26,7 +26,7 @@ export default function AddMapToStore ({
         if (fetcher.data?.ok) {
             shopify.toast.show('Store Locator Embed is enabled.')
         } else {
-            shopify.toast.show('Store Locator Embed is not enabled yet.')
+            shopify.toast.show('Store Locator Embed is disabled.')
         }
     }, [fetcher.data])
 
