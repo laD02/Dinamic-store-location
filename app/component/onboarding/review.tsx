@@ -1,23 +1,24 @@
 import { useFetcher } from "react-router"
 
-export default function DesignMap ({
+export default function Review ({
     check,
     handleCheck,
     index
 }: {
     check: boolean
-    handleCheck: ( value: boolean) => void
+    handleCheck: (value: boolean) => void
     index: number
 }) {
     const fetcher = useFetcher()
 
-    const handleOnBoard = () => {
+    const handleOnBoard1 = () => {
         const formData = new FormData()
-        formData.append('saveDesignMap', 'designMap')
-        formData.append('actionType', 'saveDesignMap')
+        formData.append('saveReview', 'review')
+        formData.append('actionType', 'saveReview')
         fetcher.submit(formData, {method: 'post'})
     }
 
+  
     return (
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
@@ -32,18 +33,18 @@ export default function DesignMap ({
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-text type="strong">Select Map Design Options</s-text>
+                    <s-text type="strong">Review Synced Locations</s-text>
                     {
-                        index === 1 && 
+                        index === 2 &&
                         <>
-                             <s-paragraph>In the Map Designer tab, you can customize your primary map colors and fonts, as well as set the map size and default load location. You can also define a universal map marker and style the location popups, making it easy to create a cohesive and consistent map design across all locations.</s-paragraph>
+                            <s-paragraph>In the All Locations table, you can review data synced from third-party integrations, hide specific locations, and bulk update tags to improve search and filtering on your map.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href="/app/map-designers">
-                                    <s-button onClick={() => handleOnBoard()}>Go to Map Designer</s-button>
+                                <s-link href="/app/allLocation">
+                                    <s-button onClick={() => handleOnBoard1()}>View All Locations</s-button>
                                 </s-link>
                             </s-stack>
                         </>
-                    } 
+                    }
                 </s-stack>
             </s-stack>
         </s-stack>

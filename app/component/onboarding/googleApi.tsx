@@ -3,9 +3,11 @@ import { useFetcher } from "react-router"
 export default function GoogleApi ({
     check,
     handleCheck,
+    index,
 }:{
     check: boolean,
     handleCheck: (value: boolean) => void
+    index: number
 }) {
     const fetcher = useFetcher()
     // const handleExport = () => {
@@ -19,7 +21,7 @@ export default function GoogleApi ({
     }
 
     return (
-       <s-stack padding="base" gap="base">
+       <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
                     <s-clickable onClick={() => handleCheck(!check)}>
@@ -33,12 +35,17 @@ export default function GoogleApi ({
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
                     <s-text type="strong">Google Maps</s-text>
-                    <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
-                    <s-stack direction="inline">
-                        <s-link href="/app/settings?tab=googleMap">
-                            <s-button onClick={() => handleOnBoarding()}>Input API Key</s-button>
-                        </s-link>
-                    </s-stack>
+                    {
+                        index === 0 && 
+                        <>
+                            <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
+                            <s-stack direction="inline">
+                                <s-link href="/app/settings?tab=googleMap">
+                                    <s-button onClick={() => handleOnBoarding()}>Input API Key</s-button>
+                                </s-link>
+                            </s-stack>
+                        </>
+                    }
                 </s-stack>
             </s-stack>
 

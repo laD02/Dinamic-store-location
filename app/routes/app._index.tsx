@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import GoogleApi from 'app/component/onboarding/googleApi'
 import DesignMap from 'app/component/onboarding/designMap'
-import ManageLocation from 'app/component/onboarding/manageLocation'
 import AddMapToStore from 'app/component/onboarding/addMapToStore'
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from 'react-router'
 import { authenticate } from 'app/shopify.server'
 import prisma from 'app/db.server'
 import { hasStoreLocatorBlock } from 'app/utils/hasStoreBlock'
+import Review from 'app/component/onboarding/review'
+import Update from 'app/component/onboarding/update'
 
 export async function loader({request}: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
@@ -108,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Onboarding () {
-    const [index, setIndex] = useState<number | null>(0)
+    const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
     const {themeEditorUrl, onBoard} = useLoaderData()
     const [googleMap, setGoogleMap] = useState(false)
@@ -162,90 +163,47 @@ export default function Onboarding () {
                             </s-box>
                         </s-stack>
 
-                        <s-stack>
-                            <s-divider></s-divider>
-                            <s-clickable onClick={() => setIndex(index === 0 ? null : 0)} background={index === 0 ? 'subdued' : 'base'}>
-                                <s-stack direction='inline' justifyContent='space-between' padding='small'>
-                                    <s-stack>Configure Integrations & Import Locations</s-stack>
-                                    <s-stack>
-                                        {
-                                            index === 0 ?
-                                            <s-icon type='caret-up'/>
-                                            :
-                                            <s-icon type='caret-down'/>
-                                        }   
-                                    </s-stack>
-                                </s-stack>
-                            </s-clickable>
-                            { index === 0 && 
+                        <s-stack gap='small'>
+                            <s-clickable onClick={() => setIndex(0)} background={index === 0 ? 'subdued' : 'base'} borderRadius='large'>
                                 <GoogleApi 
                                     check = {googleMap}
                                     handleCheck={setGoogleMap}
+                                    index = {index}
                                 />
-                            }
-                            <s-divider></s-divider>       
-                            <s-clickable onClick={() => setIndex(index === 1 ? null : 1)} background={index === 1 ? 'subdued' : 'base'}>
-                                <s-stack direction='inline' justifyContent='space-between' padding='small'>
-                                    <s-stack>Design Your Map</s-stack>
-                                    <s-stack>
-                                        {
-                                            index === 1 ?
-                                            <s-icon type='caret-up'/>
-                                            :
-                                            <s-icon type='caret-down'/>
-                                        }   
-                                    </s-stack>
-                                </s-stack>
-                            </s-clickable>
-                            { index === 1 && 
-                                <DesignMap 
+                            </s-clickable> 
+
+                            <s-clickable onClick={() => setIndex(1)} background={index === 1 ? 'subdued' : 'base'} borderRadius='large'>
+                                 <DesignMap 
                                     check = {design}
                                     handleCheck = {setDesign}
+                                    index = {index}
                                 />
-                            }   
-                            <s-divider></s-divider>       
-                            <s-clickable onClick={() => setIndex(index === 2 ? null : 2)} background={index === 2 ? 'subdued' : 'base'}>
-                                <s-stack direction='inline' justifyContent='space-between' padding='small'>
-                                    <s-stack>Manage Your Locations</s-stack>
-                                    <s-stack>
-                                        {
-                                            index === 2 ?
-                                            <s-icon type='caret-up'/>
-                                            :
-                                            <s-icon type='caret-down'/>
-                                        }   
-                                    </s-stack>
-                                </s-stack>
                             </s-clickable>
-                            { index === 2 && 
-                                <ManageLocation 
-                                    check1 = {review}
-                                    check2 = {update}
-                                    handleCheck1 = {setReview}
-                                    handleCheck2 = {setUpdate}
+                     
+                            <s-clickable onClick={() => setIndex(2)} background={index === 2 ? 'subdued' : 'base'} borderRadius='large'>
+                                 <Review 
+                                    check = {review}
+                                    handleCheck = {setReview}
+                                    index = {index}
                                 />
-                            }  
-                            <s-divider></s-divider>       
-                            <s-clickable onClick={() => setIndex(index === 3 ? null : 3)} background={index === 3 ? 'subdued' : 'base'}>
-                                <s-stack direction='inline' justifyContent='space-between' padding='small'>
-                                    <s-stack>Add Your Map To Your Store</s-stack>
-                                    <s-stack>
-                                        {
-                                            index === 3 ?
-                                            <s-icon type='caret-up'/>
-                                            :
-                                            <s-icon type='caret-down'/>
-                                        }   
-                                    </s-stack>
-                                </s-stack>
                             </s-clickable>
-                            { index === 3 && 
+
+                            <s-clickable onClick={() => setIndex(3)} background={index === 3 ? 'subdued' : 'base'} borderRadius='large'>
+                                 <Update
+                                    check = {update}
+                                    handleCheck = {setUpdate}
+                                    index = {index}
+                                />
+                            </s-clickable>
+                            
+                            <s-clickable onClick={() => setIndex(4)} background={index === 4 ? 'subdued' : 'base'} borderRadius='large'>
                                 <AddMapToStore 
                                     themeEditorUrl={themeEditorUrl}
                                     check = {addMap}
                                     handleCheck = {setAddMap}
+                                    index = {index}
                                 />
-                            }  
+                            </s-clickable>
                         </s-stack>
                     </s-stack>
                 </s-stack>
