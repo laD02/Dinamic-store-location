@@ -161,6 +161,17 @@ export default function Onboarding () {
                             <s-box>
                                 {count === 5 && <s-icon type='check' size='small'/>}
                             </s-box>
+                            <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
+                                <div
+                                style={{
+                                    width: `${(count/5) * 100}%`,
+                                    height: 4,
+                                    background: "#2790dbff",
+                                    borderRadius: 4,
+                                    transition: "width 0.3s",
+                                }}
+                                />
+                            </div>
                         </s-stack>
 
                         <s-stack gap='small'>
