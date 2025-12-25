@@ -155,6 +155,11 @@ export default function Onboarding () {
             [googleMap, design, review, update, addMap].filter(Boolean).length
         )
     }, [googleMap, design, review, update, addMap])
+
+    const hasAddMapStep =
+        Array.isArray(onBoard?.onBoarding) &&
+        onBoard.onBoarding.includes("addMap")
+
     
     return (
         <s-page heading='Store Locator'>
@@ -233,6 +238,7 @@ export default function Onboarding () {
                                     check = {addMap}
                                     handleCheck = {setAddMap}
                                     index = {index}
+                                    hasAddMapStep = {hasAddMapStep}
                                 />
                             </s-clickable>
                         </s-stack>

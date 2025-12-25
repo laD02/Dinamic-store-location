@@ -50,7 +50,7 @@ export default function Review ({
                             <s-paragraph>In the All Locations table, you can review data synced from third-party integrations, hide specific locations, and bulk update tags to improve search and filtering on your map.</s-paragraph>
                             <s-stack direction="inline">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocation`}>
-                                    <s-button onClick={() => handleOnBoard1()}>View All Locations</s-button>
+                                    <s-button variant="primary" onClick={() => handleOnBoard1()}>View All Locations</s-button>
                                 </s-link>
                             </s-stack>
                         </>

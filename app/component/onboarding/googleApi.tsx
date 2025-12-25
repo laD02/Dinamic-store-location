@@ -52,7 +52,7 @@ export default function GoogleApi ({
                             <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
                             <s-stack direction="inline">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/settings?tab=googleMap`}>
-                                    <s-button onClick={() => handleOnBoarding()}>Input API Key</s-button>
+                                    <s-button variant="primary" onClick={() => handleOnBoarding()}>Input API Key</s-button>
                                 </s-link>
                             </s-stack>
                         </>

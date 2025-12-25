@@ -50,7 +50,7 @@ export default function DesignMap ({
                              <s-paragraph>In the Map Designer tab, you can customize your primary map colors and fonts, as well as set the map size and default load location. You can also define a universal map marker and style the location popups, making it easy to create a cohesive and consistent map design across all locations.</s-paragraph>
                             <s-stack direction="inline">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/map-designers`}>
-                                    <s-button onClick={() => handleOnBoard()}>Go to Map Designer</s-button>
+                                    <s-button variant="primary" onClick={() => handleOnBoard()}>Go to Map Designer</s-button>
                                 </s-link>
                             </s-stack>
                         </>

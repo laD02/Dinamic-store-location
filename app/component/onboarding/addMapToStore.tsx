@@ -7,13 +7,15 @@ export default function AddMapToStore ({
     themeId,
     check,
     handleCheck,
-    index
+    index,
+    hasAddMapStep
 }: {
     storeHandle: string
     themeId: string
     check: boolean
     handleCheck: (value:boolean) => void
     index: number
+    hasAddMapStep: boolean
 }) {
     const fetcher = useFetcher()
     const toggleFetcher = useFetcher()
@@ -65,7 +67,7 @@ export default function AddMapToStore ({
                             <s-paragraph>You can add your map to your store using the Shopify theme editor. Go to Online Store, click Customize next to the theme where you want to display the map, then select Add Section and choose the Store Locator app from the app options.</s-paragraph>
                             <s-stack direction="inline" gap="base">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/themes/${themeId}/editor?context=apps&activateAppId=20d7d45fc96ed3baec84f8232a6cf110/store_locator`}>
-                                    <s-button>Open Shopify CMS</s-button>
+                                    <s-button disabled={hasAddMapStep} variant="primary">Open Shopify CMS</s-button>
                                 </s-link>
                                 <s-button 
                                     onClick={() => handleOnBoard()}
