@@ -1,10 +1,12 @@
 import { useFetcher } from "react-router"
 
 export default function Update ({
+    storeHandle,
     check,
     handleCheck,
     index
 }: {
+    storeHandle: string
     check: boolean
     handleCheck: (value: boolean) => void
     index: number
@@ -13,8 +15,17 @@ export default function Update ({
 
     const handleOnBoard = () => {
         const formData = new FormData()
-        formData.append('saveUpdate', 'update')
         formData.append('actionType', 'saveUpdate')
+        fetcher.submit(formData, {method: 'post'})
+    }
+
+    const handleToggle = () => {
+        const newCheck = !check
+        handleCheck(newCheck)
+
+        const formData = new FormData()
+        formData.append('actionType', 'saveUpdate')
+        formData.append('remove', 'true')
         fetcher.submit(formData, {method: 'post'})
     }
   
@@ -22,7 +33,7 @@ export default function Update ({
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleCheck(!check)}>
+                    <s-clickable onClick={() => handleToggle()}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
@@ -38,7 +49,7 @@ export default function Update ({
                         <>
                             <s-paragraph>Click on individual locations to add or update imported or synced data, ensuring your store locator remains accurate. You can also preview how each location will appear on your live site.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href="/app/allLocation">
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocation`}>
                                     <s-button onClick={() => handleOnBoard()}>View All Locations</s-button>
                                 </s-link>
                             </s-stack>

@@ -147,16 +147,20 @@ export default function Settings() {
         <s-stack direction="inline" gap="large">
           {
             listBlock.map((item, index) => (
-              <div 
-                className={`${styles.itemsBlock} ${active === index && styles.active}`} 
-                key={index} 
-                onClick={() => {
-                  setActive(index)
-                  handleClick(index)
-                }}
-              >
-                {item}
-              </div>
+              <s-box>
+                <s-clickable 
+                  padding="small-200"
+                  borderRadius="base"
+                  background={active === index ? "subdued" : 'base'}
+                  key={index}
+                  onClick={() => {
+                    setActive(index)
+                    handleClick(index)
+                  }}
+                >
+                  {item}
+                </s-clickable>
+              </s-box>
             ))
           }
         </s-stack>

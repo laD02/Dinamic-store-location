@@ -3,24 +3,36 @@ import { useEffect } from "react"
 import { useFetcher } from "react-router"
 
 export default function AddMapToStore ({
-    themeEditorUrl,
+    storeHandle,
+    themeId,
     check,
     handleCheck,
     index
 }: {
-    themeEditorUrl: string
+    storeHandle: string
+    themeId: string
     check: boolean
     handleCheck: (value:boolean) => void
     index: number
 }) {
     const fetcher = useFetcher()
+    const toggleFetcher = useFetcher()
     const shopify = useAppBridge()
     
     const handleOnBoard = () => {
         const formData = new FormData()
-        formData.append('saveAddMap', 'addMap')
         formData.append('actionType', 'saveAddMap')
         fetcher.submit(formData, {method: 'post'})
+    }
+
+    const handleToggle = () => {
+        const newCheck = !check
+        handleCheck(newCheck)
+
+        const formData = new FormData()
+        formData.append('actionType', 'saveAddMap')
+        formData.append('remove', 'true')
+        toggleFetcher.submit(formData, {method: 'post'})
     }
 
     useEffect(() => {
@@ -36,7 +48,7 @@ export default function AddMapToStore ({
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleCheck(!check)}>
+                    <s-clickable onClick={() => handleToggle()}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
@@ -52,7 +64,7 @@ export default function AddMapToStore ({
                         <>
                             <s-paragraph>You can add your map to your store using the Shopify theme editor. Go to Online Store, click Customize next to the theme where you want to display the map, then select Add Section and choose the Store Locator app from the app options.</s-paragraph>
                             <s-stack direction="inline" gap="base">
-                                <s-link href={themeEditorUrl}>
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/themes/${themeId}/editor?context=apps&activateAppId=20d7d45fc96ed3baec84f8232a6cf110/store_locator`}>
                                     <s-button>Open Shopify CMS</s-button>
                                 </s-link>
                                 <s-button 

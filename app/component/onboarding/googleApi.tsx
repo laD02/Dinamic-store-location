@@ -1,10 +1,12 @@
 import { useFetcher } from "react-router"
 
 export default function GoogleApi ({
+    storeHandle,
     check,
     handleCheck,
     index,
 }:{
+    storeHandle: string
     check: boolean,
     handleCheck: (value: boolean) => void
     index: number
@@ -15,16 +17,25 @@ export default function GoogleApi ({
     // }
     const handleOnBoarding = () => {
         const formData = new FormData()
-        formData.append('saveGoogleMap', 'googleMap')
         formData.append('actionType', 'saveGoogleMap')
         fetcher.submit(formData, {method: 'post'})
+    }
+
+    const handleToggle = () => {
+        const newCheck = !check
+        handleCheck(newCheck)
+        const formData = new FormData()
+        formData.append('actionType', 'saveGoogleMap')
+        formData.append('remove', "true") // nếu newCheck = false thì remove = true
+        
+        fetcher.submit(formData, { method: 'post' })
     }
 
     return (
        <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleCheck(!check)}>
+                    <s-clickable onClick={() => handleToggle()}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
@@ -40,7 +51,7 @@ export default function GoogleApi ({
                         <>
                             <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href="/app/settings?tab=googleMap">
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/settings?tab=googleMap`}>
                                     <s-button onClick={() => handleOnBoarding()}>Input API Key</s-button>
                                 </s-link>
                             </s-stack>

@@ -1,6 +1,6 @@
-export async function hasStoreLocatorBlock(
+export async function hasStoreLocatorAddBlock(
     admin: any, 
-    appHandle: string = 'store-locator' // Thay bằng app handle thật của bạn
+    appHandle: string = 'store-locator'
 ): Promise<boolean> {
     try {
         const themeRes = await admin.graphql(`
@@ -41,12 +41,22 @@ export async function hasStoreLocatorBlock(
         const filesData = await filesRes.json()
         const files = filesData?.data?.theme?.files?.edges || []
 
-        // Tìm app handle cụ thể của bạn
-        const appPattern = new RegExp(`apps/${appHandle}|shopify://apps/[^/]+/blocks/${appHandle}`, 'i')
+        // Pattern match format: shopify://apps/store-locator/blocks/...
+        const appBlockPattern = new RegExp(
+            `shopify://apps/${appHandle}/blocks/`,
+            'i'
+        )
 
         return files.some((file: any) => {
+            const filename = file.node.filename || ''
             const content = file.node.body?.content
-            return content && appPattern.test(content)
+            
+            // Chỉ check trong sections/
+            if (!filename.startsWith('sections/')) {
+                return false
+            }
+            
+            return content && appBlockPattern.test(content)
         })
 
     } catch (error) {

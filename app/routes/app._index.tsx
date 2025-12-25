@@ -5,7 +5,7 @@ import AddMapToStore from 'app/component/onboarding/addMapToStore'
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from 'react-router'
 import { authenticate } from 'app/shopify.server'
 import prisma from 'app/db.server'
-import { hasStoreLocatorBlock } from 'app/utils/hasStoreBlock'
+import { hasStoreLocatorAddBlock } from 'app/utils/hasStoreBlock'
 import Review from 'app/component/onboarding/review'
 import Update from 'app/component/onboarding/update'
 
@@ -39,12 +39,11 @@ export async function loader({request}: LoaderFunctionArgs) {
     const shop = session.shop
     const storeHandle = session.shop.replace(".myshopify.com", "");
 
-    const themeEditorUrl = `https://admin.shopify.com/store/${storeHandle}/themes/${themeId}/editor`;
     const onBoard = await prisma.onBoard.findFirst({
         where: {shop}
     })
 
-    return {themeEditorUrl, onBoard}
+    return {storeHandle, themeId, onBoard}
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -53,6 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const formData = await request.formData()
     const actionType = formData.get("actionType") as string
+    const remove = formData.get("remove") === "true"
 
     // mapping action → onboarding step
     const STEP_MAP: Record<string, string> = {
@@ -70,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // 👉 RIÊNG STEP addMap → phải verify theme
     if (step === "addMap") {
-        const hasBlock = await hasStoreLocatorBlock(admin, 'store-locator')
+        const hasBlock = await hasStoreLocatorAddBlock(admin, 'store-locator')
 
         if (!hasBlock) {
             return {
@@ -85,9 +85,25 @@ export async function action({ request }: ActionFunctionArgs) {
     })
 
     const current = Array.isArray(existing?.onBoarding)
-        ? existing.onBoarding
+        ? (existing.onBoarding as string[])
         : []
 
+    if (remove) {
+        const updated = current.filter((s: string) => s !== step)
+        
+        await prisma.onBoard.upsert({
+            where: { shop },
+            update: {
+                onBoarding: updated,
+            },
+            create: {
+                shop,
+                onBoarding: [],
+            },
+        })
+
+        return { ok: true, removed: true }
+    }
     // Nếu đã có rồi thì thôi
     if (current.includes(step)) {
         return { ok: true }
@@ -111,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Onboarding () {
     const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
-    const {themeEditorUrl, onBoard} = useLoaderData()
+    const {storeHandle, themeId, onBoard} = useLoaderData()
     const [googleMap, setGoogleMap] = useState(false)
     const [design, setDesign] = useState(false)
     const [review, setReview] = useState(false)
@@ -156,17 +172,16 @@ export default function Onboarding () {
                                 <s-paragraph>A step-by-step guide to configuring the app to suit your business needs.</s-paragraph>
                             </s-stack>
                         </s-stack>
-                        <s-stack direction='inline' gap='small-200' alignItems='center'>
-                            <s-paragraph>{count} of 5 tasks completed </s-paragraph>
+                        <s-stack gap='small'>
                             <s-box>
-                                {count === 5 && <s-icon type='check' size='small'/>}
+                                <s-text>{count} of 5 tasks completed </s-text>
                             </s-box>
                             <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                 <div
                                 style={{
                                     width: `${(count/5) * 100}%`,
-                                    height: 4,
-                                    background: "#2790dbff",
+                                    height: 8,
+                                    background: "rgb(145, 208, 255)",
                                     borderRadius: 4,
                                     transition: "width 0.3s",
                                 }}
@@ -177,6 +192,7 @@ export default function Onboarding () {
                         <s-stack gap='small'>
                             <s-clickable onClick={() => setIndex(0)} background={index === 0 ? 'subdued' : 'base'} borderRadius='large'>
                                 <GoogleApi 
+                                    storeHandle = {storeHandle}
                                     check = {googleMap}
                                     handleCheck={setGoogleMap}
                                     index = {index}
@@ -185,6 +201,7 @@ export default function Onboarding () {
 
                             <s-clickable onClick={() => setIndex(1)} background={index === 1 ? 'subdued' : 'base'} borderRadius='large'>
                                  <DesignMap 
+                                    storeHandle = {storeHandle}
                                     check = {design}
                                     handleCheck = {setDesign}
                                     index = {index}
@@ -193,6 +210,7 @@ export default function Onboarding () {
                      
                             <s-clickable onClick={() => setIndex(2)} background={index === 2 ? 'subdued' : 'base'} borderRadius='large'>
                                  <Review 
+                                    storeHandle = {storeHandle}
                                     check = {review}
                                     handleCheck = {setReview}
                                     index = {index}
@@ -201,6 +219,7 @@ export default function Onboarding () {
 
                             <s-clickable onClick={() => setIndex(3)} background={index === 3 ? 'subdued' : 'base'} borderRadius='large'>
                                  <Update
+                                    storeHandle = {storeHandle}
                                     check = {update}
                                     handleCheck = {setUpdate}
                                     index = {index}
@@ -209,7 +228,8 @@ export default function Onboarding () {
                             
                             <s-clickable onClick={() => setIndex(4)} background={index === 4 ? 'subdued' : 'base'} borderRadius='large'>
                                 <AddMapToStore 
-                                    themeEditorUrl={themeEditorUrl}
+                                    storeHandle = {storeHandle}
+                                    themeId = {themeId}
                                     check = {addMap}
                                     handleCheck = {setAddMap}
                                     index = {index}

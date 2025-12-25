@@ -54,10 +54,20 @@ export default function GoogleMap () {
                         <s-grid-item>
                             <s-stack background="base" padding="base" borderRadius="large" gap="small" borderWidth="base">
                                 <s-text type="strong">Map Providers</s-text >
-                                <div className={`${styles.googleMap} ${number === 0 && styles.active}`} onClick={() => setNumber(0)}>
-                                    <i className="fa-solid fa-location-dot"></i>
-                                    <span>Googles Map</span>
-                                </div>
+                                <s-clickable
+                                    borderRadius="base"
+                                    background={number === 0 ? 'subdued' : 'base'}
+                                    onClick={() => setNumber(0)}
+                                >   
+                                    <s-stack direction="inline" alignItems="center" gap="small" padding="small-200">       
+                                        <s-box>
+                                            <s-icon type="location"/>
+                                        </s-box>
+                                        <s-box>
+                                            <s-text>Googles Map</s-text>
+                                        </s-box>
+                                    </s-stack>
+                                </s-clickable>
                             {/* <s-divider/>
                             <s-text type="strong">Connected Integrations</s-text >
                             <div className={`${styles.googleMap} ${number === 1 && styles.active}`} onClick={() => setNumber(1)}>

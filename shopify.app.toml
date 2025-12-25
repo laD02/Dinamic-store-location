@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "20d7d45fc96ed3baec84f8232a6cf110"
-name = "Store Locator"
+name = "store_locator"
 application_url = "https://example.com"
 embedded = true
 

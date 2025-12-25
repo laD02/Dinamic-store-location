@@ -1,10 +1,12 @@
 import { useFetcher } from "react-router"
 
 export default function DesignMap ({
+    storeHandle,
     check,
     handleCheck,
     index
 }: {
+    storeHandle: string
     check: boolean
     handleCheck: ( value: boolean) => void
     index: number
@@ -13,8 +15,17 @@ export default function DesignMap ({
 
     const handleOnBoard = () => {
         const formData = new FormData()
-        formData.append('saveDesignMap', 'designMap')
         formData.append('actionType', 'saveDesignMap')
+        fetcher.submit(formData, {method: 'post'})
+    }
+
+    const handleToggle = () => {
+        const newCkeck = !check
+        handleCheck(newCkeck)
+
+        const formData = new FormData()
+        formData.append("actionType", "saveDesignMap")
+        formData.append("remove", "true")
         fetcher.submit(formData, {method: 'post'})
     }
 
@@ -22,7 +33,7 @@ export default function DesignMap ({
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleCheck(!check)}>
+                    <s-clickable onClick={() => handleToggle()}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
@@ -38,7 +49,7 @@ export default function DesignMap ({
                         <>
                              <s-paragraph>In the Map Designer tab, you can customize your primary map colors and fonts, as well as set the map size and default load location. You can also define a universal map marker and style the location popups, making it easy to create a cohesive and consistent map design across all locations.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href="/app/map-designers">
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/map-designers`}>
                                     <s-button onClick={() => handleOnBoard()}>Go to Map Designer</s-button>
                                 </s-link>
                             </s-stack>
