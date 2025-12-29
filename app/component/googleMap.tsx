@@ -1,7 +1,6 @@
-import { useAppBridge } from "@shopify/app-bridge-react"
+import { SaveBar, useAppBridge } from "@shopify/app-bridge-react"
 import { useEffect, useState } from "react"
 import { Form, useFetcher, useLoaderData } from "react-router"
-import styles from "../css/intergration.module.css"
 
 export default function GoogleMap () {
     const {key} = useLoaderData()
@@ -10,10 +9,13 @@ export default function GoogleMap () {
     const [show, setShow] = useState(false)
     const shopify = useAppBridge()
     const [number, setNumber] = useState<number>(0)
+    const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
+    const originalValue = key?.ggKey ?? ""
 
     useEffect(() => {
         if (fetcher.data?.ok) {
             shopify.toast.show('The settings have been updated.')
+            shopify.saveBar.hide("my-save-bar");
         }
     }, [fetcher.data, shopify]);
 
@@ -21,14 +23,17 @@ export default function GoogleMap () {
         setValue(key?.ggKey ?? "")
     }, [key])
 
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value
-        setValue(value)
+        const newValue = e.target.value
+        setValue(newValue)
 
-        if (value.trim()) {
-            setShow(false)
+        if (newValue !== originalValue) {
+            shopify.saveBar.show("my-save-bar")
+        } else {
+            shopify.saveBar.hide("my-save-bar")
         }
+
+        if (newValue.trim()) setShow(false)
     }
 
     const handleSubmit = () => {
@@ -45,6 +50,15 @@ export default function GoogleMap () {
 
     return (
         <s-page heading="Dynamic Store Locator">
+            <SaveBar id="my-save-bar">
+                <button variant="primary" onClick={handleSubmit} loading={isSaving ? "true" : undefined}></button>
+                <button disabled={isSaving} onClick={() => {
+                        setValue(key.ggKey)
+                        shopify.saveBar.hide("my-save-bar");
+                    }}        
+                >
+                </button>
+            </SaveBar>
             {/* <div className={styles.wrapper}> */}
                 <s-query-container>
                     <s-grid 
@@ -83,14 +97,14 @@ export default function GoogleMap () {
 
                         <s-grid-item>
                             <s-stack>
-                                <Form   
+                                {/* <fetcher.Form   
                                     data-save-bar
                                     onSubmit={(e) => {
                                         e.preventDefault()
                                         handleSubmit()
                                     }}
                                     onReset={() => setValue(key.ggKey)}
-                                >
+                                > */}
                                     <s-stack inlineSize="100%" gap="large">
                                         <s-stack background="base" padding="base" borderRadius="large" inlineSize="100%" gap="small" borderWidth="base">
                                             <h2>Google Maps</h2>
@@ -101,17 +115,17 @@ export default function GoogleMap () {
                                             <s-text-field 
                                                 placeholder="Enter an API key for your map"
                                                 name="ggKey"
-                                                // value={value}
+                                                value={value}
                                                 onInput={(e: any) => handleChange(e)}
                                                 error={show ? "API Key cannot be empty" :"" }
                                             />
                                         </s-stack>
                                         
                                         <s-banner heading="Need Help Setting up your API Key?">
-                                            We created a step-by-step guide to walk you through setting up a Google Maps API Key. <s-link href="https://www.h1-apps.com/articles/how-to-setup-a-google-maps-api-key">Click here</s-link> to access that guide.
+                                            We created a step-by-step guide to walk you through setting up a Google Maps API Key. <s-link href="">Click here</s-link> to access that guide.
                                         </s-banner>
                                     </s-stack>
-                                </Form>
+                                {/* </fetcher.Form> */}
                             </s-stack>
                         </s-grid-item>
                     </s-grid>

@@ -1,12 +1,12 @@
 // app/routes/app.help-center.tsx
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useFetcher, useLoaderData } from "react-router";
 import styles from "../css/mapDesigner.module.css"
 import { useEffect, useMemo, useRef, useState } from "react";
 import prisma from "app/db.server";
 import 'leaflet/dist/leaflet.css';
 import MapGoogle from "../component/map";
 import MapDesigner from "../component/mapDesigner";
-import { useAppBridge } from "@shopify/app-bridge-react";
+import { SaveBar,useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -80,16 +80,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function MapDesigners() {
+  const fetcher = useFetcher()
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const { stores, config } = useLoaderData<typeof loader>();
   const [searchAddress, setSearchAddress] = useState<string>("");
-  const listRef = useRef<HTMLDivElement>(null);
-  const actionData = useActionData<typeof action>();
   const shopify = useAppBridge()
   const [leftWidth, setLeftWidth] = useState<number>(49);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
+  const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
+  const SAVE_BAR_ID = "map-designer-save-bar";
   const defaultTheme = {
     primaryColor: "#000",
     secondaryColor: "#000",
@@ -118,10 +118,16 @@ export default function MapDesigners() {
   });
 
   useEffect(() => {
-    if (actionData?.ok) {
-      shopify.toast.show('Map designer edited successfully!')
+    if (fetcher.data?.ok) {
+      shopify.toast.show("Map designer saved!");
+      shopify.saveBar.hide(SAVE_BAR_ID);
+
+      savedConfigRef.current = {
+        theme,
+        popup,
+      };
     }
-  }, [actionData]);
+  }, [fetcher.data]);
 
   useEffect(() => {
     if (config) {
@@ -154,10 +160,10 @@ export default function MapDesigners() {
     }
   }, [config]);
 
-  const handleReset = () => {
-    setTheme(savedConfigRef.current.theme);
-    setPopup(savedConfigRef.current.popup);
-  };
+  // const handleReset = () => {
+  //   setTheme(savedConfigRef.current.theme);
+  //   setPopup(savedConfigRef.current.popup);
+  // };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsResizing(true);
@@ -202,8 +208,47 @@ export default function MapDesigners() {
     })
   }, [stores, searchAddress])
 
+  const handleSave = () => {
+    fetcher.submit(
+      {
+        theme: JSON.stringify(theme),
+        popup: JSON.stringify(popup),
+      },
+      { method: "post" }
+    );
+  };
+
+  const handleDiscard = () => {
+    setTheme(savedConfigRef.current.theme);
+    setPopup(savedConfigRef.current.popup);
+    shopify.saveBar.hide(SAVE_BAR_ID);
+  };
+
+  const isConfigChanged = (
+    nextTheme: typeof theme,
+    nextPopup: typeof popup
+  ) => {
+    return (
+      JSON.stringify(nextTheme) !== JSON.stringify(savedConfigRef.current.theme) ||
+      JSON.stringify(nextPopup) !== JSON.stringify(savedConfigRef.current.popup)
+    );
+  };
+
   return (
     <s-page heading="Store Locator" >
+      <SaveBar id={SAVE_BAR_ID}>
+        <button
+          variant="primary"
+          loading={isSaving ? "true" : undefined}
+          onClick={handleSave}
+        >
+          Save
+        </button>
+
+        <button disabled={isSaving} onClick={handleDiscard}>
+          Discard
+        </button>
+      </SaveBar>
       <h2>Map Designer</h2>
       <div 
         ref={containerRef}
@@ -226,23 +271,28 @@ export default function MapDesigners() {
           }}
         >
           <s-stack>
-            <Form 
-              method="post" 
-              data-save-bar
-              onReset={(e) => {
-                e.preventDefault();
-                handleReset();
+            <MapDesigner
+              config={{ theme, popup }}
+              onThemeChange={(v) => {
+                setTheme(v);
+                if (isConfigChanged(v, popup)) {
+                  shopify.saveBar.show(SAVE_BAR_ID);
+                } else {
+                  shopify.saveBar.hide(SAVE_BAR_ID);
+                }
               }}
-            >
-              <MapDesigner 
-                onThemeChange={setTheme}
-                onPopupChange={setPopup}
-                config={{theme, popup}}
-              />
+              onPopupChange={(v) => {
+                setPopup(v);
+                if (isConfigChanged(theme, v)) {
+                  shopify.saveBar.show(SAVE_BAR_ID);
+                } else {
+                  shopify.saveBar.hide(SAVE_BAR_ID);
+                }
+              }}
+            />
 
-              <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
-              <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
-            </Form>
+            <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
+            <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
           </s-stack>  
           
           <s-stack padding="base" background="base" gap="small-500" borderRadius="large-100" borderWidth="small">
