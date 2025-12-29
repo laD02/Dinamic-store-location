@@ -151,7 +151,7 @@ export default function Settings() {
                 <s-clickable 
                   padding="small-200"
                   borderRadius="base"
-                  background={active === index ? "subdued" : 'base'}
+                  background={active === index ? "base" : 'subdued'}
                   key={index}
                   onClick={() => {
                     setActive(index)

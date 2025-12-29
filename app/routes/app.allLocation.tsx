@@ -386,7 +386,7 @@ export default function AllLocation() {
                 <s-table-body>
                   {
                     currentStores.map((store, index) => (
-                      <s-table-row>
+                      <s-table-row key={store.id}>
                         <s-table-cell>
                           <s-checkbox 
                             checked={selectedIds.has(store.id)}
@@ -429,10 +429,10 @@ export default function AllLocation() {
                           <s-button 
                             variant="tertiary" 
                             icon="delete"
-                            commandFor="deleteId-modal"
+                            commandFor={`deleteId-modal-${store.id}`}
                           >
                           </s-button>
-                          <s-modal id="deleteId-modal" heading="Delete Location">
+                          <s-modal id={`deleteId-modal-${store.id}`} heading="Delete Location">
                             <s-text>
                                 Are you sure you want to delete this store? This action cannot be undone.
                             </s-text>
@@ -440,7 +440,7 @@ export default function AllLocation() {
                             <s-button
                               slot="secondary-actions"
                               variant="secondary"
-                              commandFor="deleteId-modal"
+                              commandFor={`deleteId-modal-${store.id}`}
                               command="--hide"
                             >
                               Cancel
@@ -450,7 +450,7 @@ export default function AllLocation() {
                               slot="primary-action"
                               variant="primary"
                               tone="critical"
-                              commandFor="deleteId-modal"
+                              commandFor={`deleteId-modal-${store.id}`}
                               command="--hide"
                               onClick={e => {
                                 e.stopPropagation();
