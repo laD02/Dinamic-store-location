@@ -133,8 +133,8 @@ export default function EditLocation () {
                 
                 acc[day] = {
                     disabled: openValue === "close" && closeValue === "close",
-                    valueOpen: openValue === "close" ? "9:00" : openValue,
-                    valueClose: closeValue === "close" ? "17:00" : closeValue
+                    valueOpen: openValue ,
+                    valueClose: closeValue 
                 };
                 return acc;
             }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>);

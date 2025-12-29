@@ -176,6 +176,48 @@ export default function MapGoogle({
                 <i className="fa-solid fa-phone" style={{color: popupStyle.iconColor}}></i>
                 +1 408-996-1010
               </span>       
+              <div style={{display: 'flex', justifyContent:'space-between', marginTop: "4px"}}>
+                <i className="fa-solid fa-clock" style={{color:popupStyle.iconColor}}></i>
+                <table align="center">
+                  <tbody>
+                    <tr>
+                      <td>Mon</td>
+                      <td>Close</td>
+                    </tr>
+                    <tr>
+                      <td>Tue</td>
+                      <td>9:00</td>
+                      <td>-</td>
+                      <td>17:00</td>
+                    </tr>
+                    <tr>
+                      <td>Wed</td>
+                      <td>9:00</td>
+                      <td>-</td>
+                      <td>17:00</td>
+                    </tr><tr>
+                      <td>Thu</td>
+                      <td>9:00</td>
+                      <td>-</td>
+                      <td>17:00</td>
+                    </tr><tr>
+                      <td>Fri</td>
+                      <td>9:00</td>
+                      <td>-</td>
+                      <td>17:00</td>
+                    </tr><tr>
+                      <td>Sat</td>
+                      <td>9:00</td>
+                      <td>-</td>
+                      <td>17:00</td>
+                    </tr>
+                    <tr> 
+                      <td>Sun</td>
+                      <td>Close</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </OverlayView>
         )}

@@ -143,59 +143,86 @@ function showOverlay(store, marker) {
                     min-width: 150px;
                     max-width: 300px;
                     position: relative;
-                    align-items: center;
-                    justify-items: center;  
                 ">
                     ${this.store.image ? `
                         <img src="${this.store.image}" 
                              alt="${this.store.name}" 
-                             style=" width: 100%; height: 80px; object-fit: cover; border-radius: 8px; padding: 12px;" />
+                             style=" width: 100%; height: 40px; object-fit: contain; border-radius: 8px;" />
                     ` : ''}
-                    <h3 style="margin: 0 0 8px 0; font-size: 12px; color: ${mapStyle.color}; font-weight: 600;">
-                        ${this.store.storeName}
-                    </h3>
-                    <p style="margin: 0 0 8px 0; color: ${mapStyle.color}; font-size: 8px; line-height: 1.5;">
+                    <div style= "display: flex; justify-content: center">
+                        <h3 style="margin: 0 0 4px 0; font-size: 12px; color: ${mapStyle.color}; font-weight: 600">
+                            ${this.store.storeName}
+                        </h3>
+                    </div>
+                    <p style="margin: 0 0 4px 0; color: ${mapStyle.color}; font-size: 8px; line-height: 1.5;">
                         ${this.store.address || ''}, ${this.store.city}, ${this.store.state}, ${this.store.code}
                     </p>
                     ${this.store.phone ? `
-                        <p style="margin: 0; color: ${mapStyle.color}; font-size: 8px; padding-bottom: 12px">
-                            <i class="fa-solid fa-phone" style="margin-right: 5px; color: ${mapStyle.iconColor};"></i>
+                        <p style="margin: 0; color: ${mapStyle.color}; font-size: 8px">
+                            <i class="fa-solid fa-phone" style="margin-right: 4px; color: ${mapStyle.iconColor};"></i>
                             ${this.store.phone}
                         </p>
-                    ` : ''}
-                    
-                    <!-- Nút đóng -->
-                    <button onclick="closeOverlay()" style="
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
-                        background: rgba(0,0,0,0.5);
-                        color: white;
-                        border: none;
-                        border-radius: 50%;
-                        width: 24px;
-                        height: 24px;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 16px;
-                        line-height: 1;
-                    ">×</button>
-                    
-                    <!-- Mũi tên tam giác -->
-                    <div style="
-                        position: absolute;
-                        bottom: -8px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        width: 0;
-                        height: 0;
-                        border-left: 8px solid transparent;
-                        border-right: 8px solid transparent;
-                        border-top: 8px solid white;
-                    "></div>
-                </div>
+                    ` : ''}                  
+                    <div style="display: flex; justify-content: flex-start;margin-top:4px;">
+                        <i class="fa-solid fa-clock" style="margin-right: 4px; color: ${mapStyle.iconColor}"></i>
+                        <div style="font-size: 8px;">
+                            <p>
+                            Mon ${
+                                this.store.time.mondayClose === 'close' || this.store.time.mondayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.mondayOpen} - ${this.store.time.mondayClose}`
+                            }
+                            </p>
+
+                            <p>
+                            Tue ${
+                                this.store.time.tuesdayClose === 'close' || this.store.time.tuesdayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.tuesdayOpen} - ${this.store.time.tuesdayClose}`
+                            }
+                            </p>
+
+                            <p>
+                            Wed ${
+                                this.store.time.wednesdayClose === 'close' || this.store.time.wednesdayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.wednesdayOpen} - ${this.store.time.wednesdayClose}`
+                            }
+                            </p>
+
+                            <p>
+                            Thu ${
+                                this.store.time.thursdayClose === 'close' || this.store.time.thursdayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.thursdayOpen} - ${this.store.time.thursdayClose}`
+                            }
+                            </p>
+
+                            <p>
+                            Fri ${
+                                this.store.time.fridayClose === 'close' || this.store.time.fridayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.fridayOpen} - ${this.store.time.fridayClose}`
+                            }
+                            </p>
+
+                            <p>
+                            Sat ${
+                                this.store.time.saturdayClose === 'close' || this.store.time.saturdayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.saturdayOpen} - ${this.store.time.saturdayClose}`
+                            }
+                            </p>
+
+                            <p>
+                            Sun ${
+                                this.store.time.sundayClose === 'close' || this.store.time.sundayOpen === 'close'
+                                ? 'Close'
+                                : `${this.store.time.sundayOpen} - ${this.store.time.sundayClose}`
+                            }
+                            </p>
+                        </div>
+                    </div>
             `;
             
             // Thêm vào pane
