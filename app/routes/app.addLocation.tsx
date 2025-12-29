@@ -567,6 +567,7 @@ export default function AddLocation () {
                                                 onClick={ (e)=> {
                                                     e.stopPropagation();
                                                     setPreview(null) 
+                                                    setImageBase64(null); 
                                                 }}
                                             >
                                                 <s-icon type="x"/>
