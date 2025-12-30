@@ -116,7 +116,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Settings() {
   const fetcher = useFetcher()
   const navigate = useNavigate()
-  const listBlock  = ["Display", "Google API"]
+  const listBlock  = [ "Google API"]
   const [active, setActive] = useState(0)
   const filter = useLoaderData<typeof loader>()
   const [searchParams] = useSearchParams() // Thêm này
@@ -144,14 +144,14 @@ export default function Settings() {
     <s-page heading="Store Locator">
       <s-stack gap="small">
         <h2>Settings</h2>
-        <s-stack direction="inline" gap="large">
+        {/* <s-stack direction="inline" gap="large">
           {
             listBlock.map((item, index) => (
               <s-box>
                 <s-clickable 
                   padding="small-200"
                   borderRadius="base"
-                  background={active === index ? "base" : 'subdued'}
+                  background='base'
                   key={index}
                   onClick={() => {
                     setActive(index)
@@ -163,10 +163,10 @@ export default function Settings() {
               </s-box>
             ))
           }
-        </s-stack>
-        {active === 0 && <Display />}
+        </s-stack> */}
+        {/* {active === 0 && <Display />} */}
         {/* {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>} */}
-        {active === 1 && <GoogleMap />}
+        {active === 0 && <GoogleMap />}
       </s-stack>
     </s-page>
   );

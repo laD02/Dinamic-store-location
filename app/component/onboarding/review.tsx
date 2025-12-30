@@ -13,19 +13,15 @@ export default function Review ({
 }) {
     const fetcher = useFetcher()
 
-    const handleOnBoard1 = () => {
-        const formData = new FormData()
-        formData.append('actionType', 'saveReview')
-        fetcher.submit(formData, {method: 'post'})
-    }
+    const handleToggle = (e: any) => {
+        e.stopPropagation()
 
-    const handleToggle = () => {
         const newCheck = !check
         handleCheck(newCheck)
 
         const formData = new FormData()
         formData.append("actionType", 'saveReview')
-        formData.append('remove', 'true')
+        formData.append('remove', String(!newCheck))
         fetcher.submit(formData, {method: 'post'})
     }
   
@@ -33,7 +29,7 @@ export default function Review ({
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleToggle()}>
+                    <s-clickable onClick={handleToggle}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
@@ -50,7 +46,7 @@ export default function Review ({
                             <s-paragraph>In the All Locations table, you can review data synced from third-party integrations, hide specific locations, and bulk update tags to improve search and filtering on your map.</s-paragraph>
                             <s-stack direction="inline">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocation`}>
-                                    <s-button variant="primary" onClick={() => handleOnBoard1()}>View All Locations</s-button>
+                                    <s-button variant="primary">View All Locations</s-button>
                                 </s-link>
                             </s-stack>
                         </>

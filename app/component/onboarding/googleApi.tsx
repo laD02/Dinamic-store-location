@@ -10,23 +10,19 @@ export default function GoogleApi ({
     check: boolean,
     handleCheck: (value: boolean) => void
     index: number
+    
 }) {
     const fetcher = useFetcher()
-    // const handleExport = () => {
-    //     downloadCSVTemplate()
-    // }
-    const handleOnBoarding = () => {
-        const formData = new FormData()
-        formData.append('actionType', 'saveGoogleMap')
-        fetcher.submit(formData, {method: 'post'})
-    }
 
-    const handleToggle = () => {
+    const handleToggle = (e: any) => {
+        e.stopPropagation()
+
         const newCheck = !check
         handleCheck(newCheck)
+        
         const formData = new FormData()
         formData.append('actionType', 'saveGoogleMap')
-        formData.append('remove', "true") // nếu newCheck = false thì remove = true
+        formData.append('remove', String(!newCheck)) // nếu newCheck = false thì remove = true
         
         fetcher.submit(formData, { method: 'post' })
     }
@@ -35,7 +31,7 @@ export default function GoogleApi ({
        <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleToggle()}>
+                    <s-clickable onClick={handleToggle}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
@@ -51,8 +47,8 @@ export default function GoogleApi ({
                         <>
                             <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/settings?tab=googleMap`}>
-                                    <s-button variant="primary" onClick={() => handleOnBoarding()}>Input API Key</s-button>
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/settings`}>
+                                    <s-button variant="primary" >Input API Key</s-button>
                                 </s-link>
                             </s-stack>
                         </>

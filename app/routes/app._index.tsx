@@ -8,6 +8,7 @@ import prisma from 'app/db.server'
 import { hasStoreLocatorAddBlock } from 'app/utils/hasStoreBlock'
 import Review from 'app/component/onboarding/review'
 import Update from 'app/component/onboarding/update'
+import { hasStoreLocatorEmbedEnabled } from 'app/utils/embedStore'
 
 export async function loader({request}: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
@@ -54,6 +55,37 @@ export async function action({ request }: ActionFunctionArgs) {
     const actionType = formData.get("actionType") as string
     const remove = formData.get("remove") === "true"
 
+    if (actionType === 'checkAddMap') {
+        const hasBlock = await hasStoreLocatorAddBlock(admin, 'store-locator')
+        const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
+        const verified = hasBlock && embedStore
+
+        if (verified) {
+            const existing = await prisma.onBoard.findFirst({
+                where: { shop },
+            })
+
+            const current = Array.isArray(existing?.onBoarding)
+                ? (existing.onBoarding as string[])
+                : []
+
+            if (!current.includes("addMap")) {
+                await prisma.onBoard.upsert({
+                    where: { shop },
+                    update: {
+                        onBoarding: [...current, "addMap"],
+                    },
+                    create: {
+                        shop,
+                        onBoarding: ["addMap"],
+                    },
+                })
+            }
+        }
+
+        return {ok: verified}
+    }
+
     // mapping action → onboarding step
     const STEP_MAP: Record<string, string> = {
         saveGoogleMap: "googleMap",
@@ -66,17 +98,6 @@ export async function action({ request }: ActionFunctionArgs) {
     const step = STEP_MAP[actionType]
     if (!step) {
         return { ok: false, message: "Invalid actionType" }
-    }
-
-    // 👉 RIÊNG STEP addMap → phải verify theme
-    if (step === "addMap") {
-        const hasBlock = await hasStoreLocatorAddBlock(admin, 'store-locator')
-
-        if (!hasBlock) {
-            return {
-                ok: false
-            }
-        }
     }
 
     // Lấy trạng thái hiện tại

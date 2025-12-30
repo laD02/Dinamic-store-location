@@ -23,17 +23,19 @@ export default function AddMapToStore ({
     
     const handleOnBoard = () => {
         const formData = new FormData()
-        formData.append('actionType', 'saveAddMap')
+        formData.append('actionType', 'checkAddMap')
         fetcher.submit(formData, {method: 'post'})
     }
 
-    const handleToggle = () => {
+    const handleToggle = (e: any) => {
+        e.stopPropagation()
+
         const newCheck = !check
         handleCheck(newCheck)
 
         const formData = new FormData()
         formData.append('actionType', 'saveAddMap')
-        formData.append('remove', 'true')
+        formData.append('remove', String(!newCheck))
         toggleFetcher.submit(formData, {method: 'post'})
     }
 
@@ -50,7 +52,7 @@ export default function AddMapToStore ({
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
-                    <s-clickable onClick={() => handleToggle()}>
+                    <s-clickable onClick={handleToggle}>
                         {
                             check ?
                             <s-icon type="check-circle-filled"/>
