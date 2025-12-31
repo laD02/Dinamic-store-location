@@ -87,9 +87,11 @@ export default function MapDesigners() {
   const shopify = useAppBridge()
   const [leftWidth, setLeftWidth] = useState<number>(49);
   const [isResizing, setIsResizing] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
   const SAVE_BAR_ID = "map-designer-save-bar";
+  
   const defaultTheme = {
     primaryColor: "#000",
     secondaryColor: "#000",
@@ -116,6 +118,18 @@ export default function MapDesigners() {
     theme: defaultTheme,
     popup: defaultPopup
   });
+
+  // Detect screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (fetcher.data?.ok) {
@@ -160,24 +174,20 @@ export default function MapDesigners() {
     }
   }, [config]);
 
-  // const handleReset = () => {
-  //   setTheme(savedConfigRef.current.theme);
-  //   setPopup(savedConfigRef.current.popup);
-  // };
-
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsResizing(true);
-    e.preventDefault();
+    if (!isMobile) {
+      setIsResizing(true);
+      e.preventDefault();
+    }
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing || !containerRef.current) return;
+      if (!isResizing || !containerRef.current || isMobile) return;
       
       const containerRect = containerRef.current.getBoundingClientRect();
       const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
       
-      // Giới hạn từ 30% đến 80%
       if (newWidth >= 30 && newWidth <= 70) {
         setLeftWidth(newWidth);
       }
@@ -196,7 +206,7 @@ export default function MapDesigners() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing]);
+  }, [isResizing, isMobile]);
 
   const search = useMemo(() => {
     return stores.filter(stores => {
@@ -249,21 +259,24 @@ export default function MapDesigners() {
           Discard
         </button>
       </SaveBar>
+      
       <h2>Map Designer</h2>
+      
       <div 
         ref={containerRef}
         style={{ 
           display: 'flex', 
-          gap: '0px',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '16px' : '0px',
           position: 'relative',
           width: '100%',
           userSelect: isResizing ? 'none' : 'auto'
         }}
       >
-        {/* Cột bên trái */}
+        {/* Left Column - Designer */}
         <div 
           style={{
-            width: `${leftWidth}%`,
+            width: isMobile ? '100%' : `${leftWidth}%`,
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
@@ -295,77 +308,79 @@ export default function MapDesigners() {
             <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
           </s-stack>  
           
-          <s-stack padding="base" background="base" gap="small-500" borderRadius="large-100" borderWidth="small">
-            {/* <s-search-field 
-              placeholder="Enter Address or Zip code"
-              value={searchAddress}
-              onInput={(e) => {
-                const target = e.target as any;
-                setSearchAddress(target.value)
+          <s-stack 
+            padding="base" 
+            background="base" 
+            gap="small-500" 
+            borderRadius="large-100" 
+            borderWidth="small"
+          >
+            <div
+              className={styles.inforItem}
+              style={{
+                border: `1px solid ${theme.secondaryColor}`
               }}
-            /> */}
-        
-            {/* <div className={styles.information} ref={listRef}> */}
-              {/* {
-                search.map((store: any, index: number) => ( */}
-                  <div
-                    // key={store.id || index}
-                    // className={`${styles.inforItem} ${selectedIndex === index ? styles.click : ""}`}
-                    className={styles.inforItem}
-                    // onClick={() => setSelectedIndex(index)}
-                    style={{border: `1px solid ${theme.secondaryColor}`}}
-                  >
-                    <h4 style={{color: theme.primaryColor, fontFamily: theme.primaryFont, whiteSpace: "normal", wordBreak: "break-word"}}>Apple Park</h4>
-                    <p style={{color: theme.primaryColor, fontFamily: theme.secondaryFont}}> 1 Apple Park Way, Cupertino, CA 95014, USA<br/></p>
-                    <p style={{color: theme.secondaryColor}}>+1 408-996-1010</p>
-                    <s-stack direction="inline" justifyContent="start" gap="small-500">
-                      {/* {
-                        (store.tags || []).map((item: any, index: any) => ( */}
-                          {/* <s-badge tone="info">
-                            <text style={{fontSize:'6px'}}>qkjwnf</text>
-                          </s-badge> */}
-                        {/* ))
-                      } */}
-                    </s-stack>
-                  </div>
-                {/* ))
-              }      */}
-            {/* </div> */}
+            >
+              <h4 style={{
+                color: theme.primaryColor, 
+                fontFamily: theme.primaryFont, 
+                whiteSpace: "normal", 
+                wordBreak: "break-word"
+              }}>
+                Apple Park
+              </h4>
+              <p style={{
+                color: theme.primaryColor, 
+                fontFamily: theme.secondaryFont
+              }}>
+                1 Apple Park Way, Cupertino, CA 95014, USA<br/>
+              </p>
+              <p style={{
+                color: theme.secondaryColor
+              }}>
+                +1 408-996-1010
+              </p>
+              <s-stack direction="inline" justifyContent="start" gap="small-500">
+              </s-stack>
+            </div>
           </s-stack>
         </div>
 
-        {/* Thanh kéo resize */}
-        <div
-          onMouseDown={handleMouseDown}
-          style={{
-            width: '16px',
-            cursor: 'col-resize',
-            // background: isResizing ? '#0066ff' : 'transparent',
-            transition: isResizing ? 'none' : 'background 0.2s',
-            position: 'relative',
-            flexShrink: 0
-          }}
-        >
+        {/* Resize Handle - Desktop Only */}
+        {!isMobile && (
           <div
+            onMouseDown={handleMouseDown}
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              // width: '4px',
-              // height: '40px',
-              background: '#ddd',
-              borderRadius: '2px',
-              pointerEvents: 'none'
+              width: '16px',
+              cursor: 'col-resize',
+              transition: isResizing ? 'none' : 'background 0.2s',
+              position: 'relative',
+              flexShrink: 0
             }}
-          />
-        </div>
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '4px',
+                height: '40px',
+                background: '#ddd',
+                borderRadius: '2px',
+                pointerEvents: 'none'
+              }}
+            />
+          </div>
+        )}
 
-        {/* Cột bên phải - Map */}
+        {/* Right Column - Map */}
         <div 
           style={{
-            width: `${100 - leftWidth}%`,
-            flexShrink: 0
+            width: isMobile ? '100%' : `${100 - leftWidth}%`,
+            flexShrink: 0,
+            minHeight: '500px',
+            height: isMobile ? '500px' : 'auto'
           }}
         >
           <MapGoogle 
