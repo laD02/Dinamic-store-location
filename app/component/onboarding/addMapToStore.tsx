@@ -66,7 +66,7 @@ export default function AddMapToStore ({
                     {
                         index === 4 && 
                         <>
-                            <s-paragraph>You can add your map to your store using the Shopify theme editor. Go to Online Store, click Customize next to the theme where you want to display the map, then select Add Section and choose the Store Locator app from the app options.</s-paragraph>
+                            <s-paragraph>Enable the Store Locator core in your theme by clicking “Open Shopify CMS” and “Save”. Once activated, open Online Store → Customize, add a new section, and select Store Locator to display the map on your store.</s-paragraph>
                             <s-stack direction="inline" gap="base">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/themes/${themeId}/editor?context=apps&activateAppId=20d7d45fc96ed3baec84f8232a6cf110/store_locator`}>
                                     <s-button disabled={hasAddMapStep} variant="primary">Open Shopify CMS</s-button>

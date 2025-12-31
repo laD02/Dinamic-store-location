@@ -51,7 +51,7 @@ export async function action({request}: ActionFunctionArgs) {
             phone: formData.get("phone")?.toString() ?? "",
             image: formData.get("image")?.toString() ?? "",
             directions: formData.get("directions")?.toString() ?? "",
-            contract, // đây là object chứa arrays
+            contract,
             source: formData.get('source')?.toString() ?? "Manual",
             visibility: formData.get('visibility')?.toString() ?? "",
             time:{
@@ -83,11 +83,16 @@ export default function AddLocation () {
     const fetcher = useFetcher()
     const shopify = useAppBridge()
     const [click, setClick] = useState(false)
-    const [countSocial, setCountSocial] = useState([{},{}]);
+    const [countSocial, setCountSocial] = useState<string[]>([
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+    ]);
+    const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
     const initialFormRef = useRef<FormData | null>(null);
+    const initialSocialCountRef = useRef<number>(2);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -105,11 +110,11 @@ export default function AddLocation () {
     useEffect(() => {
         if (isInitialized || !formRef.current) return;
         
-        // Chờ React render xong form
         requestAnimationFrame(() => {
             if (formRef.current) {
                 initialFormRef.current = new FormData(formRef.current);
                 initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+                initialSocialCountRef.current = countSocial.length;
                 setIsInitialized(true);
             }
         });
@@ -121,10 +126,10 @@ export default function AddLocation () {
 
         let dirty = false;
 
-        // 1. Check FormData (BỎ hours)
+        // 1. Check FormData (BỎ hours và contract)
         const current = new FormData(formRef.current);
         for (const [key, value] of current.entries()) {
-            if (key.endsWith("-open") || key.endsWith("-close") || key === "image") continue;
+            if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
 
             const initialValue = initialFormRef.current.get(key);
             const currentStr = String(value).trim();
@@ -136,7 +141,7 @@ export default function AddLocation () {
             }
         }
 
-        // 2. ⭐ Check HOURS từ STATE (không đọc từ FormData)
+        // 2. Check HOURS từ STATE
         if (!dirty && initialHoursRef.current) {
             const initialHours = JSON.stringify(initialHoursRef.current);
             const currentHours = JSON.stringify(dayStatus);
@@ -153,6 +158,22 @@ export default function AddLocation () {
             if (!!hadInitialImage !== !!hasCurrentImage || 
                 (hadInitialImage && hasCurrentImage && hadInitialImage !== hasCurrentImage)) {
                 dirty = true;
+            }
+        }
+
+        // 4. ⭐ CHECK SOCIAL - Kiểm tra số lượng hoặc nội dung
+        if (!dirty) {
+            // Check số lượng social media fields
+            if (countSocial.length !== initialSocialCountRef.current) {
+                dirty = true;
+            } else {
+                // Check nội dung các contract URLs
+                const currentContracts = current.getAll("contract").map(v => String(v).trim());
+                const initialContracts = initialFormRef.current.getAll("contract").map(v => String(v).trim());
+                
+                if (JSON.stringify(currentContracts) !== JSON.stringify(initialContracts)) {
+                    dirty = true;
+                }
             }
         }
 
@@ -184,16 +205,21 @@ export default function AddLocation () {
         checkDirtyAndToggleSaveBar();
     }, [dayStatus, isInitialized]);
 
-    // ✅ 3. CHECK DIRTY khi image thay đổi
     useEffect(() => {
-        if (!isInitialized) return; // ⭐ Thêm check này
+        if (!isInitialized) return;
         checkDirtyAndToggleSaveBar();
     }, [imageBase64, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [countSocial, isInitialized]);
 
     useEffect(() => {
         if (fetcher.data?.ok && formRef.current) {
             initialFormRef.current = new FormData(formRef.current);
             initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+            initialSocialCountRef.current = countSocial.length;
             shopify.toast.show('Store saved successfully!')
             shopify.saveBar.hide("location-save-bar");
         }
@@ -206,33 +232,28 @@ export default function AddLocation () {
             return next;
         });
     };
-    const handleAdd = () => {
-        const newItem = {};
-        setCountSocial([...countSocial, newItem]);
-        setTimeout(checkDirtyAndToggleSaveBar);
-    }
 
-    const handleRemove = (index: number) => {
-        const newArr =  countSocial.filter((_,i) => i !== index)
-        setCountSocial(newArr)
-        setTimeout(checkDirtyAndToggleSaveBar);
-    }
+    const handleAdd = () => {
+        setCountSocial(prev => [...prev, crypto.randomUUID()]);
+    };
+
+    const handleRemove = (key: string) => {
+        setCountSocial(prev => prev.filter(k => k !== key));
+    };
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
 
     const handleClick = () => {
-        fileInputRef.current?.click(); // Kích hoạt input file
+        fileInputRef.current?.click();
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Hiển thị preview
             const imageUrl = URL.createObjectURL(file);
             setPreview(imageUrl);
 
-            // Đọc file thành base64
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImageBase64(reader.result as string);
@@ -240,7 +261,6 @@ export default function AddLocation () {
             reader.readAsDataURL(file);
         }
     };
-   
 
     const handleSubmit = () => {
         if (!formRef.current) return;
@@ -257,7 +277,19 @@ export default function AddLocation () {
         }
 
         setError(false);
-        fetcher.submit(formRef.current, { method: "post" });
+
+        const formData = new FormData(formRef.current);
+        const allContracts = formData.getAll("contract") as string[];
+        
+        formData.delete("contract");
+        
+        allContracts.forEach(url => {
+            if (url && url.trim() !== "") {
+                formData.append("contract", url.trim());
+            }
+        });
+
+        fetcher.submit(formData, { method: "post" });
     };
 
     const handleDiscard = () => {
@@ -265,10 +297,8 @@ export default function AddLocation () {
 
         isDiscardingRef.current = true;
 
-        // ✅ Reset về giá trị ban đầu thay vì reset rỗng
         const form = formRef.current;
         
-        // Restore từng field về giá trị initial
         for (const [key, value] of initialFormRef.current.entries()) {
             const element = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
             if (element && key !== "image") {
@@ -276,21 +306,21 @@ export default function AddLocation () {
             }
         }
 
-        // Reset image
         const initialImage = initialFormRef.current.get("image")?.toString();
         setPreview(initialImage || null);
         setImageBase64(initialImage || null);
         
-        // Reset visibility
         const initialVisibility = initialFormRef.current.get("visibility")?.toString();
         setClick(initialVisibility === "visible");
         
-        // Reset social media - Đếm số contract URLs ban đầu
         const initialContracts = initialFormRef.current.getAll("contract");
-        const initialCount = Math.max(initialContracts.length, 2); // Ít nhất 2
-        setCountSocial(Array(initialCount).fill({}));
+        const initialCount = Math.max(initialContracts.length, 2);
+
+        setCountSocial(
+            Array.from({ length: initialCount }, () => crypto.randomUUID())
+        );
+        setSocialResetKey(prev => prev + 1);
         
-        // Reset hours về initial
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
         }
@@ -302,6 +332,7 @@ export default function AddLocation () {
             isDiscardingRef.current = false;
         });
     };
+
     return (
         <s-page heading="Dynamic Store Locator">
             <SaveBar id="location-save-bar">
@@ -471,10 +502,10 @@ export default function AddLocation () {
                         </s-stack>
                         <s-stack paddingBlock="small-200" paddingInlineStart="small">
                             {
-                                countSocial.map((item, index) => (
-                                    <s-stack direction="inline" justifyContent="start" gap="small-200" alignItems="center" key = {index} >
+                                countSocial.map(key => (
+                                    <s-stack direction="inline" justifyContent="start" gap="small-200" alignItems="center"  key={`${socialResetKey}-${key}`} >
                                         <s-box inlineSize="33%">
-                                            <s-select >
+                                            <s-select name="social" onChange={checkDirtyAndToggleSaveBar}>
                                                 <s-option value="linkedin">LinkedIn</s-option>
                                                 <s-option value="youtube">Youtube</s-option>
                                                 <s-option value="facebook">Facebook</s-option>
@@ -487,11 +518,10 @@ export default function AddLocation () {
                                                 onInput={checkDirtyAndToggleSaveBar}
                                             />
                                         </s-box>
-                                        <s-button icon="delete" onClick={() => handleRemove(index)}></s-button>
+                                        <s-button icon="delete" onClick={() => handleRemove(key)}></s-button>
                                     </s-stack>
                                 ))
-                            }
-                            
+                            }              
                         </s-stack>
                     </s-stack>
                     <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
@@ -508,7 +538,7 @@ export default function AddLocation () {
                                         <td></td>
                                     </tr>                       
                                     {days.map((item) => (
-                                        <tr>
+                                        <tr key={item}>
                                             <td>{item}</td>
                                             <td>
                                                 <s-text-field

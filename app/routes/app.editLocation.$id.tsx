@@ -89,17 +89,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return {ok: true};
 }
 
+type SocialMedia = {
+    id: string;
+    platform: string;
+    url: string;
+};
+
 export default function EditLocation () {
     const fetcher = useFetcher()
     const {store, filter} = useLoaderData()
     const navigate = useNavigate();
     const shopify = useAppBridge()
     const [click, setClick] = useState(false)
-    const [countSocial, setCountSocial] = useState([{},{}]);
+    const [countSocial, setCountSocial] = useState<SocialMedia[]>([]);
+    const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
     const initialFormRef = useRef<FormData | null>(null);
+    const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -133,7 +141,7 @@ export default function EditLocation () {
                 
                 acc[day] = {
                     disabled: openValue === "close" && closeValue === "close",
-                    valueOpen: openValue ,
+                    valueOpen: openValue,
                     valueClose: closeValue 
                 };
                 return acc;
@@ -141,10 +149,30 @@ export default function EditLocation () {
             
             setDayStatus(loadedDayStatus);
 
-            // Load social media count
-            const socialCount = Object.values(store.contract || {}).reduce((sum: number, arr: any) => sum + arr.length, 0);
-            setCountSocial(socialCount > 0 ? Array(Math.max(socialCount, 2)).fill({}) : [{}, {}]);
+            // ⭐ Load social media vào state
+            const existingSocials: SocialMedia[] = [];
             
+            Object.entries(store.contract || {}).forEach(([platform, urls]: [string, any]) => {
+                urls.forEach((url: string) => {
+                    existingSocials.push({
+                        id: crypto.randomUUID(),
+                        platform: platform,
+                        url: url
+                    });
+                });
+            });
+
+            // Nếu không có social nào, khởi tạo 2 cái rỗng
+            if (existingSocials.length === 0) {
+                existingSocials.push(
+                    { id: crypto.randomUUID(), platform: "facebook", url: "" },
+                    { id: crypto.randomUUID(), platform: "facebook", url: "" }
+                );
+            }
+
+            setCountSocial(existingSocials);
+            initialSocialRef.current = JSON.parse(JSON.stringify(existingSocials));
+                     
             // Đánh dấu đã load xong
             setDataLoaded(true);
         }
@@ -169,10 +197,10 @@ export default function EditLocation () {
 
         let dirty = false;
 
-        // 1. Check FormData (BỎ hours)
+        // 1. Check FormData (BỎ hours và contract)
         const current = new FormData(formRef.current);
         for (const [key, value] of current.entries()) {
-            if (key.endsWith("-open") || key.endsWith("-close") || key === "image") continue;
+            if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
 
             const initialValue = initialFormRef.current.get(key);
             const currentStr = String(value).trim();
@@ -200,6 +228,16 @@ export default function EditLocation () {
             
             if (!!hadInitialImage !== !!hasCurrentImage || 
                 (hadInitialImage && hasCurrentImage && hadInitialImage !== hasCurrentImage)) {
+                dirty = true;
+            }
+        }
+
+        // 4. ⭐ CHECK SOCIAL từ STATE
+        if (!dirty) {
+            const currentSocials = JSON.stringify(countSocial);
+            const initialSocials = JSON.stringify(initialSocialRef.current);
+
+            if (currentSocials !== initialSocials) {
                 dirty = true;
             }
         }
@@ -238,9 +276,17 @@ export default function EditLocation () {
     }, [imageBase64, isInitialized]);
 
     useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [countSocial, isInitialized]);
+
+    useEffect(() => {
         if (fetcher.data?.ok && formRef.current) {
+            // Update initial refs sau khi save thành công
             initialFormRef.current = new FormData(formRef.current);
             initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
+            
             shopify.toast.show('Store updated successfully!')
             shopify.saveBar.hide("location-edit-bar");
         }
@@ -255,15 +301,17 @@ export default function EditLocation () {
     };
     
     const handleAdd = () => {
-        const newItem = {};
+        const newItem: SocialMedia = {
+            id: crypto.randomUUID(),
+            platform: "facebook",
+            url: ""
+        };
         setCountSocial([...countSocial, newItem]);
-        setTimeout(checkDirtyAndToggleSaveBar);
     }
 
-    const handleRemove = (index: number) => {
-        const newArr =  countSocial.filter((_,i) => i !== index)
-        setCountSocial(newArr)
-        setTimeout(checkDirtyAndToggleSaveBar);
+    const handleRemove = (id: string) => {
+        const newArr = countSocial.filter(item => item.id !== id);
+        setCountSocial(newArr);
     }
 
     const handleClick = () => {
@@ -326,10 +374,9 @@ export default function EditLocation () {
         const initialVisibility = initialFormRef.current.get("visibility")?.toString();
         setClick(initialVisibility === "visible");
         
-        // Reset social media
-        const initialContracts = initialFormRef.current.getAll("contract");
-        const initialCount = Math.max(initialContracts.length, 2);
-        setCountSocial(Array(initialCount).fill({}));
+        // Reset social media về initial và force re-render
+        setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
+        setSocialResetKey(prev => prev + 1);
         
         // Reset hours về initial
         if (initialHoursRef.current) {
@@ -562,49 +609,27 @@ export default function EditLocation () {
                         </s-stack>
                         <s-stack paddingBlock="small-200" paddingInlineStart="small">
                             {
-                                Object.entries(store.contract || {}).flatMap(([key, values]: [string, any]) =>
-                                    values.map((value: string, index: number) => (
-                                        <s-stack
-                                            direction="inline" 
-                                            justifyContent="start" 
-                                            gap="small-200" 
-                                            alignItems="center"
-                                            key={`${key}-${index}`}
-                                        >
-                                            <s-box inlineSize="33%">
-                                                <s-select value={key}>
-                                                    <s-option value="linkedin">LinkedIn</s-option>
-                                                    <s-option value="youtube">Youtube</s-option>
-                                                    <s-option value="facebook">Facebook</s-option>
-                                                </s-select>
-                                            </s-box>
-                                            <s-box inlineSize="33%">
-                                                <s-text-field 
-                                                    name="contract"
-                                                    defaultValue={value}
-                                                    onInput={checkDirtyAndToggleSaveBar}
-                                                />
-                                            </s-box>
-                                            <s-button 
-                                                icon="delete" 
-                                                onClick={() => handleRemove(index)}
-                                            />
-                                        </s-stack>
-                                    ))
-                                )
-                            }
-                            
-                            {
-                                countSocial.slice(Object.values(store.contract || {}).flat().length).map((item, index) => (
+                                countSocial.map((item) => (
                                     <s-stack
                                         direction="inline" 
                                         justifyContent="start" 
                                         gap="small-200" 
                                         alignItems="center"
-                                        key={`new-${index}`}
+                                        key={`${socialResetKey}-${item.id}`}
                                     >
                                         <s-box inlineSize="33%">
-                                            <s-select>
+                                            <s-select 
+                                                value={item.platform}
+                                                onChange={(e: any) => {
+                                                    setCountSocial(prev => 
+                                                        prev.map(social => 
+                                                            social.id === item.id 
+                                                                ? {...social, platform: e.target.value}
+                                                                : social
+                                                        )
+                                                    );
+                                                }}
+                                            >
                                                 <s-option value="linkedin">LinkedIn</s-option>
                                                 <s-option value="youtube">Youtube</s-option>
                                                 <s-option value="facebook">Facebook</s-option>
@@ -613,13 +638,21 @@ export default function EditLocation () {
                                         <s-box inlineSize="33%">
                                             <s-text-field 
                                                 name="contract"
-                                                defaultValue=""
-                                                onInput={checkDirtyAndToggleSaveBar}
+                                                value={item.url}
+                                                onInput={(e: any) => {
+                                                    setCountSocial(prev => 
+                                                        prev.map(social => 
+                                                            social.id === item.id 
+                                                                ? {...social, url: e.target.value}
+                                                                : social
+                                                        )
+                                                    );
+                                                }}
                                             />
                                         </s-box>
                                         <s-button 
                                             icon="delete" 
-                                            onClick={() => handleRemove(Object.values(store.contract || {}).flat().length + index)}
+                                            onClick={() => handleRemove(item.id)}
                                         />
                                     </s-stack>
                                 ))
