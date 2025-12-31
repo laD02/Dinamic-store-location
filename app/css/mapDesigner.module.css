@@ -75,10 +75,6 @@
     font-size: 8px;
 }
 
-.inforItem:hover {
-    background-color: rgb(237, 233, 233);
-}
-
 .click {
     background-color: rgb(210, 207, 207);
 }

@@ -131,6 +131,15 @@ export default function MapDesigners() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Trigger map resize when switching layout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 150);
+    
+    return () => clearTimeout(timer);
+  }, [isMobile]);
+
   useEffect(() => {
     if (fetcher.data?.ok) {
       shopify.toast.show("Map designer saved!");
@@ -283,67 +292,28 @@ export default function MapDesigners() {
             position: 'relative'
           }}
         >
-          <s-stack>
-            <MapDesigner
-              config={{ theme, popup }}
-              onThemeChange={(v) => {
-                setTheme(v);
-                if (isConfigChanged(v, popup)) {
-                  shopify.saveBar.show(SAVE_BAR_ID);
-                } else {
-                  shopify.saveBar.hide(SAVE_BAR_ID);
-                }
-              }}
-              onPopupChange={(v) => {
-                setPopup(v);
-                if (isConfigChanged(theme, v)) {
-                  shopify.saveBar.show(SAVE_BAR_ID);
-                } else {
-                  shopify.saveBar.hide(SAVE_BAR_ID);
-                }
-              }}
-            />
+          <MapDesigner
+            config={{ theme, popup }}
+            onThemeChange={(v) => {
+              setTheme(v);
+              if (isConfigChanged(v, popup)) {
+                shopify.saveBar.show(SAVE_BAR_ID);
+              } else {
+                shopify.saveBar.hide(SAVE_BAR_ID);
+              }
+            }}
+            onPopupChange={(v) => {
+              setPopup(v);
+              if (isConfigChanged(theme, v)) {
+                shopify.saveBar.show(SAVE_BAR_ID);
+              } else {
+                shopify.saveBar.hide(SAVE_BAR_ID);
+              }
+            }}
+          />
 
-            <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
-            <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
-          </s-stack>  
-          
-          <s-stack 
-            padding="base" 
-            background="base" 
-            gap="small-500" 
-            borderRadius="large-100" 
-            borderWidth="small"
-          >
-            <div
-              className={styles.inforItem}
-              style={{
-                border: `1px solid ${theme.secondaryColor}`
-              }}
-            >
-              <h4 style={{
-                color: theme.primaryColor, 
-                fontFamily: theme.primaryFont, 
-                whiteSpace: "normal", 
-                wordBreak: "break-word"
-              }}>
-                Apple Park
-              </h4>
-              <p style={{
-                color: theme.primaryColor, 
-                fontFamily: theme.secondaryFont
-              }}>
-                1 Apple Park Way, Cupertino, CA 95014, USA<br/>
-              </p>
-              <p style={{
-                color: theme.secondaryColor
-              }}>
-                +1 408-996-1010
-              </p>
-              <s-stack direction="inline" justifyContent="start" gap="small-500">
-              </s-stack>
-            </div>
-          </s-stack>
+          <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
+          <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
         </div>
 
         {/* Resize Handle - Desktop Only */}
@@ -374,21 +344,74 @@ export default function MapDesigners() {
           </div>
         )}
 
-        {/* Right Column - Map */}
+        {/* Right Column - Info Item + Map */}
         <div 
           style={{
             width: isMobile ? '100%' : `${100 - leftWidth}%`,
             flexShrink: 0,
-            minHeight: '500px',
-            height: isMobile ? '500px' : 'auto'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            minHeight: isMobile ? '500px' : 'auto'
           }}
         >
-          <MapGoogle 
-            stores={stores ?? []} 
-            selectedIndex={selectedIndex}  
-            searchAddress={searchAddress}
-            popupStyle={popup}
-          />
+          {/* Info Item - Always on top */}
+          <div style={{ flexShrink: 0 }}>
+            <s-stack 
+              padding="base" 
+              background="base" 
+              gap="small-500" 
+              borderRadius="large-100" 
+              borderWidth="small"
+            >
+              <div
+                className={styles.inforItem}
+                style={{
+                  border: `1px solid ${theme.secondaryColor}`
+                }}
+              >
+                <h4 style={{
+                  color: theme.primaryColor, 
+                  fontFamily: theme.primaryFont, 
+                  whiteSpace: "normal", 
+                  wordBreak: "break-word"
+                }}>
+                  Apple Park
+                </h4>
+                <p style={{
+                  color: theme.primaryColor, 
+                  fontFamily: theme.secondaryFont
+                }}>
+                  1 Apple Park Way, Cupertino, CA 95014, USA<br/>
+                </p>
+                <p style={{
+                  color: theme.secondaryColor
+                }}>
+                  +1 408-996-1010
+                </p>
+                <s-stack direction="inline" justifyContent="start" gap="small-500">
+                </s-stack>
+              </div>
+            </s-stack>
+          </div>
+          
+          {/* Map - Below info item */}
+          <div style={{
+            height: isMobile ? '450px' : '500px',
+            minHeight: isMobile ? '450px' : '500px',
+            flex: isMobile ? '0 0 auto' : 1,
+            width: '100%',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <MapGoogle 
+              key={isMobile ? 'mobile-map' : 'desktop-map'}
+              stores={stores ?? []} 
+              selectedIndex={selectedIndex}  
+              searchAddress={searchAddress}
+              popupStyle={popup}
+            />
+          </div>
         </div>
       </div>
     </s-page> 

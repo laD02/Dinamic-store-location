@@ -360,7 +360,7 @@ export default function AddLocation () {
                             background="strong" 
                             borderRadius="small-100" 
                             blockSize="50%"
-                            onClick={() => navigate(-1)}
+                            onClick={() => navigate('/app/allLocation')}
                             padding="small-300"
                         >
                             <s-icon type="arrow-left"/>

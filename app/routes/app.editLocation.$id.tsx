@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (actionType === "deleteId") {
         const id = formData.get("id") as string;
         await prisma.store.delete({ where: { id } });
-        return redirect("/app?message=deleted");
+        return redirect("/app/allLocation?message=deleted");
     }
 
     urls.forEach((url) => {
@@ -303,7 +303,7 @@ export default function EditLocation () {
     const handleAdd = () => {
         const newItem: SocialMedia = {
             id: crypto.randomUUID(),
-            platform: "facebook",
+            platform: "linkedin",
             url: ""
         };
         setCountSocial([...countSocial, newItem]);
@@ -427,7 +427,7 @@ export default function EditLocation () {
                             background="strong" 
                             borderRadius="small-100" 
                             blockSize="50%"
-                            onClick={() => navigate(-1)}
+                            onClick={() => navigate('/app/allLocation')}
                             padding="small-300"
                         >
                             <s-icon type="arrow-left"/>

@@ -77,6 +77,21 @@ export default function AllLocation() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const shopify = useAppBridge()
+  const [windowWidth, setWindowWidth] = useState(0);
+
+  useEffect(() => {
+    // Lấy width lần đầu
+    setWindowWidth(window.innerWidth);
+
+    // Update khi resize
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ✅ Đọc message từ URL - chỉ chạy 1 lần khi mount
   useEffect(() => {
@@ -224,7 +239,10 @@ export default function AllLocation() {
         <h2>
           All Locations
         </h2>
-        <s-stack direction="inline" gap="base">
+        {
+          windowWidth > 768 
+          ? 
+          <s-stack direction="inline" gap="base">
             <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} >Export</s-button> 
             <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete">Delete</s-button>
             <s-modal id="deleteTrash-modal" heading="Delete Location">
@@ -250,20 +268,58 @@ export default function AllLocation() {
               >
                   Delete 
               </s-button>
-          </s-modal>
-          <Link to="/app/addLocation" >
-            <s-button variant="primary" icon="plus-circle">Add Product</s-button>
-          </Link>
-        </s-stack>
+            </s-modal>
+            <Link to="/app/addLocation" >
+              <s-button variant="primary" icon="plus-circle">Add Product</s-button>
+            </Link>
+          </s-stack> 
+          :
+          <s-stack direction="inline" justifyContent="end" gap="base">
+            <s-button icon="menu-horizontal" commandFor="btn-group"></s-button>
+            <s-popover id="btn-group">
+              <s-stack direction="block">
+                <s-button variant="tertiary" disabled={!hasChecked} icon="export" onClick={handleExport} >Export</s-button> 
+                <s-button variant="tertiary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete">Delete</s-button>
+                <s-modal id="deleteTrash-modal" heading="Delete Location">
+                  <s-text>
+                      Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
+                  </s-text>
+                  <s-button
+                      slot="secondary-actions"
+                      variant="secondary"
+                      commandFor="deleteTrash-modal"
+                      command="--hide"
+                  >
+                      Cancel
+                  </s-button>
+
+                  <s-button
+                      slot="primary-action"
+                      variant="primary"
+                      tone="critical"
+                      commandFor="deleteTrash-modal"
+                      command="--hide"
+                      onClick={() => handleDelete()}
+                  >
+                      Delete 
+                  </s-button>
+                </s-modal>
+              </s-stack>
+            </s-popover>
+            <Link to="/app/addLocation" >
+              <s-button variant="primary" icon="plus-circle"></s-button>
+            </Link>
+          </s-stack>
+        }
       </s-stack>
 
       <s-stack background="base" borderRadius="large-100" >
         <s-table 
-          paginate 
-          hasPreviousPage={currentPage > 1}  // Thay vì filteredStores.length > 5
-          hasNextPage={currentPage < totalPages}  // Thay vì filteredStores.length > 5
-          onPreviousPage={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-          onNextPage={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+          // paginate
+          // hasPreviousPage={currentPage > 1}  
+          // hasNextPage={currentPage < totalPages}  
+          // onPreviousPage={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+          // onNextPage={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
         >
           <s-grid slot="filters" gap="small-200" gridTemplateColumns="1fr auto">
             <s-text-field
@@ -289,7 +345,7 @@ export default function AllLocation() {
             </s-tooltip>
             <s-popover id="sort-actions">
               <s-stack gap="none">
-                <s-box padding="small">
+                {/* <s-box padding="small">
                   Source
                   {["Manual", "Faire", "National Retailer", "Shopify B2B"].map((src, index) => (
                   <s-checkbox 
@@ -306,7 +362,7 @@ export default function AllLocation() {
                     }}
                   />
                 ))}
-                </s-box>
+                </s-box> */}
                 <s-divider />
                 <s-box padding="small">
                   <s-choice-list 
@@ -334,7 +390,7 @@ export default function AllLocation() {
           {
             filteredStores.length !== 0 ? (
               <>
-                {hasChecked && (
+                {hasChecked && windowWidth >= 490 && (
                   <s-table-header-row>
                     <s-table-header listSlot="primary">
                       <s-stack direction="inline" gap="small" alignItems="center">
@@ -344,11 +400,11 @@ export default function AllLocation() {
                         />
                       </s-stack>
                     </s-table-header>
-                    <s-table-header listSlot="kicker"></s-table-header>
+                    {/* <s-table-header listSlot="kicker"></s-table-header> */}
                     <s-table-header listSlot="inline"><s-text>{checkedRowCount} selected</s-text></s-table-header>
                     <s-table-header listSlot="labeled"></s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
+                    {/* <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header> */}
                     <s-table-header listSlot="labeled">
                       <s-button onClick={() => updateVisibility("visible")}>
                         Set As Visible
@@ -371,12 +427,12 @@ export default function AllLocation() {
                         onChange={selectAllVisible}
                       />
                     </s-table-header>
-                    <s-table-header listSlot="kicker">No</s-table-header>
+                    {/* <s-table-header listSlot="kicker">No</s-table-header> */}
                     <s-table-header listSlot="inline">Store Name</s-table-header>
-                    <s-table-header listSlot="labeled">Source</s-table-header>
-                    <s-table-header listSlot="labeled">Map Maker</s-table-header>
-                    {/* <s-table-header listSlot="labeled">Tags</s-table-header> */}
                     <s-table-header listSlot="labeled">Visibility</s-table-header>
+                    {/* <s-table-header listSlot="labeled">Source</s-table-header> */}
+                    {/* <s-table-header listSlot="labeled">Map Maker</s-table-header> */}
+                    {/* <s-table-header listSlot="labeled">Tags</s-table-header> */}
                     <s-table-header listSlot="labeled">Added</s-table-header>
                     <s-table-header listSlot="labeled">Update</s-table-header>
                     <s-table-header listSlot="labeled"></s-table-header>
@@ -388,25 +444,31 @@ export default function AllLocation() {
                     currentStores.map((store, index) => (
                       <s-table-row key={store.id}>
                         <s-table-cell>
+                          <s-stack direction="inline" justifyContent="start" gap="small" alignItems="center">
                           <s-checkbox 
                             checked={selectedIds.has(store.id)}
                             onChange={() => toggleSelect(store.id)}
                           />
+                          <s-thumbnail src={store.image || ''}  size="small"/>
+                          </s-stack>
                         </s-table-cell>
-                        <s-table-cell>{index + 1}</s-table-cell>
+                        {/* <s-table-cell>{index + 1}</s-table-cell> */}
                         <s-table-cell>
                           <s-link href={`/app/editLocation/${store.id}`}>  
-                            <s-box>{store.storeName}</s-box>
+                            <s-box><s-text type="strong">{store.storeName}</s-text></s-box>
                             <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
                           </s-link>
                         </s-table-cell>
                         <s-table-cell>
+                          <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
+                        </s-table-cell>
+                        {/* <s-table-cell>
                           <s-badge tone="info">{store.source}</s-badge>
                         </s-table-cell>
                         <s-table-cell>
                           <s-icon type="location"/>
                         </s-table-cell>
-                        {/* <s-table-cell>
+                        <s-table-cell>
                           <s-tooltip id={`tags-${index}`}>
                             <s-text>
                               {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
@@ -420,9 +482,6 @@ export default function AllLocation() {
                             </div>
                           </s-text>
                         </s-table-cell> */}
-                        <s-table-cell>
-                          <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
-                        </s-table-cell>
                         <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>
@@ -488,6 +547,31 @@ export default function AllLocation() {
             )
           }        
         </s-table>
+        <s-stack
+          direction="inline"
+          justifyContent="center"
+          gap="small"
+          background="subdued"
+          paddingBlock="small-200"
+        >
+          <s-button
+            variant="secondary"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => p - 1)}
+            icon="caret-left"
+          >
+            
+          </s-button>
+
+          <s-button
+            variant="secondary"
+            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() => setCurrentPage(p => p + 1)}
+            icon="caret-right"
+          >
+  
+          </s-button>
+        </s-stack>
       </s-stack>
     </s-page>
   );
