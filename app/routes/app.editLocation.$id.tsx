@@ -165,8 +165,8 @@ export default function EditLocation () {
             // Nếu không có social nào, khởi tạo 2 cái rỗng
             if (existingSocials.length === 0) {
                 existingSocials.push(
-                    { id: crypto.randomUUID(), platform: "facebook", url: "" },
-                    { id: crypto.randomUUID(), platform: "facebook", url: "" }
+                    { id: crypto.randomUUID(), platform: "linkedin", url: "" },
+                    { id: crypto.randomUUID(), platform: "linkedin", url: "" }
                 );
             }
 
