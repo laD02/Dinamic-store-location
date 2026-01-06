@@ -125,7 +125,18 @@ function showOverlay(store, marker) {
             this.div = null;
         }
 
+        
+
         onAdd() {
+            const icons = {
+                facebook: 'fa-facebook',
+                youtube: 'fa-youtube',
+                linkedin: 'fa-linkedin',
+                instagram: 'fa-square-instagram',
+                x: 'fa-square-x-twitter',
+                pinterest: 'fa-pinterest',
+                tiktok: 'fa-tiktok'
+            }
             // Tạo div container
             this.div = document.createElement('div');
             this.div.style.position = 'absolute';
@@ -144,28 +155,48 @@ function showOverlay(store, marker) {
                     max-width: 300px;
                     position: relative;
                 ">
+                    <button onclick="closeOverlay()" style="
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: transparent;
+                        border: none;
+                        color: ${mapStyle.color};
+                        font-size: 20px;
+                        cursor: pointer;
+                        padding: 0;
+                        width: 24px;
+                        height: 24px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0.7;
+                        transition: opacity 0.2s;
+                    " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+                        ×
+                    </button>
                     ${this.store.image ? `
                         <img src="${this.store.image}" 
                              alt="${this.store.name}" 
                              style=" width: 100%; height: 40px; object-fit: contain; border-radius: 8px;" />
                     ` : ''}
                     <div style= "display: flex; justify-content: center">
-                        <h3 style="margin: 0 0 4px 0; font-size: 12px; color: ${mapStyle.color}; font-weight: 600">
+                        <h3 style="margin: 0 0 4px 0; font-size: 16px; color: ${mapStyle.color}; font-weight: 600">
                             ${this.store.storeName}
                         </h3>
                     </div>
-                    <p style="margin: 0 0 4px 0; color: ${mapStyle.color}; font-size: 8px; line-height: 1.5;">
+                    <p style="margin: 0 0 4px 0; color: ${mapStyle.color}; font-size: 12px; line-height: 1.5;">
                         ${this.store.address || ''}, ${this.store.city}, ${this.store.state}, ${this.store.code}
                     </p>
                     ${this.store.phone ? `
-                        <p style="margin: 0; color: ${mapStyle.color}; font-size: 8px">
+                        <p style="margin: 0; color: ${mapStyle.color}; font-size: 12px">
                             <i class="fa-solid fa-phone" style="margin-right: 4px; color: ${mapStyle.iconColor};"></i>
                             ${this.store.phone}
                         </p>
                     ` : ''}                  
                     <div style="display: flex; justify-content: flex-start;margin-top:4px;">
                         <i class="fa-solid fa-clock" style="margin-right: 4px; color: ${mapStyle.iconColor}"></i>
-                        <div style="font-size: 8px;">
+                        <div style="font-size: 12px;">
                             <p>
                             Mon ${
                                 this.store.time.mondayClose === 'close' || this.store.time.mondayOpen === 'close'
@@ -221,9 +252,22 @@ function showOverlay(store, marker) {
                                 : `${this.store.time.sundayOpen} - ${this.store.time.sundayClose}`
                             }
                             </p>
-                        </div>
+                        </div>               
                     </div>
-            `;
+                    <div style="margin-top: 4px;display: flex; justify-content: center; gap: 4px; align-item: center; ">               
+                        ${
+                            Object.entries(this.store.contract)
+                                .map(([platform, items]) =>
+                                items.map((href) => `
+                                    <a href="${href}" target="_blank" style="margin-right:4px; color: ${mapStyle.iconColor}; font-size: 16px;">
+                                        <i class="fa-brands ${icons[platform]}"></i>
+                                    </a>
+                                `).join('')
+                                )
+                                .join('')
+                        }
+                    </div>
+                `;
             
             // Thêm vào pane
             const panes = this.getPanes();

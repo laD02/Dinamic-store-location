@@ -68,6 +68,16 @@ model Style {
   updatedAt       DateTime @default(now()) @updatedAt
 }
 
+model GeocodeCache {
+  id        String   @id @default(cuid())
+  address   String   @unique // Địa chỉ đã normalize
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hitCount  Int      @default(0) // Số lần cache được dùng
+}
+
 model OnBoard {
   id              String @id @default(cuid())
   shop            String @unique

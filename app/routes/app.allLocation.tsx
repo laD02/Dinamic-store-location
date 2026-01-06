@@ -398,13 +398,10 @@ export default function AllLocation() {
                           onChange={selectAllVisible}
                           checked={allVisibleSelected}
                         />
+                        {checkedRowCount} selected
                       </s-stack>
                     </s-table-header>
-                    {/* <s-table-header listSlot="kicker"></s-table-header> */}
-                    <s-table-header listSlot="inline"><s-text>{checkedRowCount} selected</s-text></s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
-                    {/* <s-table-header listSlot="labeled"></s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header> */}
+                    <s-table-header listSlot="inline"></s-table-header>
                     <s-table-header listSlot="labeled">
                       <s-button onClick={() => updateVisibility("visible")}>
                         Set As Visible
@@ -416,27 +413,25 @@ export default function AllLocation() {
                       </s-button>
                     </s-table-header>
                     <s-table-header listSlot="labeled"></s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
                   </s-table-header-row>
                 )}
                 {!hasChecked && (
                   <s-table-header-row>
                     <s-table-header listSlot="primary">
-                      <s-checkbox 
-                        checked={allVisibleSelected}
-                        onChange={selectAllVisible}
-                      />
+                      <s-stack direction="inline" gap="base">      
+                        <s-checkbox 
+                          checked={allVisibleSelected}
+                          onChange={selectAllVisible}
+                        />
+                        StoreName
+                      </s-stack>
                     </s-table-header>
-                    {/* <s-table-header listSlot="kicker">No</s-table-header> */}
-                    <s-table-header listSlot="inline">Store Name</s-table-header>
+                    {/* <s-table-header listSlot="labeled">Address</s-table-header>
+                    <s-table-header listSlot="labeled">City</s-table-header> */}
                     <s-table-header listSlot="labeled">Visibility</s-table-header>
-                    {/* <s-table-header listSlot="labeled">Source</s-table-header> */}
-                    {/* <s-table-header listSlot="labeled">Map Maker</s-table-header> */}
-                    {/* <s-table-header listSlot="labeled">Tags</s-table-header> */}
-                    <s-table-header listSlot="labeled">Added</s-table-header>
+                    <s-table-header listSlot="labeled">Created</s-table-header>
                     <s-table-header listSlot="labeled">Update</s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled">Actions</s-table-header>
                   </s-table-header-row> 
                 )}
                 <s-table-body>
@@ -444,20 +439,17 @@ export default function AllLocation() {
                     currentStores.map((store, index) => (
                       <s-table-row key={store.id}>
                         <s-table-cell>
-                          <s-stack direction="inline" justifyContent="start" gap="small" alignItems="center">
-                          <s-checkbox 
-                            checked={selectedIds.has(store.id)}
-                            onChange={() => toggleSelect(store.id)}
-                          />
-                          <s-thumbnail src={store.image || ''}  size="small"/>
+                          <s-stack direction="inline" alignItems="center" gap="base">
+                            <s-checkbox 
+                              checked={selectedIds.has(store.id)}
+                              onChange={() => toggleSelect(store.id)}
+                            />
+                            <s-thumbnail src={store.image || ''}  size="small"/>
+                            <s-link href={`/app/editLocation/${store.id}`}>  
+                              <s-box>{store.storeName}</s-box>
+                              <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
+                            </s-link>
                           </s-stack>
-                        </s-table-cell>
-                        {/* <s-table-cell>{index + 1}</s-table-cell> */}
-                        <s-table-cell>
-                          <s-link href={`/app/editLocation/${store.id}`}>  
-                            <s-box><s-text type="strong">{store.storeName}</s-text></s-box>
-                            <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
-                          </s-link>
                         </s-table-cell>
                         <s-table-cell>
                           <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
@@ -485,43 +477,43 @@ export default function AllLocation() {
                         <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>
-                          <s-button 
-                            variant="tertiary" 
-                            icon="delete"
-                            commandFor={`deleteId-modal-${store.id}`}
-                          >
-                          </s-button>
-                          <s-modal id={`deleteId-modal-${store.id}`} heading="Delete Location">
-                            <s-text>
-                                Are you sure you want to delete this store? This action cannot be undone.
-                            </s-text>
-
-                            <s-button
-                              slot="secondary-actions"
-                              variant="secondary"
+                          <s-stack direction="inline" alignItems="center" gap="small">
+                            <s-button 
+                              variant="tertiary" 
+                              icon="delete"
                               commandFor={`deleteId-modal-${store.id}`}
-                              command="--hide"
                             >
-                              Cancel
                             </s-button>
+                            <s-modal id={`deleteId-modal-${store.id}`} heading="Delete Location">
+                              <s-text>
+                                  Are you sure you want to delete this store? This action cannot be undone.
+                              </s-text>
 
-                            <s-button
-                              slot="primary-action"
-                              variant="primary"
-                              tone="critical"
-                              commandFor={`deleteId-modal-${store.id}`}
-                              command="--hide"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleDeleteTrash(store.id);
-                              }}
-                            >
-                              Delete 
-                            </s-button>
-                        </s-modal>
-                        </s-table-cell>
-                        <s-table-cell>
-                          <s-link href={`/app/editLocation/${store.id}`}>Edit</s-link>
+                              <s-button
+                                slot="secondary-actions"
+                                variant="secondary"
+                                commandFor={`deleteId-modal-${store.id}`}
+                                command="--hide"
+                              >
+                                Cancel
+                              </s-button>
+
+                              <s-button
+                                slot="primary-action"
+                                variant="primary"
+                                tone="critical"
+                                commandFor={`deleteId-modal-${store.id}`}
+                                command="--hide"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleDeleteTrash(store.id);
+                                }}
+                              >
+                                Delete 
+                              </s-button>
+                            </s-modal>
+                            <s-link href={`/app/editLocation/${store.id}`}>Edit</s-link>
+                          </s-stack>
                         </s-table-cell>
                       </s-table-row> 
                     ))

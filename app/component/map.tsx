@@ -218,6 +218,11 @@ export default function MapGoogle({
                   </tbody>
                 </table>
               </div>
+              <div style={{marginTop:'4px'}}>
+                <i style={{color: popupStyle.iconColor}} className="fa-brands fa-linkedin"></i>
+                <i style={{color: popupStyle.iconColor}} className="fa-brands fa-youtube"></i>
+                <i style={{color: popupStyle.iconColor}} className="fa-brands fa-facebook"></i>
+              </div>
             </div>
           </OverlayView>
         )}

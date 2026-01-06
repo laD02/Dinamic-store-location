@@ -4,6 +4,7 @@ import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
 import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { authenticate } from "../shopify.server";
+import { uploadImageToCloudinary } from "app/utils/upload.server";
 
 export async function loader({request}:LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -14,6 +15,7 @@ export async function action({request}: ActionFunctionArgs) {
     const formData = await request.formData();
     const contract: Record<string, string[]> = {};
     const urls = formData.getAll("contract") as string[];
+    const imageBase64 = formData.get("image")?.toString() ?? "";
     const address = formData.get("address")?.toString() ?? "";
     const location = await getLatLngFromAddress(address);
     const tagsString = formData.get("tags")?.toString() ?? "";
@@ -21,23 +23,36 @@ export async function action({request}: ActionFunctionArgs) {
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
     
+    let imageUrl = "";
+    if (imageBase64) {
+        const uploadedUrl = await uploadImageToCloudinary(imageBase64);
+        imageUrl = uploadedUrl ?? "";
+    }
+
     urls.forEach((url) => {
         const lower = url.toLowerCase();
-        if (lower.includes("facebook")) {
-        if (!contract.facebook) contract.facebook = [];
-        contract.facebook.push(url);
-        } else if (lower.includes("youtube")) {
-        if (!contract.youtube) contract.youtube = [];
-        contract.youtube.push(url);
-        } else if (lower.includes("linkedin")) {
-        if (!contract.linkedin) contract.linkedin = [];
-        contract.linkedin.push(url);
-        } else {
-        // fallback cho social khác
-        const key = "other";
-        if (!contract[key]) contract[key] = [];
-        contract[key].push(url);
-        }
+        if (lower.includes("facebook.com")) {
+            if (!contract.facebook) contract.facebook = [];
+            contract.facebook.push(url);
+        } else if (lower.includes("youtube.com")) {
+            if (!contract.youtube) contract.youtube = [];
+            contract.youtube.push(url);
+        } else if (lower.includes("linkedin.com")) {
+            if (!contract.linkedin) contract.linkedin = [];
+            contract.linkedin.push(url);
+        } else if (lower.includes("instagram.com")) {
+            if (!contract.instagram) contract.instagram = [];
+            contract.instagram.push(url);
+        } else if (lower.includes("x.com")) {
+            if (!contract.x) contract.x = [];
+            contract.x.push(url);
+        } else if (lower.includes("pinterest.com")) {
+            if (!contract.pinterest) contract.pinterest = [];
+            contract.pinterest.push(url)
+        } else if (lower.includes("tiktok.com")) {
+            if (!contract.tiktok) contract.tiktok = [];
+            contract.tiktok.push(url)
+        } 
     });
 
     await prisma.store.create({
@@ -49,7 +64,7 @@ export async function action({request}: ActionFunctionArgs) {
             state: formData.get("state")?.toString() ?? "",
             code: formData.get("code")?.toString() ?? "",
             phone: formData.get("phone")?.toString() ?? "",
-            image: formData.get("image")?.toString() ?? "",
+            image: imageUrl,
             directions: formData.get("directions")?.toString() ?? "",
             contract,
             source: formData.get('source')?.toString() ?? "Manual",
@@ -500,7 +515,7 @@ export default function AddLocation () {
                             </s-stack>
                             <s-paragraph>Customize your location information</s-paragraph>
                         </s-stack>
-                        <s-stack paddingBlock="small-200" paddingInlineStart="small">
+                        <s-stack paddingBlock="small-200" paddingInlineStart="small" gap="small-400">
                             {
                                 countSocial.map(key => (
                                     <s-stack direction="inline" justifyContent="start" gap="small-200" alignItems="center"  key={`${socialResetKey}-${key}`} >
@@ -509,6 +524,10 @@ export default function AddLocation () {
                                                 <s-option value="linkedin">LinkedIn</s-option>
                                                 <s-option value="youtube">Youtube</s-option>
                                                 <s-option value="facebook">Facebook</s-option>
+                                                <s-option value="instagram">Instagram</s-option>
+                                                <s-option value="x">X</s-option>
+                                                <s-option value="pinterest">Pinterest</s-option>
+                                                <s-option value="tiktok">Tiktok</s-option>
                                             </s-select>
                                         </s-box>
                                         <s-box inlineSize="33%">
