@@ -52,7 +52,7 @@
 
 #sl-address {
   width: 100%;
-  padding: 12px 12px 12px 40px;
+  padding: 12px 12px 12px 12px;
   /* Space for icon */
   border-radius: 99px;
   /* Pill shape */
@@ -110,6 +110,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-top: 4px;
   padding-right: 4px;
   /* Space for scrollbar */
   padding-bottom: 10px;
