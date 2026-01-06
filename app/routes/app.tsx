@@ -5,6 +5,7 @@ import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { createApp } from '@shopify/app-bridge';
 import { authenticate } from "../shopify.server";
 import { useEffect, useState } from "react";
+import { useAppBridge } from "@shopify/app-bridge-react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -16,6 +17,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
+  const shopify = useAppBridge();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Khi loader trả dữ liệu, tắt initial loading
@@ -29,6 +31,11 @@ export default function App() {
     isInitialLoading || navigation.state === "loading" || navigation.state === "submitting";
 
   useEffect(() => {
+    if (!shopify) return;
+    shopify.loading(isLoading);
+  }, [isLoading, shopify]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return; // Avoid SSR crash
 
     const url = new URL(window.location.href);
@@ -37,7 +44,6 @@ export default function App() {
       console.warn("Missing host param, Shopify may force redirect.");
       return;
     }
-
     createApp({
       apiKey,
       host,
@@ -71,8 +77,7 @@ export default function App() {
             </s-text>
           </s-stack>
         </>
-      )}
-      
+      )} 
     </AppProvider>
   );
 }

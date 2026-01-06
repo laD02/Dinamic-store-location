@@ -415,10 +415,10 @@ export default function AddLocation () {
                     value={click ? "visible" : "hidden"}
                 />
                 <s-stack gap="large-100">
-                    <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
-                        <s-stack padding="small-200">
+                    <s-section>                      
+                        <s-stack>
                             <s-stack direction="inline" justifyContent="space-between">
-                                <s-text type="strong">Location Information</s-text>
+                                <s-heading>Location Information</s-heading>
                                 <s-badge tone="info">Manual</s-badge>                               
                             </s-stack>
                             <s-paragraph >Customize your location information</s-paragraph>
@@ -506,14 +506,14 @@ export default function AddLocation () {
                                 onInput={checkDirtyAndToggleSaveBar}
                             />
                         </s-stack>
-                    </s-stack>
-                    <s-stack background="base" padding="small-200" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
-                        <s-stack padding="small-200">
-                            <s-stack direction="inline" justifyContent="space-between">
-                                <s-text type="strong">Social Media</s-text>
-                                <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
+                    </s-section>
+                    <s-section >
+                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                            <s-stack >
+                                <s-heading>Social Media</s-heading>
+                                <s-paragraph>Customize your location information</s-paragraph>
                             </s-stack>
-                            <s-paragraph>Customize your location information</s-paragraph>
+                            <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
                         </s-stack>
                         <s-stack paddingBlock="small-200" paddingInlineStart="small" gap="small-400">
                             {
@@ -542,10 +542,10 @@ export default function AddLocation () {
                                 ))
                             }              
                         </s-stack>
-                    </s-stack>
-                    <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                    </s-section>
+                    <s-section>
                         <s-box>
-                            <s-text type="strong">Hours of Operation</s-text>
+                            <s-heading>Hours of Operation</s-heading>
                         </s-box>
                         <s-stack paddingInline="small">
                             <table>
@@ -593,10 +593,10 @@ export default function AddLocation () {
                                 </tbody>
                             </table>
                         </s-stack>
-                    </s-stack>   
-                    <s-stack background="base" padding="base" borderRadius="large-100" borderStyle="solid" borderColor="subdued">
+                    </s-section>   
+                    <s-section>
                         <s-box>
-                            <s-text type="strong">Add a logo for this location</s-text>                                          
+                            <s-heading>Add a logo for this location</s-heading>                                          
                             <s-paragraph>Customize your location information</s-paragraph>  
                         </s-box>
                         <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
@@ -641,7 +641,7 @@ export default function AddLocation () {
                             />
                             <input type="hidden" name="image" value={imageBase64 ?? ""} />
                         </s-stack>
-                    </s-stack>
+                    </s-section>
                 </s-stack>
                 </Form>
             </s-stack>

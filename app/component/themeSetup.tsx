@@ -76,7 +76,7 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   }, [primaryColor, secondaryColor, primaryFont, secondaryFont]);
 
   return (
-    <s-stack padding="base" background="base" inlineSize="100%" borderWidth="none small small small" borderRadius="none none large-100 large-100">
+    <s-stack inlineSize="100%" >
       <s-text type="strong">Theme Color</s-text>
       {/* Primary color */}
       <s-stack direction="inline" gap="small" paddingBlockStart="small" >

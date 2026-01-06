@@ -47,7 +47,7 @@
     border-radius: 4px;
 }
 
-.miles select{
+.miles select {
     padding: 4px;
     border: 1px solid rgb(210, 207, 207);
     border-radius: 4px;
@@ -59,15 +59,18 @@
     margin-top: 4px;
     height: 90%;
     /* hoặc auto kèm max-height */
-    max-height: 240px; /* chiều cao tối đa của khung */
-    overflow-y: auto;  /* bật thanh cuộn dọc */
-    overflow-x: hidden; /* ẩn cuộn ngang nếu có */
+    max-height: 240px;
+    /* chiều cao tối đa của khung */
+    overflow-y: auto;
+    /* bật thanh cuộn dọc */
+    overflow-x: hidden;
+    /* ẩn cuộn ngang nếu có */
     box-sizing: border-box;
     margin-top: 20px;
 }
 
 .information::-webkit-scrollbar {
-  width: 0px;
+    width: 0px;
 }
 
 .inforItem {
@@ -84,27 +87,119 @@
     height: 100%;
 }
 
+/* Overlay Container */
 .boxOverlay {
+    position: relative;
     background-color: white;
-    padding: 8px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    white-space: nowrap; /* không xuống dòng trừ khi cần */
-    transform: translate(-50%, -100%); /* center trên marker */
-    display: inline-block;
-    padding: 20px;
-    justify-items: center;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 280px;
+    max-width: 90vw;
     overflow: hidden;
+    transform: translate(-50%, -100%);
+    margin-bottom: 12px;
+    /* Space for the pointer arrow if we add one */
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    transition: all 0.3s ease;
 }
 
-.boxOverlay img {
+/* Image Container */
+.overlayImageContainer {
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+    position: relative;
+    background-color: #f5f5f5;
+}
+
+.overlayImageContainer img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    width: 100% ;
-    height: auto;
     display: block;
+    transition: transform 0.3s ease;
 }
 
-.boxOverlay i {
-    margin-right: 4px;
-    color: blue;
+.boxOverlay:hover .overlayImageContainer img {
+    transform: scale(1.05);
+}
+
+/* Content Container */
+.storeInfo {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Typography */
+.storeName {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.storeAddress {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+/* Contact Row */
+.contactRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    text-decoration: none;
+    /* In case it's a link */
+}
+
+.contactRow i {
+    font-size: 14px;
+    width: 16px;
+    /* Fixed width for alignment */
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Social Icons */
+.socialIcons {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.socialIcons i {
+    font-size: 18px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.socialIcons i:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+}
+
+/* Optional Arrow at bottom */
+.boxOverlay::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    margin-left: -6px;
+    width: 12px;
+    height: 12px;
+    background-color: inherit;
+    /* Should match bg color dynamically if possible, or defaulting to white for now */
+    background-color: white;
+    /* Fallback */
+    transform: rotate(45deg);
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.05);
 }

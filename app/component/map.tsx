@@ -25,15 +25,15 @@ type Store = {
 };
 
 interface PopupStyle {
-  backgroundColor:string,
-  color:string,
-  iconColor:string,
-  shadowColor:string,
-  transparency:number,
-  blur:number,
-  anchorx:number,
-  anchory:number,
-  cornerRadius:number
+  backgroundColor: string,
+  color: string,
+  iconColor: string,
+  shadowColor: string,
+  transparency: number,
+  blur: number,
+  anchorx: number,
+  anchory: number,
+  cornerRadius: number
 }
 
 export default function MapGoogle({
@@ -54,13 +54,13 @@ export default function MapGoogle({
     lng: stores[0]?.lng ?? 106.660172,
   });
 
-  const {googleMapsApiKey} = useLoaderData()
+  const { googleMapsApiKey } = useLoaderData()
   const hexToRgba = (hex: string, alpha: number) => {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    };
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -103,20 +103,20 @@ export default function MapGoogle({
   }, [selectedIndex, stores]);
 
   useEffect(() => {
-  if (!mapLoaded || !searchAddress.trim()) return;
+    if (!mapLoaded || !searchAddress.trim()) return;
 
-  const geocoder = new google.maps.Geocoder();
+    const geocoder = new google.maps.Geocoder();
 
-  geocoder.geocode({ address: searchAddress }, (results, status) => {
-    if (status === "OK" && results && results[0]) {
-      const loc = results[0].geometry.location;
-      const newCenter = { lat: loc.lat(), lng: loc.lng() };
-      mapRef.current?.panTo(newCenter);
-      mapRef.current?.setZoom(14);
-      setCenter(newCenter);
-    }
-  });
-}, [searchAddress, mapLoaded]);
+    geocoder.geocode({ address: searchAddress }, (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        const loc = results[0].geometry.location;
+        const newCenter = { lat: loc.lat(), lng: loc.lng() };
+        mapRef.current?.panTo(newCenter);
+        mapRef.current?.setZoom(14);
+        setCenter(newCenter);
+      }
+    });
+  }, [searchAddress, mapLoaded]);
 
 
   if (loadError) return <p>❌ Lỗi khi tải Google Maps API</p>;
@@ -125,7 +125,7 @@ export default function MapGoogle({
   return (
     <s-stack inlineSize="100%" blockSize="100%">
       <GoogleMap
-        mapContainerStyle={{ width: "100%", height: "100%", borderRadius:'12px'}}
+        mapContainerStyle={{ width: "100%", height: "100%", borderRadius: '12px' }}
         center={center}
         zoom={16}
         onLoad={onLoad}
@@ -157,71 +157,35 @@ export default function MapGoogle({
             position={{ lat: selected.lat, lng: selected.lng }}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
           >
-            <div 
+            <div
               className={styles.boxOverlay}
-               style={{
+              style={{
                 backgroundColor: popupStyle.backgroundColor,
-                color: popupStyle.color, 
+                color: popupStyle.color,
                 borderRadius: popupStyle.cornerRadius,
                 boxShadow: `${popupStyle.anchorx}px ${popupStyle.anchory}px ${popupStyle.blur}px ${hexToRgba(popupStyle.shadowColor, popupStyle.transparency / 100)}`
               }}
             >
-              {/* {
-                selected.image && */}
-                <s-thumbnail src="/shop.png" size="large" />
-              {/* }   */}
-              <h3 style={{whiteSpace: "normal",  wordBreak: "break-word"}}>Apple Park</h3>
-              <p style={{whiteSpace: "normal",  wordBreak: "break-word"}}> 1 Apple Park Way, Cupertino, CA 95014, USA</p>
-              <span>
-                <i className="fa-solid fa-phone" style={{color: popupStyle.iconColor}}></i>
-                +1 408-996-1010
-              </span>       
-              <div style={{display: 'flex', justifyContent:'space-between', marginTop: "4px"}}>
-                <i className="fa-solid fa-clock" style={{color:popupStyle.iconColor}}></i>
-                <table align="center">
-                  <tbody>
-                    <tr>
-                      <td>Mon</td>
-                      <td>Close</td>
-                    </tr>
-                    <tr>
-                      <td>Tue</td>
-                      <td>9:00</td>
-                      <td>-</td>
-                      <td>17:00</td>
-                    </tr>
-                    <tr>
-                      <td>Wed</td>
-                      <td>9:00</td>
-                      <td>-</td>
-                      <td>17:00</td>
-                    </tr><tr>
-                      <td>Thu</td>
-                      <td>9:00</td>
-                      <td>-</td>
-                      <td>17:00</td>
-                    </tr><tr>
-                      <td>Fri</td>
-                      <td>9:00</td>
-                      <td>-</td>
-                      <td>17:00</td>
-                    </tr><tr>
-                      <td>Sat</td>
-                      <td>9:00</td>
-                      <td>-</td>
-                      <td>17:00</td>
-                    </tr>
-                    <tr> 
-                      <td>Sun</td>
-                      <td>Close</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className={styles.overlayImageContainer}>
+                <img src="/shop.png" alt="Store" />
               </div>
-              <div style={{marginTop:'4px'}}>
-                <i style={{color: popupStyle.iconColor}} className="fa-brands fa-linkedin"></i>
-                <i style={{color: popupStyle.iconColor}} className="fa-brands fa-youtube"></i>
-                <i style={{color: popupStyle.iconColor}} className="fa-brands fa-facebook"></i>
+
+              <div className={styles.storeInfo}>
+                <h3 className={styles.storeName}>Apple Park</h3>
+                <div className={styles.contactRow}>
+                  <i className="fa-solid fa-location-dot" style={{ color: popupStyle.iconColor }}></i>
+                  <span className={styles.storeAddress}> 1 Apple Park Way, Cupertino, CA 95014, USA</span>
+                </div>
+                <div className={styles.contactRow}>
+                  <i className="fa-solid fa-phone" style={{ color: popupStyle.iconColor }}></i>
+                  <span>+1 408-996-1010</span>
+                </div>
+
+                <div className={styles.socialIcons}>
+                  <i style={{ color: popupStyle.iconColor }} className="fa-brands fa-linkedin"></i>
+                  <i style={{ color: popupStyle.iconColor }} className="fa-brands fa-youtube"></i>
+                  <i style={{ color: popupStyle.iconColor }} className="fa-brands fa-facebook"></i>
+                </div>
               </div>
             </div>
           </OverlayView>

@@ -102,7 +102,7 @@ export default function PopupStyle ({ onChange, config }: { onChange: (popup: an
     }, [backgroundColor, color, iconColor, shadowColor, transparency, blur, anchorx, anchory, cornerRadius]);
 
     return (
-        <s-stack padding="base" background="base" inlineSize="100%" borderWidth="none small small small" borderRadius="none none large-100 large-100">
+        <s-stack inlineSize="100%" >
             <div className={styles.maxBlockSize}>
                 <div className={styles.leftBox}>
                     <s-text type="strong">Popup Box</s-text>

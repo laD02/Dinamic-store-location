@@ -334,8 +334,6 @@ export default function MapDesigners() {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: '4px',
-                height: '40px',
                 background: '#ddd',
                 borderRadius: '2px',
                 pointerEvents: 'none'
@@ -357,42 +355,40 @@ export default function MapDesigners() {
         >
           {/* Info Item - Always on top */}
           <div style={{ flexShrink: 0 }}>
-            <s-stack 
-              padding="base" 
-              background="base" 
-              gap="small-500" 
-              borderRadius="large-100" 
-              borderWidth="small"
-            >
-              <div
-                className={styles.inforItem}
-                style={{
-                  border: `1px solid ${theme.secondaryColor}`
-                }}
+            <s-section>
+              <s-stack  
+                gap="small-500" 
               >
-                <h4 style={{
-                  color: theme.primaryColor, 
-                  fontFamily: theme.primaryFont, 
-                  whiteSpace: "normal", 
-                  wordBreak: "break-word"
-                }}>
-                  Apple Park
-                </h4>
-                <p style={{
-                  color: theme.primaryColor, 
-                  fontFamily: theme.secondaryFont
-                }}>
-                  1 Apple Park Way, Cupertino, CA 95014, USA<br/>
-                </p>
-                <p style={{
-                  color: theme.secondaryColor
-                }}>
-                  +1 408-996-1010
-                </p>
-                <s-stack direction="inline" justifyContent="start" gap="small-500">
-                </s-stack>
-              </div>
-            </s-stack>
+                <div
+                  className={styles.inforItem}
+                  style={{
+                    border: `1px solid ${theme.secondaryColor}`
+                  }}
+                >
+                  <h4 style={{
+                    color: theme.primaryColor, 
+                    fontFamily: theme.primaryFont, 
+                    whiteSpace: "normal", 
+                    wordBreak: "break-word"
+                  }}>
+                    Apple Park
+                  </h4>
+                  <p style={{
+                    color: theme.primaryColor, 
+                    fontFamily: theme.secondaryFont
+                  }}>
+                    1 Apple Park Way, Cupertino, CA 95014, USA<br/>
+                  </p>
+                  <p style={{
+                    color: theme.secondaryColor
+                  }}>
+                    +1 408-996-1010
+                  </p>
+                  <s-stack direction="inline" justifyContent="start" gap="small-500">
+                  </s-stack>
+                </div>
+              </s-stack>
+            </s-section>
           </div>
           
           {/* Map - Below info item */}

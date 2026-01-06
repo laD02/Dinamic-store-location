@@ -38,7 +38,7 @@ async function callNominatimAPI(address: string) {
 
     return null;
   } catch (error) {
-    console.error("Nominatim API error:", error);
+    // console.error("Nominatim API error:", error);
     return null;
   }
 }
@@ -51,7 +51,7 @@ export async function getLatLngFromAddress(address: string) {
 
   // 1. Check memory cache
   if (memoryCache.has(normalizedAddress)) {
-    console.log("✅ Cache HIT (memory):", normalizedAddress);
+    // console.log("✅ Cache HIT (memory):", normalizedAddress);
     return memoryCache.get(normalizedAddress)!;
   }
 
@@ -62,7 +62,7 @@ export async function getLatLngFromAddress(address: string) {
     });
 
     if (cached) {
-      console.log("✅ Cache HIT (database):", normalizedAddress);
+      // console.log("✅ Cache HIT (database):", normalizedAddress);
       
       // Update hitCount
       await prisma.geocodeCache.update({
@@ -82,7 +82,7 @@ export async function getLatLngFromAddress(address: string) {
   }
 
   // 3. Cache miss → Call API
-  console.log("❌ Cache MISS, calling API:", normalizedAddress);
+  // console.log("❌ Cache MISS, calling API:", normalizedAddress);
   const location = await callNominatimAPI(address);
 
   // 4. Save to cache if success
@@ -98,9 +98,9 @@ export async function getLatLngFromAddress(address: string) {
         create: { address: normalizedAddress, lat: location.lat, lng: location.lng },
       });
       
-      console.log("💾 Saved to cache:", normalizedAddress);
+      // console.log("💾 Saved to cache:", normalizedAddress);
     } catch (error) {
-      console.error("Failed to save cache:", error);
+      // console.error("Failed to save cache:", error);
     }
   }
 

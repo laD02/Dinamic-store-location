@@ -11,36 +11,36 @@ const hexToRgba = (hex, alpha) => {
 };
 
 function loadGoogleMaps(apiKey) {
-  return new Promise((resolve, reject) => {
-    if (window.google && window.google.maps) {
-      resolve();
-      return;
-    }
+    return new Promise((resolve, reject) => {
+        if (window.google && window.google.maps) {
+            resolve();
+            return;
+        }
 
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
 
-    script.onload = resolve;
-    script.onerror = reject;
+        script.onload = resolve;
+        script.onerror = reject;
 
-    document.head.appendChild(script);
-  });
+        document.head.appendChild(script);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const mapEl = document.getElementById("sl-map");
-  if (!mapEl) return;
+    const mapEl = document.getElementById("sl-map");
+    if (!mapEl) return;
 
-  const apiKey = mapEl.dataset.gmapKey;
-  if (!apiKey) {
-    console.warn("Missing Google Maps API key");
-    return;
-  }
+    const apiKey = mapEl.dataset.gmapKey;
+    if (!apiKey) {
+        console.warn("Missing Google Maps API key");
+        return;
+    }
 
-  await loadGoogleMaps(apiKey);
-  googleMap(); // hàm bạn đã viết sẵn
+    await loadGoogleMaps(apiKey);
+    googleMap(); // hàm bạn đã viết sẵn
 });
 
 async function googleMap() {
@@ -125,7 +125,7 @@ function showOverlay(store, marker) {
             this.div = null;
         }
 
-        
+
 
         onAdd() {
             const icons = {
@@ -139,136 +139,73 @@ function showOverlay(store, marker) {
             }
             // Tạo div container
             this.div = document.createElement('div');
-            this.div.style.position = 'absolute';
-            this.div.style.cursor = 'default';
+            this.div.className = 'map-overlay-card';
             this.div.style.zIndex = '1000';
-            
+
+            // Dynamic styles that must be inline because they come from backend config
+            // We apply color/font settings to a wrapper or specific elements
+
+            const contentStyle = `
+                color: ${mapStyle.color};
+                background: ${mapStyle.backgroundColor || '#fff'};
+            `;
+
+            // Prepare Social Icons
+            const socialLinks = Object.entries(this.store.contract || {})
+                .map(([platform, items]) =>
+                    items.map((href) => `
+                        <a href="${href}" target="_blank" style="color: ${mapStyle.iconColor}">
+                            <i class="fa-brands ${icons[platform]}"></i>
+                        </a>
+                    `).join('')
+                ).join('');
+
             // Tạo nội dung HTML
             this.div.innerHTML = `
-                <div style="
-                    background: ${mapStyle?.backgroundColor};
-                    color: ${mapStyle.color};
-                    padding: 16px;
-                    border-radius: ${mapStyle.cornerRadius}px;
-                    box-shadow: ${mapStyle.anchorx}px ${mapStyle.anchory}px ${mapStyle.blur}px ${hexToRgba(mapStyle.shadowColor, mapStyle.transparency / 100)};
-                    min-width: 150px;
-                    max-width: 300px;
-                    position: relative;
-                ">
-                    <button onclick="closeOverlay()" style="
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
-                        background: transparent;
-                        border: none;
-                        color: ${mapStyle.color};
-                        font-size: 20px;
-                        cursor: pointer;
-                        padding: 0;
-                        width: 24px;
-                        height: 24px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        opacity: 0.7;
-                        transition: opacity 0.2s;
-                    " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
-                        ×
-                    </button>
-                    ${this.store.image ? `
-                        <img src="${this.store.image}" 
-                             alt="${this.store.name}" 
-                             style=" width: 100%; height: 40px; object-fit: contain; border-radius: 8px;" />
-                    ` : ''}
-                    <div style= "display: flex; justify-content: center">
-                        <h3 style="margin: 0 0 4px 0; font-size: 16px; color: ${mapStyle.color}; font-weight: 600">
+                <button class="map-overlay-close" onclick="closeOverlay()">×</button>
+                
+                ${this.store.image ? `
+                    <div class="map-overlay-hero">
+                        <img src="${this.store.image}" alt="${this.store.name}" />
+                    </div>
+                ` : ''}
+                
+                <div class="map-overlay-content" style="${contentStyle}">
+                    <div class="map-overlay-header">
+                        <h3 class="map-overlay-title" style="color: ${mapStyle.color}">
                             ${this.store.storeName}
                         </h3>
                     </div>
-                    <p style="margin: 0 0 4px 0; color: ${mapStyle.color}; font-size: 12px; line-height: 1.5;">
-                        ${this.store.address || ''}, ${this.store.city}, ${this.store.state}, ${this.store.code}
-                    </p>
+
+                    <div class="map-overlay-row">
+                        <i class="fa-solid fa-location-dot" style="color: ${mapStyle.iconColor}"></i>
+                        <span>${this.store.address || ''}, ${this.store.city}, ${this.store.code}</span>
+                    </div>
+
                     ${this.store.phone ? `
-                        <p style="margin: 0; color: ${mapStyle.color}; font-size: 12px">
-                            <i class="fa-solid fa-phone" style="margin-right: 4px; color: ${mapStyle.iconColor};"></i>
-                            ${this.store.phone}
-                        </p>
-                    ` : ''}                  
-                    <div style="display: flex; justify-content: flex-start;margin-top:4px;">
-                        <i class="fa-solid fa-clock" style="margin-right: 4px; color: ${mapStyle.iconColor}"></i>
-                        <div style="font-size: 12px;">
-                            <p>
-                            Mon ${
-                                this.store.time.mondayClose === 'close' || this.store.time.mondayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.mondayOpen} - ${this.store.time.mondayClose}`
-                            }
-                            </p>
+                        <div class="map-overlay-row">
+                            <i class="fa-solid fa-phone" style="color: ${mapStyle.iconColor}"></i>
+                            <span>${this.store.phone}</span>
+                        </div>
+                    ` : ''}
 
-                            <p>
-                            Tue ${
-                                this.store.time.tuesdayClose === 'close' || this.store.time.tuesdayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.tuesdayOpen} - ${this.store.time.tuesdayClose}`
-                            }
-                            </p>
+                    ${socialLinks ? `
+                        <div class="map-overlay-socials">
+                            ${socialLinks}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
 
-                            <p>
-                            Wed ${
-                                this.store.time.wednesdayClose === 'close' || this.store.time.wednesdayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.wednesdayOpen} - ${this.store.time.wednesdayClose}`
-                            }
-                            </p>
+            // Apply border radius and shadow dynamically if needed, 
+            // but for now we used CSS classes. If existing config has specific radius/shadow,
+            // we can override via inline style on the card.
+            // mapStyle.cornerRadius, mapStyle.shadowColor etc.
 
-                            <p>
-                            Thu ${
-                                this.store.time.thursdayClose === 'close' || this.store.time.thursdayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.thursdayOpen} - ${this.store.time.thursdayClose}`
-                            }
-                            </p>
+            this.div.style.borderRadius = `${mapStyle.cornerRadius}px`;
+            // For shadow, it's complex to map exactly, but we can try basic or skip if CSS is enough.
+            // Let's rely on CSS for shadow for better look, or use the custom one if really needed.
 
-                            <p>
-                            Fri ${
-                                this.store.time.fridayClose === 'close' || this.store.time.fridayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.fridayOpen} - ${this.store.time.fridayClose}`
-                            }
-                            </p>
-
-                            <p>
-                            Sat ${
-                                this.store.time.saturdayClose === 'close' || this.store.time.saturdayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.saturdayOpen} - ${this.store.time.saturdayClose}`
-                            }
-                            </p>
-
-                            <p>
-                            Sun ${
-                                this.store.time.sundayClose === 'close' || this.store.time.sundayOpen === 'close'
-                                ? 'Close'
-                                : `${this.store.time.sundayOpen} - ${this.store.time.sundayClose}`
-                            }
-                            </p>
-                        </div>               
-                    </div>
-                    <div style="margin-top: 4px;display: flex; justify-content: center; gap: 4px; align-item: center; ">               
-                        ${
-                            Object.entries(this.store.contract)
-                                .map(([platform, items]) =>
-                                items.map((href) => `
-                                    <a href="${href}" target="_blank" style="margin-right:4px; color: ${mapStyle.iconColor}; font-size: 16px;">
-                                        <i class="fa-brands ${icons[platform]}"></i>
-                                    </a>
-                                `).join('')
-                                )
-                                .join('')
-                        }
-                    </div>
-                `;
-            
             // Thêm vào pane
             const panes = this.getPanes();
             panes.floatPane.appendChild(this.div);
@@ -278,11 +215,12 @@ function showOverlay(store, marker) {
             // Tính toán vị trí pixel
             const overlayProjection = this.getProjection();
             const position = overlayProjection.fromLatLngToDivPixel(this.position);
-            
+
             if (this.div) {
                 // Căn giữa overlay và đặt phía trên marker
+                // Offset horizontal by half width, vertical by height + arrow/space
                 this.div.style.left = (position.x - this.div.offsetWidth / 2) + 'px';
-                this.div.style.top = (position.y - this.div.offsetHeight - 40) + 'px';
+                this.div.style.top = (position.y - this.div.offsetHeight - 20) + 'px';
             }
         }
 
@@ -308,7 +246,7 @@ function closeOverlay() {
     }
 }
 
-window.selectStoreByIndex = function(storeIndex) {
+window.selectStoreByIndex = function (storeIndex) {
     const storeData = markers.find(m => m.index === storeIndex);
     if (storeData) {
         panToStore(storeData.store, storeData.marker);

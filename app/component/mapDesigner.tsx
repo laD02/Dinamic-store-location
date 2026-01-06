@@ -23,8 +23,8 @@ export default function MapDesigner ({
 
     return (
         <s-stack gap="base">
-            <s-stack>
-                <s-stack background="base" inlineSize="100%" paddingInline="small" paddingBlockStart="small" alignItems="center" borderRadius="large-100 large-100 none none" borderWidth="small small none small">
+            <s-section>
+                <s-stack alignItems="center" >
                     {/* <s-box></s-box> */}
                     {/* <s-box> */}
                         <s-heading>Theme Setup</s-heading>
@@ -46,10 +46,10 @@ export default function MapDesigner ({
                     <ThemeSetUp onChange={onThemeChange} config={config.theme}/>
                     {/* <PopupStyle onChange={onPopupChange} config={config.popup}/> */}
                 </div>
-            </s-stack>
+            </s-section>
 
-            <s-stack>
-                <s-stack background="base" inlineSize="100%" paddingInline="small" paddingBlockStart="small" alignItems="center" borderRadius="large-100 large-100 none none" borderWidth="small small none small">
+            <s-section>
+                <s-stack alignItems="center">
                     {/* <s-box></s-box> */}
                     {/* <s-box> */}
                         <s-heading>Popup Style</s-heading>
@@ -71,7 +71,7 @@ export default function MapDesigner ({
                     {/* <ThemeSetUp onChange={onThemeChange} config={config.theme}/> */}
                     <PopupStyle onChange={onPopupChange} config={config.popup}/>
                 </div>
-            </s-stack>
+            </s-section>
         </s-stack>
     )
 }

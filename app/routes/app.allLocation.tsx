@@ -243,8 +243,10 @@ export default function AllLocation() {
           windowWidth > 768 
           ? 
           <s-stack direction="inline" gap="base">
-            <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} >Export</s-button> 
-            <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete">Delete</s-button>
+            <s-tooltip id="export">Export</s-tooltip>
+            <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} interestFor="export" ></s-button> 
+            <s-tooltip id="delete">Delete</s-tooltip>
+            <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete" interestFor="delete"></s-button>
             <s-modal id="deleteTrash-modal" heading="Delete Location">
               <s-text>
                   Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
@@ -278,8 +280,8 @@ export default function AllLocation() {
             <s-button icon="menu-horizontal" commandFor="btn-group"></s-button>
             <s-popover id="btn-group">
               <s-stack direction="block">
-                <s-button variant="tertiary" disabled={!hasChecked} icon="export" onClick={handleExport} >Export</s-button> 
-                <s-button variant="tertiary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete">Delete</s-button>
+                <s-button variant="tertiary" disabled={!hasChecked} onClick={handleExport} >Export</s-button> 
+                <s-button variant="tertiary" commandFor="deleteTrash-modal" disabled={!hasChecked} >Delete</s-button>
                 <s-modal id="deleteTrash-modal" heading="Delete Location">
                   <s-text>
                       Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
@@ -313,7 +315,7 @@ export default function AllLocation() {
         }
       </s-stack>
 
-      <s-stack background="base" borderRadius="large-100" >
+      <s-section padding="none">
         <s-table 
           // paginate
           // hasPreviousPage={currentPage > 1}  
@@ -564,7 +566,7 @@ export default function AllLocation() {
   
           </s-button>
         </s-stack>
-      </s-stack>
+      </s-section>
     </s-page>
   );
 }
