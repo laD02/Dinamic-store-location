@@ -104,11 +104,13 @@
     {% if block.settings.show_sidebar %}
       <div class="sl-left" style="border-right: 1px solid {{ block.settings.border_color }}; background-color: {{ block.settings.background_color }}">
         {% if block.settings.enable_location_search %}
-          <input 
-            id="sl-address" 
-            placeholder="{{ block.settings.search_placeholder_text }}"
-            style="border-color: {{ block.settings.primary_accent_color }};"
-          />
+          <div class="sl-search-wrapper">
+            <input 
+              id="sl-address" 
+              placeholder="{{ block.settings.search_placeholder_text }}"
+              style="border-color: {{ block.settings.primary_accent_color }};"
+            />
+          </div>
         {% endif %}
         <div id="store-list-loading" style="
           padding: 40px 20px;

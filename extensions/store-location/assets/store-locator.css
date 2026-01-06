@@ -10,15 +10,21 @@
 }
 
 .sl-left {
-  flex: 0 0 250px;
-  padding: 20px;
-  background: #fff;
+  flex: 0 0 320px;
+  /* Slightly wider for better breathing room */
+  padding: 24px;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 8px;
+  gap: 16px;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: hidden;
+  /* Main container hidden, list scrolls */
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+  /* Subtle shadow separator */
+  z-index: 2;
+  position: relative;
 }
 
 .sl-map {
@@ -27,31 +33,71 @@
   min-height: 400px;
 }
 
+.sl-search-wrapper {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.sl-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+
 #sl-address {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgb(206, 205, 205);
+  padding: 12px 12px 12px 40px;
+  /* Space for icon */
+  border-radius: 99px;
+  /* Pill shape */
+  border: 1px solid #E5E7EB;
   outline: none;
   box-sizing: border-box;
   font-size: 14px;
+  transition: all 0.2s ease;
+  background-color: #F9FAFB;
+  color: #1F2937;
 }
 
 #sl-address:focus {
+  background-color: #fff;
   border-color: #3B82F6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+#sl-address::placeholder {
+  color: #9CA3AF;
 }
 
 .store-item {
-  border: 2px solid rgb(210, 207, 207);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  position: relative;
+  border: 1px solid transparent;
+  /* Prepare for border transition */
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 0px;
+  /* Handle gap in container */
   cursor: pointer;
-  transition: border-color 0.3s;
+  transition: all 0.2s ease;
+  background-color: #fff;
 }
 
 .store-item:hover {
+  background-color: #F9FAFB;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: #E5E7EB;
+}
+
+.store-item.selected {
   border-color: #3B82F6;
+  background-color: #EFF6FF;
 }
 
 #store-list {
@@ -63,7 +109,28 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  padding-right: 4px;
+  /* Space for scrollbar */
+  padding-bottom: 10px;
+}
+
+/* Custom Scrollbar for store list */
+#store-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#store-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#store-list::-webkit-scrollbar-thumb {
+  background-color: #E5E7EB;
+  border-radius: 20px;
+}
+
+#store-list::-webkit-scrollbar-thumb:hover {
+  background-color: #D1D5DB;
 }
 
 p {

@@ -2,7 +2,7 @@
   background: #fff;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   width: 100%;
   margin-top: 16px;
   margin-left: 8px;
@@ -23,10 +23,10 @@
 } */
 
 .leftBox {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
 }
 
 .colorBox {
@@ -38,17 +38,18 @@
 }
 
 .backgroundColor {
-    position: relative;
-    display: flex;
-    justify-content: flex-start;
-    gap: 12px
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px
 }
 
 .pickerWrapper {
   margin-top: 8px;
   z-index: 10;
   position: absolute;
-  top: 48px; /* nằm ngay dưới box */
+  top: 48px;
+  /* nằm ngay dưới box */
   left: 0;
 }
 
@@ -99,7 +100,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: #333;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input[type="range"]::-moz-range-thumb {
@@ -109,7 +110,7 @@ input[type="range"]::-moz-range-thumb {
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .hrRow {
@@ -120,11 +121,15 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .hrColum {
-  width: 1px;          /* độ dày của line */
-  height: 100%;       /* chiều cao */
+  width: 1px;
+  /* độ dày của line */
+  height: 100%;
+  /* chiều cao */
   background-color: #ddd;
-  border: none;        /* loại bỏ border mặc định */
-  margin: 0;           /* xóa margin mặc định */
+  border: none;
+  /* loại bỏ border mặc định */
+  margin: 0;
+  /* xóa margin mặc định */
 }
 
 .rightBox {
@@ -133,4 +138,3 @@ input[type="range"]::-moz-range-thumb {
   gap: 12px;
   width: 100%;
 }
-

@@ -4,13 +4,13 @@ import { useState } from "react";
 import ThemeSetUp from "./themeSetup";
 import PopupStyle from "./popupStyle";
 
-export default function MapDesigner ({ 
+export default function MapDesigner({
     onThemeChange,
     onPopupChange,
     config,
-}: { 
+}: {
     onThemeChange: (theme: any) => void;
-    onPopupChange: (popup: any) => void;  
+    onPopupChange: (popup: any) => void;
     config: any,
 }) {
 
@@ -27,7 +27,7 @@ export default function MapDesigner ({
                 <s-stack alignItems="center" >
                     {/* <s-box></s-box> */}
                     {/* <s-box> */}
-                        <s-heading>Theme Setup</s-heading>
+                    <s-heading>Theme Setup</s-heading>
                     {/* </s-box> */}
                     {/* <s-button icon="sort" commandFor="sort-popover"></s-button>
                     <s-popover id="sort-popover">
@@ -43,7 +43,7 @@ export default function MapDesigner ({
                 </s-stack>
 
                 <div className={styles.body}>
-                    <ThemeSetUp onChange={onThemeChange} config={config.theme}/>
+                    <ThemeSetUp onChange={onThemeChange} config={config.theme} />
                     {/* <PopupStyle onChange={onPopupChange} config={config.popup}/> */}
                 </div>
             </s-section>
@@ -52,7 +52,7 @@ export default function MapDesigner ({
                 <s-stack alignItems="center">
                     {/* <s-box></s-box> */}
                     {/* <s-box> */}
-                        <s-heading>Popup Style</s-heading>
+                    <s-heading>Popup Style</s-heading>
                     {/* </s-box> */}
                     {/* <s-button icon="sort" commandFor="sort-popover"></s-button>
                     <s-popover id="sort-popover">
@@ -69,7 +69,7 @@ export default function MapDesigner ({
 
                 <div className={styles.body}>
                     {/* <ThemeSetUp onChange={onThemeChange} config={config.theme}/> */}
-                    <PopupStyle onChange={onPopupChange} config={config.popup}/>
+                    <PopupStyle onChange={onPopupChange} config={config.popup} />
                 </div>
             </s-section>
         </s-stack>
