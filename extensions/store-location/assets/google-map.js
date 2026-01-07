@@ -106,27 +106,33 @@ async function googleMap() {
 function panToStore(store, marker) {
     map.setZoom(16);
 
-    // Đợi zoom hoàn thành trước
-    google.maps.event.addListenerOnce(map, 'zoom_changed', () => {
-        // Tính toán offset để đưa marker xuống dưới, overlay hiển thị ở giữa
+    google.maps.event.addListenerOnce(map, "idle", () => {
+        const projection = map.getProjection();
+        if (!projection) return;
+
+        const overlayHeight = 260; // chiều cao overlay (ước lượng)
+        const offsetY = overlayHeight / 2 + 20; // 40px khoảng hở
+
+        const latLng = new google.maps.LatLng(store.lat, store.lng);
+
+        // LatLng -> world point
+        const point = projection.fromLatLngToPoint(latLng);
+
+        // scale theo zoom
         const scale = Math.pow(2, map.getZoom());
-        const worldCoordinate = map.getProjection().fromLatLngToPoint(new google.maps.LatLng(store.lat, store.lng));
 
-        // Offset pixel - TRỪ đi để đưa marker xuống phía dưới màn hình
-        const pixelOffset = 150;
-
-        const newWorldCoordinate = new google.maps.Point(
-            worldCoordinate.x,
-            worldCoordinate.y - (pixelOffset / scale) // ĐỔI DẤU - để đưa xuống
+        // Tạo point mới lệch xuống dưới
+        const newPoint = new google.maps.Point(
+            point.x,
+            point.y - offsetY / scale
         );
 
-        const newLatLng = map.getProjection().fromPointToLatLng(newWorldCoordinate);
-        map.panTo(newLatLng);
+        // World point -> LatLng
+        const newCenter = projection.fromPointToLatLng(newPoint);
 
-        // Hiện overlay sau khi pan
-        setTimeout(() => {
-            showOverlay(store, marker);
-        }, 300);
+        map.panTo(newCenter);
+
+        showOverlay(store, marker);
     });
 }
 
