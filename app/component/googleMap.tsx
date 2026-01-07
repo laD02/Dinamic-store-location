@@ -1,6 +1,6 @@
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react"
 import { useEffect, useState } from "react"
-import { Form, useFetcher, useLoaderData } from "react-router"
+import { useFetcher, useLoaderData } from "react-router"
 
 export default function GoogleMap() {
     const { key } = useLoaderData()

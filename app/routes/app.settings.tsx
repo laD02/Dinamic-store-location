@@ -8,6 +8,7 @@ import SearchFilter from "app/component/searchFilter";
 import prisma from "app/db.server";
 import GoogleMap from "app/component/googleMap";
 import { useSearchParams } from "react-router";
+import { authenticate } from "app/shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // const filter = await prisma.attribute.findMany()
@@ -16,10 +17,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const apiKey = process.env.API_KEY
   const plan = await prisma.plan.findFirst()
   const key = await prisma.key.findFirst()
-  return {key, plan, apiKey};
+  return { key, plan, apiKey };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const { session } = await authenticate.admin(request);
+  const shop = session?.shop;
   // const formData = await request.formData();
 
   // const filterRaw = formData.get("filter");
@@ -64,10 +67,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const actionType = formData.get('actionType') as string
 
   if (actionType === 'saveGGKey') {
-    const exitkey = await prisma.key.findFirst()
+    const exitkey = await prisma.key.findFirst({ where: { shop } })
     if (!exitkey) {
       await prisma.key.create({
         data: {
+          shop,
           ggKey: formData.get('ggKey')?.toString() ?? '',
           b2bKey: '',
           url: ''
@@ -82,24 +86,24 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       })
     }
-    return {ok: true}
+    return { ok: true }
   }
 
   if (actionType === 'save') {
     const save = formData.get('save') as string
-    const saveField = JSON.parse(save) as {url: string, b2b: string}
+    const saveField = JSON.parse(save) as { url: string, b2b: string }
     const exitkey = await prisma.key.findFirst()
     if (!exitkey) {
       await prisma.key.create({
         data: {
           ggKey: '',
-          b2bKey:saveField.b2b,
+          b2bKey: saveField.b2b,
           url: saveField.url
         }
       })
     } else {
       await prisma.key.update({
-        where: {id: exitkey.id},
+        where: { id: exitkey.id },
         data: {
           ...exitkey,
           b2bKey: saveField.b2b,
@@ -107,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       })
     }
-    return {ok: true}
+    return { ok: true }
   }
   return {}
 }
@@ -116,7 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Settings() {
   const fetcher = useFetcher()
   const navigate = useNavigate()
-  const listBlock  = [ "Google API"]
+  const listBlock = ["Google API"]
   const [active, setActive] = useState(0)
   const filter = useLoaderData<typeof loader>()
   const [searchParams] = useSearchParams() // Thêm này
@@ -124,7 +128,7 @@ export default function Settings() {
   const handleDelete = (id: string | number) => {
     const formData = new FormData();
     formData.append("deleteFilter", JSON.stringify(id))
-    fetcher.submit(formData, {method: "delete"})
+    fetcher.submit(formData, { method: "delete" })
   }
 
   useEffect(() => {
