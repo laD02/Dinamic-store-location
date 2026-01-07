@@ -104,10 +104,30 @@ async function googleMap() {
 }
 
 function panToStore(store, marker) {
-    map.panTo({ lat: store.lat, lng: store.lng });
     map.setZoom(16);
 
-    showOverlay(store, marker);
+    // Đợi zoom hoàn thành trước
+    google.maps.event.addListenerOnce(map, 'zoom_changed', () => {
+        // Tính toán offset để đưa marker xuống dưới, overlay hiển thị ở giữa
+        const scale = Math.pow(2, map.getZoom());
+        const worldCoordinate = map.getProjection().fromLatLngToPoint(new google.maps.LatLng(store.lat, store.lng));
+
+        // Offset pixel - TRỪ đi để đưa marker xuống phía dưới màn hình
+        const pixelOffset = 150;
+
+        const newWorldCoordinate = new google.maps.Point(
+            worldCoordinate.x,
+            worldCoordinate.y - (pixelOffset / scale) // ĐỔI DẤU - để đưa xuống
+        );
+
+        const newLatLng = map.getProjection().fromPointToLatLng(newWorldCoordinate);
+        map.panTo(newLatLng);
+
+        // Hiện overlay sau khi pan
+        setTimeout(() => {
+            showOverlay(store, marker);
+        }, 300);
+    });
 }
 
 function showOverlay(store, marker) {
