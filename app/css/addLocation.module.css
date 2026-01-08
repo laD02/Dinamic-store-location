@@ -1,5 +1,5 @@
-
-h4, p {
+h4,
+p {
     margin: 0;
 }
 
@@ -118,7 +118,7 @@ h4, p {
     margin-bottom: 12px;
 }
 
-.sharedForm input{
+.sharedForm input {
     width: 100%;
     margin-top: 4px;
     padding: 4px;
@@ -137,7 +137,7 @@ select {
     justify-content: space-between;
 }
 
-.right  button{
+.right button {
     padding: 6px;
     background-color: white;
     border-radius: 8px;
@@ -187,9 +187,10 @@ table {
     border: 1px dotted rgb(193, 188, 188);
     border-radius: 8px;
     display: flex;
-    justify-content: center; /* căn giữa ngang */
-    align-items: center;  
-    cursor: pointer; 
+    justify-content: center;
+    /* căn giữa ngang */
+    align-items: center;
+    cursor: pointer;
 }
 
 .boxAddImage button {
@@ -197,42 +198,48 @@ table {
     border: 1px solid rgb(210, 207, 207);
     border-radius: 8px;
     background-color: white;
-    cursor: pointer; 
+    cursor: pointer;
 }
 
 .boxAddImage button:hover {
     background-color: rgb(189, 186, 186);
 }
 
-.boxAddImage > div {
+.boxAddImage>div {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .previewBox {
-  width: 100%;
-    height: 100%;           /* bạn đổi theo ý muốn */
+    width: 100%;
+    height: 100%;
+    /* bạn đổi theo ý muốn */
     overflow: hidden;
     border-radius: 8px;
     display: flex;
-    flex-direction: column;  /* ảnh trên, icon dưới */
-    align-items: center;     /* căn giữa icon theo ngang */
+    flex-direction: column;
+    /* ảnh trên, icon dưới */
+    align-items: center;
+    /* căn giữa icon theo ngang */
     justify-content: center;
 }
 
 .previewImage {
     width: 100%;
     height: 50px;
-    object-fit: contain;     /* hoặc cover nếu muốn full khung */
-    display: flex;          /* ảnh không cần flex */  
+    object-fit: contain;
+    /* hoặc cover nếu muốn full khung */
+    display: flex;
+    /* ảnh không cần flex */
     cursor: pointer;
 }
 
 .boxImage {
     width: 32%;
     position: sticky;
-    top: 24px; /* khoảng cách từ top */
+    top: 24px;
+    /* khoảng cách từ top */
     height: fit-content;
 }
 
@@ -240,4 +247,222 @@ table {
     display: none;
 }
 
+.boxMap {
+    display: flex;
+    justify-content: space-between;
+}
 
+.boxInfo {
+    height: 460px;
+}
+
+.search i {
+    border: 0;
+    border-radius: 4px;
+}
+
+.search input {
+    width: 100%;
+    border: none;
+    outline: none;
+}
+
+.search:focus-within {
+    border: 1px solid blue;
+}
+
+.search {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.attribute {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.attribute i {
+    margin-right: 4px;
+}
+
+.allTag {
+    background-color: rgb(210, 207, 207);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.miles select {
+    padding: 4px;
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 4px;
+}
+
+.information {
+    border: 1px solid rgb(210, 207, 207);
+    border-radius: 4px;
+    margin-top: 4px;
+    height: 90%;
+    /* hoặc auto kèm max-height */
+    max-height: 240px;
+    /* chiều cao tối đa của khung */
+    overflow-y: auto;
+    /* bật thanh cuộn dọc */
+    overflow-x: hidden;
+    /* ẩn cuộn ngang nếu có */
+    box-sizing: border-box;
+    margin-top: 20px;
+}
+
+.information::-webkit-scrollbar {
+    width: 0px;
+}
+
+.inforItem {
+    padding: 24px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inforItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.inforItem h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.inforItem p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
+.click {
+    background-color: rgb(210, 207, 207);
+}
+
+.map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Overlay Container */
+.boxOverlay {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 90vw;
+    overflow: hidden;
+    transform: none;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
+    transition: box-shadow 0.3s ease;
+}
+
+
+/* Image Container */
+.overlayImageContainer {
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+    position: relative;
+    background-color: #f5f5f5;
+}
+
+.overlayImageContainer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.boxOverlay:hover .overlayImageContainer img {
+    transform: scale(1.05);
+}
+
+/* Content Container */
+.storeInfo {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Typography */
+.storeName {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.storeAddress {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+/* Contact Row */
+.contactRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    text-decoration: none;
+    /* In case it's a link */
+}
+
+.contactRow i {
+    font-size: 14px;
+    width: 16px;
+    /* Fixed width for alignment */
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Social Icons */
+.socialIcons {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.socialIcons i {
+    font-size: 18px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.socialIcons i:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+}
+
+i {
+    color: blue;
+}
+
+/* Optional Arrow at bottom */

@@ -17,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session?.shop;
   const storeData = await prisma.store.findMany({
-    where: {shop},
+    where: { shop },
     orderBy: {
       createdAt: 'desc', // mới nhất lên đầu
     },
@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
         data: { visibility },
       });
     }
-    return {oks: true };
+    return { oks: true };
   }
 
   return { error: "Unknown action" };
@@ -89,7 +89,7 @@ export default function AllLocation() {
     };
 
     window.addEventListener('resize', handleResize);
-    
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -97,10 +97,10 @@ export default function AllLocation() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const message = params.get('message');
-    
+
     if (message === 'deleted') {
       shopify.toast.show('Store deleted successfully!');
-      
+
       // Xóa param khỏi URL
       window.history.replaceState({}, '', '/app');
     }
@@ -187,8 +187,8 @@ export default function AllLocation() {
 
 
   const allVisibleSelected =
-  filteredStores.length > 0 &&
-  filteredStores.every(s => selectedIds.has(s.id));
+    filteredStores.length > 0 &&
+    filteredStores.every(s => selectedIds.has(s.id));
 
   const hasChecked = selectedIds.size > 0;
   const checkedRowCount = selectedIds.size;
@@ -240,88 +240,88 @@ export default function AllLocation() {
           All Locations
         </h2>
         {
-          windowWidth > 768 
-          ? 
-          <s-stack direction="inline" gap="base">
-            <s-tooltip id="export">Export</s-tooltip>
-            <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} interestFor="export" ></s-button> 
-            <s-tooltip id="delete">Delete</s-tooltip>
-            <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete" interestFor="delete"></s-button>
-            <s-modal id="deleteTrash-modal" heading="Delete Location">
-              <s-text>
+          windowWidth > 768
+            ?
+            <s-stack direction="inline" gap="base">
+              <s-tooltip id="export">Export</s-tooltip>
+              <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} interestFor="export" ></s-button>
+              <s-tooltip id="delete">Delete</s-tooltip>
+              <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete" interestFor="delete"></s-button>
+              <s-modal id="deleteTrash-modal" heading="Delete Location">
+                <s-text>
                   Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
-              </s-text>
-              <s-button
+                </s-text>
+                <s-button
                   slot="secondary-actions"
                   variant="secondary"
                   commandFor="deleteTrash-modal"
                   command="--hide"
-              >
+                >
                   Cancel
-              </s-button>
+                </s-button>
 
-              <s-button
+                <s-button
                   slot="primary-action"
                   variant="primary"
                   tone="critical"
                   commandFor="deleteTrash-modal"
                   command="--hide"
                   onClick={() => handleDelete()}
-              >
-                  Delete 
-              </s-button>
-            </s-modal>
-            <Link to="/app/addLocation" >
-              <s-button variant="primary" icon="plus-circle">Add Product</s-button>
-            </Link>
-          </s-stack> 
-          :
-          <s-stack direction="inline" justifyContent="end" gap="base">
-            <s-button icon="menu-horizontal" commandFor="btn-group"></s-button>
-            <s-popover id="btn-group">
-              <s-stack direction="block">
-                <s-button variant="tertiary" disabled={!hasChecked} onClick={handleExport} >Export</s-button> 
-                <s-button variant="tertiary" commandFor="deleteTrash-modal" disabled={!hasChecked} >Delete</s-button>
-                <s-modal id="deleteTrash-modal" heading="Delete Location">
-                  <s-text>
+                >
+                  Delete
+                </s-button>
+              </s-modal>
+              <Link to="/app/addLocation" >
+                <s-button variant="primary" icon="plus-circle">Add Product</s-button>
+              </Link>
+            </s-stack>
+            :
+            <s-stack direction="inline" justifyContent="end" gap="base">
+              <s-button icon="menu-horizontal" commandFor="btn-group"></s-button>
+              <s-popover id="btn-group">
+                <s-stack direction="block">
+                  <s-button variant="tertiary" disabled={!hasChecked} onClick={handleExport} >Export</s-button>
+                  <s-button variant="tertiary" commandFor="deleteTrash-modal" disabled={!hasChecked} >Delete</s-button>
+                  <s-modal id="deleteTrash-modal" heading="Delete Location">
+                    <s-text>
                       Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
-                  </s-text>
-                  <s-button
+                    </s-text>
+                    <s-button
                       slot="secondary-actions"
                       variant="secondary"
                       commandFor="deleteTrash-modal"
                       command="--hide"
-                  >
+                    >
                       Cancel
-                  </s-button>
+                    </s-button>
 
-                  <s-button
+                    <s-button
                       slot="primary-action"
                       variant="primary"
                       tone="critical"
                       commandFor="deleteTrash-modal"
                       command="--hide"
                       onClick={() => handleDelete()}
-                  >
-                      Delete 
-                  </s-button>
-                </s-modal>
-              </s-stack>
-            </s-popover>
-            <Link to="/app/addLocation" >
-              <s-button variant="primary" icon="plus-circle"></s-button>
-            </Link>
-          </s-stack>
+                    >
+                      Delete
+                    </s-button>
+                  </s-modal>
+                </s-stack>
+              </s-popover>
+              <Link to="/app/addLocation" >
+                <s-button variant="primary" icon="plus-circle"></s-button>
+              </Link>
+            </s-stack>
         }
       </s-stack>
 
       <s-section padding="none">
-        <s-table 
-          // paginate
-          // hasPreviousPage={currentPage > 1}  
-          // hasNextPage={currentPage < totalPages}  
-          // onPreviousPage={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-          // onNextPage={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+        <s-table
+        // paginate
+        // hasPreviousPage={currentPage > 1}  
+        // hasNextPage={currentPage < totalPages}  
+        // onPreviousPage={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+        // onNextPage={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
         >
           <s-grid slot="filters" gap="small-200" gridTemplateColumns="1fr auto">
             <s-text-field
@@ -367,14 +367,14 @@ export default function AllLocation() {
                 </s-box> */}
                 <s-divider />
                 <s-box padding="small">
-                  <s-choice-list 
+                  <s-choice-list
                     label="Visibility"
-                    name= "visi"
+                    name="visi"
                     values={selectedVisibility ? [selectedVisibility] : []}
                     onChange={(e) => {
-                        const target = e.currentTarget.values;                     
-                        setSelectedVisibility(target ? target[0] : "")
-                      }}
+                      const target = e.currentTarget.values;
+                      setSelectedVisibility(target ? target[0] : "")
+                    }}
                   >
                     <s-choice value="visible">Visible</s-choice>
                     <s-choice value="hidden">Hidden</s-choice>
@@ -396,7 +396,7 @@ export default function AllLocation() {
                   <s-table-header-row>
                     <s-table-header listSlot="primary">
                       <s-stack direction="inline" gap="small" alignItems="center">
-                        <s-checkbox 
+                        <s-checkbox
                           onChange={selectAllVisible}
                           checked={allVisibleSelected}
                         />
@@ -420,8 +420,8 @@ export default function AllLocation() {
                 {!hasChecked && (
                   <s-table-header-row>
                     <s-table-header listSlot="primary">
-                      <s-stack direction="inline" gap="base">      
-                        <s-checkbox 
+                      <s-stack direction="inline" gap="base">
+                        <s-checkbox
                           checked={allVisibleSelected}
                           onChange={selectAllVisible}
                         />
@@ -434,7 +434,7 @@ export default function AllLocation() {
                     <s-table-header listSlot="labeled">Created</s-table-header>
                     <s-table-header listSlot="labeled">Update</s-table-header>
                     <s-table-header listSlot="labeled">Actions</s-table-header>
-                  </s-table-header-row> 
+                  </s-table-header-row>
                 )}
                 <s-table-body>
                   {
@@ -442,12 +442,12 @@ export default function AllLocation() {
                       <s-table-row key={store.id}>
                         <s-table-cell>
                           <s-stack direction="inline" alignItems="center" gap="base">
-                            <s-checkbox 
+                            <s-checkbox
                               checked={selectedIds.has(store.id)}
                               onChange={() => toggleSelect(store.id)}
                             />
-                            <s-thumbnail src={store.image || ''}  size="small"/>
-                            <s-link href={`/app/editLocation/${store.id}`}>  
+                            <s-thumbnail src={store.image || ''} size="small" />
+                            <s-link href={`/app/editLocation/${store.id}`}>
                               <s-box>{store.storeName}</s-box>
                               <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
                             </s-link>
@@ -480,15 +480,15 @@ export default function AllLocation() {
                         <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>
                           <s-stack direction="inline" alignItems="center" gap="small">
-                            <s-button 
-                              variant="tertiary" 
+                            <s-button
+                              variant="tertiary"
                               icon="delete"
                               commandFor={`deleteId-modal-${store.id}`}
                             >
                             </s-button>
                             <s-modal id={`deleteId-modal-${store.id}`} heading="Delete Location">
                               <s-text>
-                                  Are you sure you want to delete this store? This action cannot be undone.
+                                Are you sure you want to delete this store? This action cannot be undone.
                               </s-text>
 
                               <s-button
@@ -511,13 +511,13 @@ export default function AllLocation() {
                                   handleDeleteTrash(store.id);
                                 }}
                               >
-                                Delete 
+                                Delete
                               </s-button>
                             </s-modal>
                             <s-link href={`/app/editLocation/${store.id}`}>Edit</s-link>
                           </s-stack>
                         </s-table-cell>
-                      </s-table-row> 
+                      </s-table-row>
                     ))
                   }
                 </s-table-body>
@@ -528,7 +528,7 @@ export default function AllLocation() {
                   <s-table-row>
                     <s-table-cell >
                       <s-stack alignItems="center" gap="small">
-                        <s-icon type="search" size="base"/>
+                        <s-icon type="search" size="base" />
                         <h2>No filters found</h2>
                         <s-text color="subdued">
                           Try changing the filters or search term
@@ -539,12 +539,12 @@ export default function AllLocation() {
                 </s-table-body>
               </>
             )
-          }        
+          }
         </s-table>
         <s-stack
           direction="inline"
           justifyContent="center"
-          gap="small"
+          gap="small-400"
           background="subdued"
           paddingBlock="small-200"
         >
@@ -554,7 +554,7 @@ export default function AllLocation() {
             onClick={() => setCurrentPage(p => p - 1)}
             icon="caret-left"
           >
-            
+
           </s-button>
 
           <s-button
@@ -563,7 +563,7 @@ export default function AllLocation() {
             onClick={() => setCurrentPage(p => p + 1)}
             icon="caret-right"
           >
-  
+
           </s-button>
         </s-stack>
       </s-section>

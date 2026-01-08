@@ -10,7 +10,7 @@ import Review from 'app/component/onboarding/review'
 import Update from 'app/component/onboarding/update'
 import { hasStoreLocatorEmbedEnabled } from 'app/utils/embedStore'
 
-export async function loader({request}: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
 
     const query = `
@@ -41,10 +41,10 @@ export async function loader({request}: LoaderFunctionArgs) {
     const storeHandle = session.shop.replace(".myshopify.com", "");
 
     const onBoard = await prisma.onBoard.findFirst({
-        where: {shop}
+        where: { shop }
     })
 
-    return {storeHandle, themeId, onBoard}
+    return { storeHandle, themeId, onBoard }
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -83,7 +83,7 @@ export async function action({ request }: ActionFunctionArgs) {
             }
         }
 
-        return {ok: verified}
+        return { ok: verified }
     }
 
     // mapping action → onboarding step
@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (remove) {
         const updated = current.filter((s: string) => s !== step)
-        
+
         await prisma.onBoard.upsert({
             where: { shop },
             update: {
@@ -145,10 +145,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return { ok: true }
 }
 
-export default function Onboarding () {
+export default function Onboarding() {
     const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
-    const {storeHandle, themeId, onBoard} = useLoaderData()
+    const { storeHandle, themeId, onBoard } = useLoaderData()
     const [googleMap, setGoogleMap] = useState(false)
     const [design, setDesign] = useState(false)
     const [review, setReview] = useState(false)
@@ -181,13 +181,12 @@ export default function Onboarding () {
         Array.isArray(onBoard?.onBoarding) &&
         onBoard.onBoarding.includes("addMap")
 
-    
     return (
         <s-page heading='Store Locator'>
             <s-query-container>
                 <s-stack paddingInline="small">
                     <h2>Welcome to Store Locator</h2>
-                    
+
                     <s-section>
                         <s-stack gap="base">
                             <s-stack direction="inline" justifyContent="start" gap="base">
@@ -195,7 +194,7 @@ export default function Onboarding () {
                                     <s-icon type="incentive" />
                                 </s-stack>
                                 <s-stack>
-                                    <h2 style={{marginTop:"0", marginBottom:'8px'}}>Getting Started with Store Locator</h2>
+                                    <h2 style={{ marginTop: "0", marginBottom: '8px' }}>Getting Started with Store Locator</h2>
                                     <s-paragraph>A step-by-step guide to configuring the app to suit your business needs.</s-paragraph>
                                 </s-stack>
                             </s-stack>
@@ -205,62 +204,62 @@ export default function Onboarding () {
                                 </s-box>
                                 <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                     <div
-                                    style={{
-                                        width: `${(count/5) * 100}%`,
-                                        height: 8,
-                                        background: "rgb(145, 208, 255)",
-                                        borderRadius: 4,
-                                        transition: "width 0.3s",
-                                    }}
+                                        style={{
+                                            width: `${(count / 5) * 100}%`,
+                                            height: 8,
+                                            background: "rgb(145, 208, 255)",
+                                            borderRadius: 4,
+                                            transition: "width 0.3s",
+                                        }}
                                     />
                                 </div>
                             </s-stack>
 
                             <s-stack gap='small'>
                                 <s-clickable onClick={() => setIndex(0)} background={index === 0 ? 'subdued' : 'base'} borderRadius='large'>
-                                    <GoogleApi 
-                                        storeHandle = {storeHandle}
-                                        check = {googleMap}
+                                    <GoogleApi
+                                        storeHandle={storeHandle}
+                                        check={googleMap}
                                         handleCheck={setGoogleMap}
-                                        index = {index}
-                                    />
-                                </s-clickable> 
-
-                                <s-clickable onClick={() => setIndex(1)} background={index === 1 ? 'subdued' : 'base'} borderRadius='large'>
-                                    <DesignMap 
-                                        storeHandle = {storeHandle}
-                                        check = {design}
-                                        handleCheck = {setDesign}
-                                        index = {index}
+                                        index={index}
                                     />
                                 </s-clickable>
-                        
+
+                                <s-clickable onClick={() => setIndex(1)} background={index === 1 ? 'subdued' : 'base'} borderRadius='large'>
+                                    <DesignMap
+                                        storeHandle={storeHandle}
+                                        check={design}
+                                        handleCheck={setDesign}
+                                        index={index}
+                                    />
+                                </s-clickable>
+
                                 <s-clickable onClick={() => setIndex(2)} background={index === 2 ? 'subdued' : 'base'} borderRadius='large'>
-                                    <Review 
-                                        storeHandle = {storeHandle}
-                                        check = {review}
-                                        handleCheck = {setReview}
-                                        index = {index}
+                                    <Review
+                                        storeHandle={storeHandle}
+                                        check={review}
+                                        handleCheck={setReview}
+                                        index={index}
                                     />
                                 </s-clickable>
 
                                 <s-clickable onClick={() => setIndex(3)} background={index === 3 ? 'subdued' : 'base'} borderRadius='large'>
                                     <Update
-                                        storeHandle = {storeHandle}
-                                        check = {update}
-                                        handleCheck = {setUpdate}
-                                        index = {index}
+                                        storeHandle={storeHandle}
+                                        check={update}
+                                        handleCheck={setUpdate}
+                                        index={index}
                                     />
                                 </s-clickable>
-                                
+
                                 <s-clickable onClick={() => setIndex(4)} background={index === 4 ? 'subdued' : 'base'} borderRadius='large'>
-                                    <AddMapToStore 
-                                        storeHandle = {storeHandle}
-                                        themeId = {themeId}
-                                        check = {addMap}
-                                        handleCheck = {setAddMap}
-                                        index = {index}
-                                        hasAddMapStep = {hasAddMapStep}
+                                    <AddMapToStore
+                                        storeHandle={storeHandle}
+                                        themeId={themeId}
+                                        check={addMap}
+                                        handleCheck={setAddMap}
+                                        index={index}
+                                        hasAddMapStep={hasAddMapStep}
                                     />
                                 </s-clickable>
                             </s-stack>

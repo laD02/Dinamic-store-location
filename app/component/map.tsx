@@ -163,7 +163,8 @@ export default function MapGoogle({
                 backgroundColor: popupStyle.backgroundColor,
                 color: popupStyle.color,
                 borderRadius: popupStyle.cornerRadius,
-                boxShadow: `${popupStyle.anchorx}px ${popupStyle.anchory}px ${popupStyle.blur}px ${hexToRgba(popupStyle.shadowColor, popupStyle.transparency / 100)}`
+                boxShadow: `${popupStyle.anchorx}px ${popupStyle.anchory}px ${popupStyle.blur}px ${hexToRgba(popupStyle.shadowColor, popupStyle.transparency / 100)}`,
+                transform: 'translate(-50%, -50%)'
               }}
             >
               <div className={styles.overlayImageContainer}>

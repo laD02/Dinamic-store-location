@@ -1,17 +1,19 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useNavigate} from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
 import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
+import { stateList } from "app/utils/state";
+import styles from "../css/addLocation.module.css"
 
-export async function loader({request}:LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
     return filter;
 }
 
-export async function action({request}: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
     const formData = await request.formData();
     const contract: Record<string, string[]> = {};
     const urls = formData.getAll("contract") as string[];
@@ -22,7 +24,7 @@ export async function action({request}: ActionFunctionArgs) {
     const tags = tagsString ? JSON.parse(tagsString) : [];
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
-    
+
     let imageUrl = "";
     if (imageBase64) {
         const uploadedUrl = await uploadImageToCloudinary(imageBase64);
@@ -52,7 +54,7 @@ export async function action({request}: ActionFunctionArgs) {
         } else if (lower.includes("tiktok.com")) {
             if (!contract.tiktok) contract.tiktok = [];
             contract.tiktok.push(url)
-        } 
+        }
     });
 
     await prisma.store.create({
@@ -69,7 +71,7 @@ export async function action({request}: ActionFunctionArgs) {
             contract,
             source: formData.get('source')?.toString() ?? "Manual",
             visibility: formData.get('visibility')?.toString() ?? "",
-            time:{
+            time: {
                 mondayOpen: formData.get('Monday-open')?.toString() ?? "",
                 mondayClose: formData.get('Monday-close')?.toString() ?? "",
                 tuesdayOpen: formData.get('Tuesday-open')?.toString() ?? "",
@@ -90,50 +92,74 @@ export async function action({request}: ActionFunctionArgs) {
             lng: location?.lng ?? null,
         },
     });
-    return {ok: true}
+    return { ok: true }
 }
 
-export default function AddLocation () {
+type SocialMedia = {
+    id: string;
+    platform: string;
+    url: string;
+};
+
+export default function AddLocation() {
     const navigate = useNavigate();
     const fetcher = useFetcher()
     const shopify = useAppBridge()
     const [click, setClick] = useState(false)
-    const [countSocial, setCountSocial] = useState<string[]>([
-        crypto.randomUUID(),
-        crypto.randomUUID(),
+    const [countSocial, setCountSocial] = useState<SocialMedia[]>([
+        { id: crypto.randomUUID(), platform: "linkedin", url: "" },
+        { id: crypto.randomUUID(), platform: "linkedin", url: "" },
     ]);
     const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [error, setError] = useState(false)
     const initialFormRef = useRef<FormData | null>(null);
-    const initialSocialCountRef = useRef<number>(2);
+    const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [previewData, setPreviewData] = useState({
+        storeName: "",
+        address: "",
+        phone: "",
+        city: "",
+        state: "",
+        code: "",
+    });
     const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
 
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Saturday', 'Sunday'];
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     const [dayStatus, setDayStatus] = useState(
         days.reduce((acc, day) => {
-        acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
-        return acc;
+            acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
+            return acc;
         }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
     );
 
+    const socialIcons: Record<string, string> = {
+        facebook: 'fa-facebook',
+        youtube: 'fa-youtube',
+        linkedin: 'fa-linkedin',
+        instagram: 'fa-square-instagram',
+        x: 'fa-square-x-twitter',
+        pinterest: 'fa-pinterest',
+        tiktok: 'fa-tiktok'
+    };
+
     useEffect(() => {
         if (isInitialized || !formRef.current) return;
-        
+
         requestAnimationFrame(() => {
             if (formRef.current) {
                 initialFormRef.current = new FormData(formRef.current);
                 initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
-                initialSocialCountRef.current = countSocial.length;
+                initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
                 setIsInitialized(true);
             }
         });
-    }, [isInitialized]); 
+    }, [isInitialized]);
 
     const checkDirtyAndToggleSaveBar = () => {
         if (isDiscardingRef.current || !isInitialized) return;
@@ -149,7 +175,7 @@ export default function AddLocation () {
             const initialValue = initialFormRef.current.get(key);
             const currentStr = String(value).trim();
             const initialStr = String(initialValue ?? "").trim();
-            
+
             if (currentStr !== initialStr) {
                 dirty = true;
                 break;
@@ -169,8 +195,8 @@ export default function AddLocation () {
         if (!dirty) {
             const hadInitialImage = initialFormRef.current.get("image");
             const hasCurrentImage = imageBase64;
-            
-            if (!!hadInitialImage !== !!hasCurrentImage || 
+
+            if (!!hadInitialImage !== !!hasCurrentImage ||
                 (hadInitialImage && hasCurrentImage && hadInitialImage !== hasCurrentImage)) {
                 dirty = true;
             }
@@ -178,17 +204,10 @@ export default function AddLocation () {
 
         // 4. ⭐ CHECK SOCIAL - Kiểm tra số lượng hoặc nội dung
         if (!dirty) {
-            // Check số lượng social media fields
-            if (countSocial.length !== initialSocialCountRef.current) {
+            const currentSocials = JSON.stringify(countSocial);
+            const initialSocials = JSON.stringify(initialSocialRef.current);
+            if (currentSocials !== initialSocials) {
                 dirty = true;
-            } else {
-                // Check nội dung các contract URLs
-                const currentContracts = current.getAll("contract").map(v => String(v).trim());
-                const initialContracts = initialFormRef.current.getAll("contract").map(v => String(v).trim());
-                
-                if (JSON.stringify(currentContracts) !== JSON.stringify(initialContracts)) {
-                    dirty = true;
-                }
             }
         }
 
@@ -234,7 +253,7 @@ export default function AddLocation () {
         if (fetcher.data?.ok && formRef.current) {
             initialFormRef.current = new FormData(formRef.current);
             initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
-            initialSocialCountRef.current = countSocial.length;
+            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
             shopify.toast.show('Store saved successfully!')
             shopify.saveBar.hide("location-save-bar");
         }
@@ -249,11 +268,16 @@ export default function AddLocation () {
     };
 
     const handleAdd = () => {
-        setCountSocial(prev => [...prev, crypto.randomUUID()]);
+        const newItem: SocialMedia = {
+            id: crypto.randomUUID(),
+            platform: "linkedin",
+            url: ""
+        };
+        setCountSocial([...countSocial, newItem]);
     };
 
-    const handleRemove = (key: string) => {
-        setCountSocial(prev => prev.filter(k => k !== key));
+    const handleRemove = (id: string) => {
+        setCountSocial(prev => prev.filter(item => item.id !== id));
     };
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -293,18 +317,33 @@ export default function AddLocation () {
 
         setError(false);
 
-        const formData = new FormData(formRef.current);
-        const allContracts = formData.getAll("contract") as string[];
-        
-        formData.delete("contract");
-        
-        allContracts.forEach(url => {
-            if (url && url.trim() !== "") {
-                formData.append("contract", url.trim());
-            }
+        // ⭐ THÊM: Cập nhật dayStatus - nếu 1 trong 2 rỗng thì set cả 2 thành "close"
+        setDayStatus(prev => {
+            const updated = { ...prev };
+
+            days.forEach(day => {
+                const openValue = prev[day].valueOpen;
+                const closeValue = prev[day].valueClose;
+
+                // Nếu 1 trong 2 rỗng hoặc "close", set cả 2 thành "close" và disabled = true
+                if (!openValue || !closeValue || openValue === "close" || closeValue === "close") {
+                    updated[day] = {
+                        disabled: true,
+                        valueOpen: "close",
+                        valueClose: "close"
+                    };
+                }
+            });
+
+            return updated;
         });
 
-        fetcher.submit(formData, { method: "post" });
+        // ⭐ THÊM: Đợi state update xong rồi mới submit
+        setTimeout(() => {
+            if (formRef.current) {
+                fetcher.submit(formRef.current, { method: "post" });
+            }
+        }, 0);
     };
 
     const handleDiscard = () => {
@@ -313,7 +352,7 @@ export default function AddLocation () {
         isDiscardingRef.current = true;
 
         const form = formRef.current;
-        
+
         for (const [key, value] of initialFormRef.current.entries()) {
             const element = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
             if (element && key !== "image") {
@@ -324,21 +363,26 @@ export default function AddLocation () {
         const initialImage = initialFormRef.current.get("image")?.toString();
         setPreview(initialImage || null);
         setImageBase64(initialImage || null);
-        
+
         const initialVisibility = initialFormRef.current.get("visibility")?.toString();
         setClick(initialVisibility === "visible");
-        
-        const initialContracts = initialFormRef.current.getAll("contract");
-        const initialCount = Math.max(initialContracts.length, 2);
 
-        setCountSocial(
-            Array.from({ length: initialCount }, () => crypto.randomUUID())
-        );
+        setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
-        
+
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
         }
+        // ✅ Reset preview text (Add = về rỗng)
+        setPreviewData({
+            storeName: "",
+            address: "",
+            phone: "",
+            city: "",
+            state: "",
+            code: "",
+        });
+
 
         setError(false);
 
@@ -363,7 +407,7 @@ export default function AddLocation () {
                     onClick={() => {
                         handleDiscard()
                     }}
-                    disabled = {isSaving}
+                    disabled={isSaving}
                 >
                     Discard
                 </button>
@@ -371,280 +415,438 @@ export default function AddLocation () {
             <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
                 <s-stack direction="inline" gap="small-100" alignItems="center">
                     <s-box>
-                        <s-clickable 
-                            background="strong" 
-                            borderRadius="small-100" 
+                        <s-clickable
+                            background="strong"
+                            borderRadius="small-100"
                             blockSize="50%"
                             onClick={() => navigate('/app/allLocation')}
                             padding="small-300"
                         >
-                            <s-icon type="arrow-left"/>
+                            <s-icon type="arrow-left" />
                         </s-clickable>
                     </s-box>
                     <s-text type="strong">Location Editor</s-text>
                     <s-box>
                         {
                             click ?
-                            <s-clickable onClick={handleVisibilityToggle}>
-                                <s-badge tone="success">
-                                    <s-stack direction="inline" alignItems="center">
-                                        <s-icon type="eye-check-mark"/>
-                                        visible
-                                    </s-stack>
-                                </s-badge>
-                            </s-clickable>
-                            :
-                            <s-clickable onClick={handleVisibilityToggle}>
-                                <s-badge >
-                                    <s-stack direction="inline" alignItems="center">
-                                        <s-icon type="eye-check-mark" tone="info"/>
-                                        hidden
-                                    </s-stack>
-                                </s-badge>
-                            </s-clickable>
+                                <s-clickable onClick={handleVisibilityToggle}>
+                                    <s-badge tone="success">
+                                        <s-stack direction="inline" alignItems="center">
+                                            <s-icon type="eye-check-mark" />
+                                            visible
+                                        </s-stack>
+                                    </s-badge>
+                                </s-clickable>
+                                :
+                                <s-clickable onClick={handleVisibilityToggle}>
+                                    <s-badge >
+                                        <s-stack direction="inline" alignItems="center">
+                                            <s-icon type="eye-check-mark" tone="info" />
+                                            hidden
+                                        </s-stack>
+                                    </s-badge>
+                                </s-clickable>
                         }
                     </s-box>
                 </s-stack>
             </s-stack>
-            
-            <s-stack>
-                <Form method="post" ref={formRef}>
-                <input
-                    type="hidden"
-                    name="visibility"
-                    value={click ? "visible" : "hidden"}
-                />
-                <s-stack gap="large-100">
-                    <s-section>                      
-                        <s-stack>
-                            <s-stack direction="inline" justifyContent="space-between">
-                                <s-heading>Location Information</s-heading>
-                                <s-badge tone="info">Manual</s-badge>                               
-                            </s-stack>
-                            <s-paragraph >Customize your location information</s-paragraph>
-                        </s-stack>
-                        <s-stack padding="small" gap="small-200">
-                            <s-box>
-                                <s-text-field 
-                                    label="Location Name"
-                                    name = "storeName"
-                                    error={ error === true ? "Location name is required" : ""}
-                                    required       
-                                    defaultValue=""   
-                                    onInput={checkDirtyAndToggleSaveBar}                       
-                                />
-                            </s-box>
-                            <s-box>
-                                <s-text-field 
-                                    label="Address"
-                                    name = "address"
-                                    error={error === true ? "Address line 1 is required" : ""}
-                                    required       
-                                    defaultValue=""      
-                                    onInput={checkDirtyAndToggleSaveBar}                       
-                                />
-                            </s-box>
-                            <s-stack direction="inline" justifyContent="space-between" gap="small-100">
-                            
-                                <s-box inlineSize="32%">
-                                    <s-text-field 
-                                        label="City"
-                                        name="city"
-                                        error={ error === true ? "City is required" : ""}
-                                        required
-                                        defaultValue=""
-                                        onInput={checkDirtyAndToggleSaveBar}
-                                    />
-                                </s-box>
-                            
-                                <s-box inlineSize="32%">
-                                    <s-select label="State" name="state" required error={error === true ? "State is required" : ""} onChange={checkDirtyAndToggleSaveBar}>
-                                        <s-option value="AL">AL</s-option>
-                                        <s-option value="AZ">AZ</s-option>
-                                        <s-option value="AS">AS</s-option>
-                                        <s-option value="AR">AR</s-option>
-                                    </s-select>
-                                </s-box>
-                                
-                                <s-box inlineSize="32%">
-                                    <s-text-field 
-                                        label="Zip Code"
-                                        name="code"
-                                        error={error === true ? "Zip code is required" : ""}
-                                        required
-                                        defaultValue=""
-                                        onInput={checkDirtyAndToggleSaveBar}
-                                    />
 
-                                </s-box>
-                            </s-stack>
-                            <s-stack direction="inline" justifyContent="space-between" >
-                            
-                                <s-box inlineSize="49%">
-                                    <s-text-field 
-                                        label="Phone Number"
-                                        name="phone"
-                                        defaultValue=""
-                                        onInput={checkDirtyAndToggleSaveBar}
-                                    />
-                                </s-box>
-                                
-                                <s-box inlineSize="49%">
-                                    <s-text-field 
-                                        label="Website"
-                                        name="url"
-                                        defaultValue=""
-                                        onInput={checkDirtyAndToggleSaveBar}
-                                    />
-                                </s-box>
-                            </s-stack>
-                            
-                            <s-text-area 
-                                label="Direction"
-                                name="directions"
-                                defaultValue=""
-                                onInput={checkDirtyAndToggleSaveBar}
-                            />
-                        </s-stack>
-                    </s-section>
-                    <s-section >
-                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                            <s-stack >
-                                <s-heading>Social Media</s-heading>
-                                <s-paragraph>Customize your location information</s-paragraph>
-                            </s-stack>
-                            <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
-                        </s-stack>
-                        <s-stack paddingBlock="small-200" paddingInlineStart="small" gap="small-400">
-                            {
-                                countSocial.map(key => (
-                                    <s-stack direction="inline" justifyContent="start" gap="small-200" alignItems="center"  key={`${socialResetKey}-${key}`} >
-                                        <s-box inlineSize="33%">
-                                            <s-select name="social" onChange={checkDirtyAndToggleSaveBar}>
-                                                <s-option value="linkedin">LinkedIn</s-option>
-                                                <s-option value="youtube">Youtube</s-option>
-                                                <s-option value="facebook">Facebook</s-option>
-                                                <s-option value="instagram">Instagram</s-option>
-                                                <s-option value="x">X</s-option>
-                                                <s-option value="pinterest">Pinterest</s-option>
-                                                <s-option value="tiktok">Tiktok</s-option>
-                                            </s-select>
-                                        </s-box>
-                                        <s-box inlineSize="33%">
-                                            <s-text-field 
-                                                name="contract"
+            <Form method="post" ref={formRef}>
+                <s-query-container>
+                    <s-grid
+                        gridTemplateColumns="@container (inline-size > 768px) 2fr 1fr, 1fr"
+                        gap="base"
+                    >
+                        <s-grid-item>
+                            <s-stack>
+                                <input
+                                    type="hidden"
+                                    name="visibility"
+                                    value={click ? "visible" : "hidden"}
+                                />
+                                <s-stack gap="base">
+                                    <s-section>
+                                        <s-stack>
+                                            <s-stack direction="inline" justifyContent="space-between">
+                                                <s-heading>Location Information</s-heading>
+                                                <s-badge tone="info">Manual</s-badge>
+                                            </s-stack>
+                                            <s-paragraph >Customize your location information</s-paragraph>
+                                        </s-stack>
+                                        <s-stack padding="small" gap="small-200">
+                                            <s-box>
+                                                <s-text-field
+                                                    label="Location Name"
+                                                    name="storeName"
+                                                    error={error === true ? "Location name is required" : ""}
+                                                    required
+                                                    defaultValue=""
+                                                    onInput={(e: any) => {
+                                                        setPreviewData(prev => ({
+                                                            ...prev,
+                                                            storeName: e.target.value
+                                                        }));
+                                                        checkDirtyAndToggleSaveBar();
+                                                    }}
+                                                />
+                                            </s-box>
+                                            <s-box>
+                                                <s-text-field
+                                                    label="Address"
+                                                    name="address"
+                                                    error={error === true ? "Address line 1 is required" : ""}
+                                                    required
+                                                    defaultValue=""
+                                                    onInput={(e: any) => {
+                                                        setPreviewData(prev => ({
+                                                            ...prev,
+                                                            address: e.target.value
+                                                        }));
+                                                        checkDirtyAndToggleSaveBar();
+                                                    }}
+                                                />
+                                            </s-box>
+                                            <s-stack direction="inline" justifyContent="space-between" gap="small-100">
+
+                                                <s-box inlineSize="32%">
+                                                    <s-text-field
+                                                        label="City"
+                                                        name="city"
+                                                        error={error === true ? "City is required" : ""}
+                                                        required
+                                                        defaultValue=""
+                                                        onInput={(e: any) => {
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                city: e.target.value
+                                                            }));
+                                                            checkDirtyAndToggleSaveBar();
+                                                        }}
+                                                    />
+                                                </s-box>
+
+                                                <s-box inlineSize="32%">
+                                                    <s-select
+                                                        label="State"
+                                                        name="state"
+                                                        required
+                                                        error={error === true ? "State is required" : ""}
+                                                        onChange={(e: any) => {
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                state: e.target.value
+                                                            }));
+                                                            checkDirtyAndToggleSaveBar();
+                                                        }}
+                                                    >
+                                                        {
+                                                            stateList.map((state) => (
+                                                                <s-option key={state} value={state}>
+                                                                    {state}
+                                                                </s-option>
+                                                            ))
+                                                        }
+                                                    </s-select>
+                                                </s-box>
+
+                                                <s-box inlineSize="32%">
+                                                    <s-text-field
+                                                        label="Zip Code"
+                                                        name="code"
+                                                        error={error === true ? "Zip code is required" : ""}
+                                                        required
+                                                        defaultValue=""
+                                                        onInput={(e: any) => {
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                code: e.target.value
+                                                            }));
+                                                            checkDirtyAndToggleSaveBar();
+                                                        }}
+                                                    />
+
+                                                </s-box>
+                                            </s-stack>
+                                            <s-stack direction="inline" justifyContent="space-between" >
+
+                                                <s-box inlineSize="49%">
+                                                    <s-text-field
+                                                        label="Phone Number"
+                                                        name="phone"
+                                                        defaultValue=""
+                                                        onInput={(e: any) => {
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                phone: e.target.value
+                                                            }));
+                                                            checkDirtyAndToggleSaveBar();
+                                                        }}
+                                                    />
+                                                </s-box>
+
+                                                <s-box inlineSize="49%">
+                                                    <s-text-field
+                                                        label="Website"
+                                                        name="url"
+                                                        defaultValue=""
+                                                        onInput={checkDirtyAndToggleSaveBar}
+                                                    />
+                                                </s-box>
+                                            </s-stack>
+
+                                            <s-text-area
+                                                label="Direction"
+                                                name="directions"
                                                 defaultValue=""
                                                 onInput={checkDirtyAndToggleSaveBar}
                                             />
-                                        </s-box>
-                                        <s-button icon="delete" onClick={() => handleRemove(key)}></s-button>
-                                    </s-stack>
-                                ))
-                            }              
-                        </s-stack>
-                    </s-section>
-                    <s-section>
-                        <s-box>
-                            <s-heading>Hours of Operation</s-heading>
-                        </s-box>
-                        <s-stack paddingInline="small">
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <td></td>
-                                        <td align="center">Open</td>
-                                        <td align="center">Close</td>
-                                        <td></td>
-                                    </tr>                       
-                                    {days.map((item) => (
-                                        <tr key={item}>
-                                            <td>{item}</td>
-                                            <td>
-                                                <s-text-field
-                                                    name={`${item}-open`}
-                                                    value={dayStatus[item].valueOpen}
-                                                    readOnly={dayStatus[item].disabled}
-                                                    onInput={(e: any) =>{
-                                                        setDayStatus(prev => ({
-                                                        ...prev,
-                                                        [item]: { ...prev[item], valueOpen: e.target.value }
-                                                        }))
-                                                    }}
-                                                />
-                                            </td>
-                                            <td>
-                                                <s-text-field
-                                                    name={`${item}-close`}
-                                                    value={dayStatus[item].valueClose}
-                                                    readOnly={dayStatus[item].disabled}
-                                                    onInput={(e: any) =>{
-                                                        setDayStatus(prev => ({
-                                                        ...prev,
-                                                        [item]: { ...prev[item], valueClose: e.target.value }
-                                                        }))
-                                                    }}
-                                                />
-                                            </td>
-                                            <td>
-                                                <s-button icon="eye-check-mark" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </s-stack>
-                    </s-section>   
-                    <s-section>
-                        <s-box>
-                            <s-heading>Add a logo for this location</s-heading>                                          
-                            <s-paragraph>Customize your location information</s-paragraph>  
-                        </s-box>
-                        <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
-                            <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
-                                {preview ? (
-                                    <s-stack justifyContent="center" alignItems="center">
-                                        <s-box inlineSize="60px" blockSize="60px">
-                                            <s-image
-                                                src={preview} 
-                                                alt="preview" 
-                                                objectFit="cover"
-                                                loading="lazy"
-                                            />
-                                        </s-box>
+                                        </s-stack>
+                                    </s-section>
+
+                                    <s-section>
                                         <s-box>
-                                            <s-clickable
-                                                onClick={ (e)=> {
-                                                    e.stopPropagation();
-                                                    setPreview(null) 
-                                                    setImageBase64(null); 
-                                                }}
-                                            >
-                                                <s-icon type="x"/>
-                                            </s-clickable>
+                                            <s-heading>Hours of Operation</s-heading>
                                         </s-box>
-                                    </s-stack>
-                                        
-                                ) : (
-                                    <s-stack alignItems="center">
-                                        <s-button onClick={() => handleClick()}>Add file</s-button>
-                                        <s-paragraph>Accepts .gif, .jpg, .png and .svg</s-paragraph>
-                                    </s-stack>          
-                                )}
+                                        <s-stack paddingInline="small">
+                                            <table>
+                                                <tbody>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td align="center">Open</td>
+                                                        <td align="center">Close</td>
+                                                        <td></td>
+                                                    </tr>
+                                                    {days.map((item) => (
+                                                        <tr key={item}>
+                                                            <td>{item}</td>
+                                                            <td>
+                                                                <s-text-field
+                                                                    name={`${item}-open`}
+                                                                    value={dayStatus[item].valueOpen}
+                                                                    readOnly={dayStatus[item].disabled}
+                                                                    onInput={(e: any) => {
+                                                                        setDayStatus(prev => ({
+                                                                            ...prev,
+                                                                            [item]: { ...prev[item], valueOpen: e.target.value }
+                                                                        }))
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <s-text-field
+                                                                    name={`${item}-close`}
+                                                                    value={dayStatus[item].valueClose}
+                                                                    readOnly={dayStatus[item].disabled}
+                                                                    onInput={(e: any) => {
+                                                                        setDayStatus(prev => ({
+                                                                            ...prev,
+                                                                            [item]: { ...prev[item], valueClose: e.target.value }
+                                                                        }))
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <s-button icon="eye-check-mark" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </s-stack>
+                                    </s-section>
+
+                                    <s-section >
+                                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                                            <s-stack >
+                                                <s-heading>Social Media</s-heading>
+                                                <s-paragraph>Customize your location information</s-paragraph>
+                                            </s-stack>
+                                            <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
+                                        </s-stack>
+                                        <s-stack paddingBlock="small-200" paddingInlineStart="small" gap="small-400">
+                                            {
+                                                countSocial.map((item) => (
+                                                    <s-stack
+                                                        direction="inline"
+                                                        justifyContent="start"
+                                                        gap="small-200"
+                                                        alignItems="center"
+                                                        key={`${socialResetKey}-${item.id}`}
+                                                    >
+                                                        <s-box inlineSize="33%">
+                                                            <s-select
+                                                                value={item.platform}
+                                                                onChange={(e: any) => {
+                                                                    setCountSocial(prev =>
+                                                                        prev.map(social =>
+                                                                            social.id === item.id
+                                                                                ? { ...social, platform: e.target.value }
+                                                                                : social
+                                                                        )
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <s-option value="linkedin">LinkedIn</s-option>
+                                                                <s-option value="youtube">Youtube</s-option>
+                                                                <s-option value="facebook">Facebook</s-option>
+                                                                <s-option value="instagram">Instagram</s-option>
+                                                                <s-option value="x">X</s-option>
+                                                                <s-option value="pinterest">Pinterest</s-option>
+                                                                <s-option value="tiktok">Tiktok</s-option>
+                                                            </s-select>
+                                                        </s-box>
+                                                        <s-box inlineSize="33%">
+                                                            <s-text-field
+                                                                name="contract"
+                                                                value={item.url}
+                                                                onInput={(e: any) => {
+                                                                    setCountSocial(prev =>
+                                                                        prev.map(social =>
+                                                                            social.id === item.id
+                                                                                ? { ...social, url: e.target.value }
+                                                                                : social
+                                                                        )
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </s-box>
+                                                        <s-button
+                                                            icon="delete"
+                                                            onClick={() => handleRemove(item.id)}
+                                                        />
+                                                    </s-stack>
+                                                ))
+                                            }
+                                        </s-stack>
+                                    </s-section>
+                                </s-stack>
                             </s-stack>
-                            <input
-                                ref={fileInputRef}
-                                id="upload-file"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                style={{ display: "none" }}
-                            />
-                            <input type="hidden" name="image" value={imageBase64 ?? ""} />
-                        </s-stack>
-                    </s-section>
-                </s-stack>
-                </Form>
-            </s-stack>
+                        </s-grid-item>
+
+                        <s-grid-item>
+                            <s-grid
+                                gridTemplateColumns="@container (inline-size > 768px) 1fr, 1fr 1fr"
+                                gap="base"
+                            >
+                                <s-grid-item>
+                                    <s-section>
+                                        <s-box>
+                                            <s-heading>Add a logo for this location</s-heading>
+                                            <s-paragraph>Customize your location information</s-paragraph>
+                                        </s-box>
+                                        <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
+                                            <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
+                                                {preview ? (
+                                                    <s-stack justifyContent="center" alignItems="center">
+                                                        <s-box inlineSize="60px" blockSize="60px">
+                                                            <s-image
+                                                                src={preview}
+                                                                alt="preview"
+                                                                objectFit="cover"
+                                                                loading="lazy"
+                                                            />
+                                                        </s-box>
+                                                        <s-box>
+                                                            <s-clickable
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setPreview(null)
+                                                                    setImageBase64(null);
+                                                                }}
+                                                            >
+                                                                <s-icon type="x" />
+                                                            </s-clickable>
+                                                        </s-box>
+                                                    </s-stack>
+
+                                                ) : (
+                                                    <s-stack alignItems="center">
+                                                        <s-button onClick={() => handleClick()}>Add file</s-button>
+                                                        <s-paragraph>Accepts .gif, .jpg, .png and .svg</s-paragraph>
+                                                    </s-stack>
+                                                )}
+                                            </s-stack>
+                                            <input
+                                                ref={fileInputRef}
+                                                id="upload-file"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                                style={{ display: "none" }}
+                                            />
+                                            <input type="hidden" name="image" value={imageBase64 ?? ""} />
+                                        </s-stack>
+                                    </s-section>
+                                </s-grid-item>
+
+                                <s-grid-item>
+                                    <div
+                                        className={styles.boxOverlay}
+                                    >
+                                        <div className={styles.overlayImageContainer}>
+                                            <img src={preview || "/shop.png"} alt="Store" />
+                                        </div>
+
+                                        <div className={styles.storeInfo}>
+                                            <h3 className={styles.storeName}>{previewData.storeName || 'Apple Park'}</h3>
+                                            <div className={styles.contactRow}>
+                                                <i className="fa-solid fa-location-dot" ></i>
+                                                <span className={styles.storeAddress}> {previewData.address || 'Apple Park Way'}, {previewData.city || 'Cupertino'}, {previewData.state || 'CA'} {previewData.code || '95014'}</span>
+                                            </div>
+                                            <div className={styles.contactRow}>
+                                                <i className="fa-solid fa-phone" ></i>
+                                                <span>{previewData.phone || '+1 408-996-1010'}</span>
+                                            </div>
+
+                                            <div className={styles.contactRow}>
+                                                <i className="fa-solid fa-clock"></i>
+                                                <table>
+                                                    <tbody>
+                                                        {days.map(day => {
+                                                            const status = dayStatus[day];
+                                                            // ⭐ SỬA: Ẩn nếu disabled HOẶC nếu open/close là rỗng hoặc "close"
+                                                            if (status.disabled ||
+                                                                !status.valueOpen ||
+                                                                !status.valueClose ||
+                                                                status.valueOpen === "close" ||
+                                                                status.valueClose === "close") {
+                                                                return null;
+                                                            }
+
+                                                            return (
+                                                                <tr key={day}>
+                                                                    <td>{day}</td>
+                                                                    <td>{status.valueOpen} - {status.valueClose}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div className={styles.socialIcons}>
+                                                {countSocial
+                                                    .map(item => {
+                                                        const iconClass = socialIcons[item.platform];
+                                                        return (
+                                                            <a href={item.url} target="_blank">
+                                                                <i
+                                                                    key={item.id}
+                                                                    className={`fa-brands ${iconClass}`}
+                                                                />
+                                                            </a>
+                                                        );
+                                                    })
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </s-grid-item>
+                            </s-grid>
+                        </s-grid-item>
+                    </s-grid>
+                </s-query-container>
+            </Form>
         </s-page>
     );
 }
