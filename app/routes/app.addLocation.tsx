@@ -105,7 +105,8 @@ export default function AddLocation() {
     const navigate = useNavigate();
     const fetcher = useFetcher()
     const shopify = useAppBridge()
-    const [click, setClick] = useState(false)
+    const [visibility, setVisibility] = useState("hidden");
+    const initialVisibilityRef = useRef<string>("hidden");
     const [countSocial, setCountSocial] = useState<SocialMedia[]>([
         { id: crypto.randomUUID(), platform: "linkedin", url: "" },
         { id: crypto.randomUUID(), platform: "linkedin", url: "" },
@@ -156,6 +157,7 @@ export default function AddLocation() {
                 initialFormRef.current = new FormData(formRef.current);
                 initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
                 initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
+                initialVisibilityRef.current = "hidden";
                 setIsInitialized(true);
             }
         });
@@ -237,6 +239,11 @@ export default function AddLocation() {
     useEffect(() => {
         if (!isInitialized) return;
         checkDirtyAndToggleSaveBar();
+    }, [visibility, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
     }, [dayStatus, isInitialized]);
 
     useEffect(() => {
@@ -254,18 +261,12 @@ export default function AddLocation() {
             initialFormRef.current = new FormData(formRef.current);
             initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
             initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
+            initialVisibilityRef.current = visibility;
+
             shopify.toast.show('Store saved successfully!')
             shopify.saveBar.hide("location-save-bar");
         }
-    }, [fetcher.data]);
-
-    const handleVisibilityToggle = () => {
-        setClick(prev => {
-            const next = !prev;
-            setTimeout(checkDirtyAndToggleSaveBar);
-            return next;
-        });
-    };
+    }, [fetcher.data, visibility]);
 
     const handleAdd = () => {
         const newItem: SocialMedia = {
@@ -364,8 +365,7 @@ export default function AddLocation() {
         setPreview(initialImage || null);
         setImageBase64(initialImage || null);
 
-        const initialVisibility = initialFormRef.current.get("visibility")?.toString();
-        setClick(initialVisibility === "visible");
+        setVisibility(initialVisibilityRef.current);
 
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
@@ -428,24 +428,20 @@ export default function AddLocation() {
                     <s-text type="strong">Location Editor</s-text>
                     <s-box>
                         {
-                            click ?
-                                <s-clickable onClick={handleVisibilityToggle}>
-                                    <s-badge tone="success">
-                                        <s-stack direction="inline" alignItems="center">
-                                            <s-icon type="eye-check-mark" />
-                                            visible
-                                        </s-stack>
-                                    </s-badge>
-                                </s-clickable>
+                            visibility === "visible" ?
+                                <s-badge tone="success">
+                                    <s-stack direction="inline" alignItems="center">
+                                        <s-icon type="eye-check-mark" />
+                                        visible
+                                    </s-stack>
+                                </s-badge>
                                 :
-                                <s-clickable onClick={handleVisibilityToggle}>
-                                    <s-badge >
-                                        <s-stack direction="inline" alignItems="center">
-                                            <s-icon type="eye-check-mark" tone="info" />
-                                            hidden
-                                        </s-stack>
-                                    </s-badge>
-                                </s-clickable>
+                                <s-badge>
+                                    <s-stack direction="inline" alignItems="center">
+                                        <s-icon type="hide" tone="info" />
+                                        hidden
+                                    </s-stack>
+                                </s-badge>
                         }
                     </s-box>
                 </s-stack>
@@ -462,14 +458,14 @@ export default function AddLocation() {
                                 <input
                                     type="hidden"
                                     name="visibility"
-                                    value={click ? "visible" : "hidden"}
+                                    value={visibility}
                                 />
                                 <s-stack gap="base">
                                     <s-section>
                                         <s-stack>
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
-                                                <s-badge tone="info">Manual</s-badge>
+                                                {/* <s-badge tone="info">Manual</s-badge> */}
                                             </s-stack>
                                             <s-paragraph >Customize your location information</s-paragraph>
                                         </s-stack>
@@ -646,7 +642,7 @@ export default function AddLocation() {
                                                                 />
                                                             </td>
                                                             <td>
-                                                                <s-button icon="eye-check-mark" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
+                                                                <s-button icon="clock" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -729,54 +725,69 @@ export default function AddLocation() {
                                 gap="base"
                             >
                                 <s-grid-item>
-                                    <s-section>
-                                        <s-box>
-                                            <s-heading>Add a logo for this location</s-heading>
-                                            <s-paragraph>Customize your location information</s-paragraph>
-                                        </s-box>
-                                        <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
-                                            <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
-                                                {preview ? (
-                                                    <s-stack justifyContent="center" alignItems="center">
-                                                        <s-box inlineSize="60px" blockSize="60px">
-                                                            <s-image
-                                                                src={preview}
-                                                                alt="preview"
-                                                                objectFit="cover"
-                                                                loading="lazy"
-                                                            />
-                                                        </s-box>
-                                                        <s-box>
-                                                            <s-clickable
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setPreview(null)
-                                                                    setImageBase64(null);
-                                                                }}
-                                                            >
-                                                                <s-icon type="x" />
-                                                            </s-clickable>
-                                                        </s-box>
-                                                    </s-stack>
+                                    <s-stack gap="base">
+                                        <s-section heading="Visibility">
+                                            <s-select
+                                                value={visibility}
+                                                onChange={(e: any) => {
+                                                    setVisibility(e.target.value);
+                                                    setTimeout(checkDirtyAndToggleSaveBar);
+                                                }}
+                                            >
+                                                <s-option value="hidden">Hidden</s-option>
+                                                <s-option value="visible">Visible</s-option>
+                                            </s-select>
+                                        </s-section>
 
-                                                ) : (
-                                                    <s-stack alignItems="center">
-                                                        <s-button onClick={() => handleClick()}>Add file</s-button>
-                                                        <s-paragraph>Accepts .gif, .jpg, .png and .svg</s-paragraph>
-                                                    </s-stack>
-                                                )}
+                                        <s-section>
+                                            <s-box>
+                                                <s-heading>Add a logo for this location</s-heading>
+                                                <s-paragraph>Customize your location information</s-paragraph>
+                                            </s-box>
+                                            <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
+                                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
+                                                    {preview ? (
+                                                        <s-stack justifyContent="center" alignItems="center">
+                                                            <s-box inlineSize="60px" blockSize="60px">
+                                                                <s-image
+                                                                    src={preview}
+                                                                    alt="preview"
+                                                                    objectFit="cover"
+                                                                    loading="lazy"
+                                                                />
+                                                            </s-box>
+                                                            <s-box>
+                                                                <s-clickable
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreview(null)
+                                                                        setImageBase64(null);
+                                                                    }}
+                                                                >
+                                                                    <s-icon type="x" />
+                                                                </s-clickable>
+                                                            </s-box>
+                                                        </s-stack>
+
+                                                    ) : (
+                                                        <s-stack alignItems="center">
+                                                            <s-button onClick={() => handleClick()}>Add file</s-button>
+                                                            <s-paragraph>Accepts .gif, .jpg, .png and .svg</s-paragraph>
+                                                        </s-stack>
+                                                    )}
+                                                </s-stack>
+                                                <input
+                                                    ref={fileInputRef}
+                                                    id="upload-file"
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    style={{ display: "none" }}
+                                                />
+                                                <input type="hidden" name="image" value={imageBase64 ?? ""} />
                                             </s-stack>
-                                            <input
-                                                ref={fileInputRef}
-                                                id="upload-file"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleFileChange}
-                                                style={{ display: "none" }}
-                                            />
-                                            <input type="hidden" name="image" value={imageBase64 ?? ""} />
-                                        </s-stack>
-                                    </s-section>
+                                        </s-section>
+                                    </s-stack>
                                 </s-grid-item>
 
                                 <s-grid-item>
