@@ -397,7 +397,7 @@ export default function EditLocation() {
     const handleSubmit = () => {
         if (!formRef.current) return;
 
-        const requiredFields = ["storeName", "address", "city", "state", "code"];
+        const requiredFields = ["storeName", "address", "city", "code"];
         const emptyFields = requiredFields.filter((name) => {
             const el = formRef.current!.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
             return !el?.value?.trim();
