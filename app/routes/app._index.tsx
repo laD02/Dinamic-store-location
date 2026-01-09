@@ -56,9 +56,9 @@ export async function action({ request }: ActionFunctionArgs) {
     const remove = formData.get("remove") === "true"
 
     if (actionType === 'checkAddMap') {
-        const hasBlock = await hasStoreLocatorAddBlock(admin, 'store-locator')
+        // const hasBlock = await hasStoreLocatorAddBlock(admin, 'store-locator')
         const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
-        const verified = hasBlock && embedStore
+        const verified = embedStore
 
         if (verified) {
             const existing = await prisma.onBoard.findFirst({

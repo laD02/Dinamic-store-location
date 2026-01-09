@@ -449,7 +449,7 @@ export default function AllLocation() {
                             <s-thumbnail src={store.image || ''} size="small" />
                             <s-link href={`/app/editLocation/${store.id}`}>
                               <s-box>{store.storeName}</s-box>
-                              <s-box>{store.address}, {store.city}, {store.state}, {store.code}</s-box>
+                              <s-box>{store.address}, {store.city}, {store.code}</s-box>
                             </s-link>
                           </s-stack>
                         </s-table-cell>

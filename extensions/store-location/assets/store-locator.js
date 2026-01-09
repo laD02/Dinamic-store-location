@@ -30,7 +30,7 @@ async function loadStores() {
             </p>
 
             <p style="color: ${style.primaryColor}; font-family: ${style.secondaryFont}; margin: 0 0 8px 0; font-size: 11px;">
-              ${s.address}, ${s.city}, ${s.state}, ${s.code}
+              ${s.address}, ${s.city}, ${s.code}
             </p>
 
             <p style="color: ${style.secondaryColor}; margin: 0; font-size: 11px;">

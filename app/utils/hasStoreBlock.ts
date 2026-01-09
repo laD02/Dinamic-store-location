@@ -1,5 +1,5 @@
 export async function hasStoreLocatorAddBlock(
-    admin: any, 
+    admin: any,
     appHandle: string = 'store-locator'
 ): Promise<boolean> {
     try {
@@ -15,7 +15,7 @@ export async function hasStoreLocatorAddBlock(
 
         const themeData = await themeRes.json()
         const themeId = themeData?.data?.themes?.edges?.[0]?.node?.id
-        
+
         if (!themeId) return false
 
         const filesRes = await admin.graphql(
@@ -50,12 +50,12 @@ export async function hasStoreLocatorAddBlock(
         return files.some((file: any) => {
             const filename = file.node.filename || ''
             const content = file.node.body?.content
-            
+
             // Chỉ check trong sections/
             if (!filename.startsWith('sections/')) {
                 return false
             }
-            
+
             return content && appBlockPattern.test(content)
         })
 
