@@ -66,70 +66,33 @@ export default function GoogleMap() {
                     gap="base"
                 >
                     <s-grid-item>
-                        <s-section >
-                            <s-stack gap="small" >
-                                <s-text type="strong">Map Providers</s-text >
-                                <s-clickable
-                                    borderRadius="base"
-                                    background={number === 0 ? 'subdued' : 'base'}
-                                    onClick={() => setNumber(0)}
-                                >
-                                    <s-stack direction="inline" alignItems="center" gap="small" padding="small-200">
-                                        <s-box>
-                                            <s-icon type="location" />
-                                        </s-box>
-                                        <s-box>
-                                            <s-text>Googles Map</s-text>
-                                        </s-box>
-                                    </s-stack>
-                                </s-clickable>
-                                {/* <s-divider/>
-                                <s-text type="strong">Connected Integrations</s-text >
-                                <div className={`${styles.googleMap} ${number === 1 && styles.active}`} onClick={() => setNumber(1)}>
-                                    <i className="fa-solid fa-gear"></i>
-                                    <span>Faire</span>
-                                </div>
-                                <div className={`${styles.googleMap} ${number === 2 && styles.active}`} onClick={() => setNumber(2)}>
-                                    <i className="fa-solid fa-gear"></i>
-                                    <span>Shopify B2B</span>
-                                </div> */}
-                            </s-stack>
-                        </s-section>
+                        <s-stack gap="small">
+                            <h3 style={{ margin: 0 }}>Google Maps</h3>
+                            <s-paragraph color="subdued" >Connect your Google Maps API to display interactive maps on your website.</s-paragraph>
+                        </s-stack>
                     </s-grid-item>
 
                     <s-grid-item>
-                        <s-stack>
-                            {/* <fetcher.Form   
-                                    data-save-bar
-                                    onSubmit={(e) => {
-                                        e.preventDefault()
-                                        handleSubmit()
-                                    }}
-                                    onReset={() => setValue(key.ggKey)}
-                                > */}
-                            <s-stack inlineSize="100%" gap="large">
-                                <s-section>
-                                    <s-stack inlineSize="100%" gap="small">
-                                        <h2>Google Maps</h2>
-                                        <s-stack>
-                                            <h3>API Key Connection</h3>
-                                            <s-paragraph>In order to use Google Maps on your site you must sign up for an API Key with Google. <s-link href="https://cloud.google.com/?hl=en">Click here</s-link> to get an API key and paste it below when you have created one.</s-paragraph>
-                                        </s-stack>
-                                        <s-text-field
-                                            placeholder="Enter an API key for your map"
-                                            name="ggKey"
-                                            value={value}
-                                            onInput={(e: any) => handleChange(e)}
-                                            error={show ? "API Key cannot be empty" : ""}
-                                        />
+                        <s-stack inlineSize="100%" gap="large">
+                            <s-section>
+                                <s-stack inlineSize="100%" gap="small">
+                                    <s-stack gap="small">
+                                        <h3 style={{ margin: 0 }}>API Key Connection</h3>
+                                        <s-paragraph>In order to use Google Maps on your site you must sign up for an API Key with Google. <s-link href="https://cloud.google.com/?hl=en">Click here</s-link> to get an API key and paste it below when you have created one.</s-paragraph>
                                     </s-stack>
-                                </s-section>
+                                    <s-text-field
+                                        placeholder="Enter an API key for your map"
+                                        name="ggKey"
+                                        value={value}
+                                        onInput={(e: any) => handleChange(e)}
+                                        error={show ? "API Key cannot be empty" : ""}
+                                    />
+                                </s-stack>
+                            </s-section>
 
-                                <s-banner heading="Need Help Setting up your API Key?">
-                                    We created a step-by-step guide to walk you through setting up a Google Maps API Key. <s-link href="">Click here</s-link> to access that guide.
-                                </s-banner>
-                            </s-stack>
-                            {/* </fetcher.Form> */}
+                            {/* <s-banner heading="Need Help Setting up your API Key?">
+                                We created a step-by-step guide to walk you through setting up a Google Maps API Key. <s-link href="">Click here</s-link> to access that guide.
+                            </s-banner> */}
                         </s-stack>
                     </s-grid-item>
                 </s-grid>

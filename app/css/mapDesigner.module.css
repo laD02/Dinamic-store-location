@@ -213,18 +213,3 @@
 }
 
 /* Optional Arrow at bottom */
-.boxOverlay::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    margin-left: -6px;
-    width: 12px;
-    height: 12px;
-    background-color: inherit;
-    /* Should match bg color dynamically if possible, or defaulting to white for now */
-    background-color: white;
-    /* Fallback */
-    transform: rotate(45deg);
-    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.05);
-}

@@ -57,11 +57,7 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app/allLocation">All Location</s-link>
         <s-link href="/app/map-designers">Map Designers</s-link>
-        {/* <s-link href="/app/intergrations">Intergrations</s-link> */}
-        {/* <s-link href="/app/installation">Installation</s-link> */}
-        {/* <s-link href="/app/mapLocation">Map Location</s-link> */}
         <s-link href="/app/settings">Settings</s-link>
-        {/* <s-link href="/app/help-center">Help Center</s-link> */}
       </s-app-nav>
 
       {isLoading ? (
@@ -73,11 +69,11 @@ export default function App() {
           <Outlet />
           <s-stack alignItems="center" paddingBlock="base">
             <s-text>
-              Learn more about <s-link href=""> Review section.</s-link>
+              Learn more about <span style={{ color: 'blue' }}><s-link href="">Review section.</s-link></span>
             </s-text>
           </s-stack>
         </>
-      )} 
+      )}
     </AppProvider>
   );
 }

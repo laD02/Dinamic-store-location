@@ -638,9 +638,12 @@ export default function EditLocation() {
                                                     }}
                                                 />
                                             </s-box>
-                                            <s-stack direction="inline" justifyContent="space-between" gap="small-100">
+                                            <s-grid
+                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
+                                                gap="base"
+                                            >
 
-                                                <s-box inlineSize="32%">
+                                                <s-grid-item>
                                                     <s-text-field
                                                         label="City"
                                                         name="city"
@@ -655,9 +658,9 @@ export default function EditLocation() {
                                                             checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
-                                                </s-box>
+                                                </s-grid-item>
 
-                                                <s-box inlineSize="32%">
+                                                {/* <s-grid-item inlineSize="32%">
                                                     <s-select
                                                         label="State"
                                                         name="state"
@@ -680,9 +683,9 @@ export default function EditLocation() {
                                                             ))
                                                         }
                                                     </s-select>
-                                                </s-box>
+                                                </s-grid-item> */}
 
-                                                <s-box inlineSize="32%">
+                                                <s-grid-item >
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
@@ -698,11 +701,13 @@ export default function EditLocation() {
                                                         }}
                                                     />
 
-                                                </s-box>
-                                            </s-stack>
-                                            <s-stack direction="inline" justifyContent="space-between" >
-
-                                                <s-box inlineSize="49%">
+                                                </s-grid-item>
+                                            </s-grid>
+                                            <s-grid
+                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
+                                                gap="base"
+                                            >
+                                                <s-grid-item >
                                                     <s-text-field
                                                         label="Phone Number"
                                                         name="phone"
@@ -715,17 +720,17 @@ export default function EditLocation() {
                                                             checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
-                                                </s-box>
+                                                </s-grid-item>
 
-                                                <s-box inlineSize="49%">
+                                                <s-grid-item >
                                                     <s-text-field
                                                         label="Website"
                                                         name="url"
                                                         defaultValue={store.url || ""}
                                                         onInput={checkDirtyAndToggleSaveBar}
                                                     />
-                                                </s-box>
-                                            </s-stack>
+                                                </s-grid-item>
+                                            </s-grid>
 
                                             <s-text-area
                                                 label="Direction"
@@ -938,7 +943,7 @@ export default function EditLocation() {
                                             <h3 className={styles.storeName}>{previewData.storeName || ''}</h3>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-location-dot" ></i>
-                                                <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''}, {previewData.state || ''}, {previewData.code || ''}</span>
+                                                <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''}, {previewData.code || ''}</span>
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone" ></i>
