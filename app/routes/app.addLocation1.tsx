@@ -106,6 +106,7 @@ export default function AddLocation() {
     const fetcher = useFetcher()
     const shopify = useAppBridge()
     const [visibility, setVisibility] = useState("hidden");
+    const initialVisibilityRef = useRef<string>("hidden");
     const [countSocial, setCountSocial] = useState<SocialMedia[]>([
         { id: crypto.randomUUID(), platform: "linkedin", url: "" },
         { id: crypto.randomUUID(), platform: "linkedin", url: "" },
@@ -118,8 +119,6 @@ export default function AddLocation() {
     const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
-    const initialVisibilityRef = useRef<string>("hidden");
-    const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
     const [previewData, setPreviewData] = useState({
         storeName: "",
@@ -150,11 +149,6 @@ export default function AddLocation() {
         tiktok: 'fa-tiktok'
     };
 
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const formRef = useRef<HTMLFormElement>(null);
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Initialize
     useEffect(() => {
         if (isInitialized || !formRef.current) return;
 
@@ -164,93 +158,72 @@ export default function AddLocation() {
                 initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
                 initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
                 initialVisibilityRef.current = "hidden";
-                initialImageRef.current = null;
                 setIsInitialized(true);
             }
         });
     }, [isInitialized]);
 
-    // Debounced dirty check - CHỈ 1 HÀM DUY NHẤT
-    const checkDirty = () => {
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
+    const checkDirtyAndToggleSaveBar = () => {
+        if (isDiscardingRef.current || !isInitialized) return;
+        if (!formRef.current || !initialFormRef.current) return;
+
+        let dirty = false;
+
+        // 1. Check FormData (BỎ hours và contract)
+        const current = new FormData(formRef.current);
+        for (const [key, value] of current.entries()) {
+            if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
+
+            const initialValue = initialFormRef.current.get(key);
+            const currentStr = String(value).trim();
+            const initialStr = String(initialValue ?? "").trim();
+
+            if (currentStr !== initialStr) {
+                dirty = true;
+                break;
+            }
         }
 
-        debounceTimerRef.current = setTimeout(() => {
-            if (isDiscardingRef.current || !isInitialized || !formRef.current || !initialFormRef.current) return;
-
-            let dirty = false;
-
-            // Check form fields
-            const current = new FormData(formRef.current);
-            for (const [key, value] of current.entries()) {
-                if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
-                const initialValue = initialFormRef.current.get(key);
-                if (String(value).trim() !== String(initialValue ?? "").trim()) {
-                    dirty = true;
-                    break;
-                }
+        // 2. Check HOURS từ STATE
+        if (!dirty && initialHoursRef.current) {
+            const initialHours = JSON.stringify(initialHoursRef.current);
+            const currentHours = JSON.stringify(dayStatus);
+            if (currentHours !== initialHours) {
+                dirty = true;
             }
+        }
 
-            // Check hours
-            if (!dirty && initialHoursRef.current) {
-                if (JSON.stringify(dayStatus) !== JSON.stringify(initialHoursRef.current)) {
-                    dirty = true;
-                }
+        // 3. Check IMAGE
+        if (!dirty) {
+            const hadInitialImage = initialFormRef.current.get("image");
+            const hasCurrentImage = imageBase64;
+
+            if (!!hadInitialImage !== !!hasCurrentImage ||
+                (hadInitialImage && hasCurrentImage && hadInitialImage !== hasCurrentImage)) {
+                dirty = true;
             }
+        }
 
-            // Check image
-            if (!dirty) {
-                if (imageBase64 !== initialImageRef.current) {
-                    dirty = true;
-                }
+        // 4. ⭐ CHECK SOCIAL - Kiểm tra số lượng hoặc nội dung
+        if (!dirty) {
+            const currentSocials = JSON.stringify(countSocial);
+            const initialSocials = JSON.stringify(initialSocialRef.current);
+            if (currentSocials !== initialSocials) {
+                dirty = true;
             }
+        }
 
-            // Check social
-            if (!dirty) {
-                if (JSON.stringify(countSocial) !== JSON.stringify(initialSocialRef.current)) {
-                    dirty = true;
-                }
-            }
-
-            // Check visibility
-            if (!dirty) {
-                if (visibility !== initialVisibilityRef.current) {
-                    dirty = true;
-                }
-            }
-
-            if (dirty) {
-                shopify.saveBar.show("location-save-bar");
-            } else {
-                shopify.saveBar.hide("location-save-bar");
-            }
-        }, 150); // 150ms debounce
-    };
-
-    // GỌI checkDirty khi có thay đổi
-    useEffect(() => {
-        if (!isInitialized) return;
-        checkDirty();
-    }, [dayStatus, imageBase64, countSocial, visibility, isInitialized]);
-
-    // Save success
-    useEffect(() => {
-        if (fetcher.data?.ok && formRef.current) {
-            initialFormRef.current = new FormData(formRef.current);
-            initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
-            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
-            initialVisibilityRef.current = visibility;
-            initialImageRef.current = imageBase64;
-
-            shopify.toast.show('Store saved successfully!')
+        if (dirty) {
+            shopify.saveBar.show("location-save-bar");
+        } else {
             shopify.saveBar.hide("location-save-bar");
         }
-    }, [fetcher.data]);
+    };
 
     const handleClickDay = (day: string) => {
         setDayStatus(prev => {
             const isDisabled = prev[day].disabled;
+
             return {
                 ...prev,
                 [day]: {
@@ -262,6 +235,38 @@ export default function AddLocation() {
             };
         });
     };
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [visibility, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [dayStatus, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [imageBase64, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [countSocial, isInitialized]);
+
+    useEffect(() => {
+        if (fetcher.data?.ok && formRef.current) {
+            initialFormRef.current = new FormData(formRef.current);
+            initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
+            initialVisibilityRef.current = visibility;
+
+            shopify.toast.show('Store saved successfully!')
+            shopify.saveBar.hide("location-save-bar");
+        }
+    }, [fetcher.data, visibility]);
 
     const handleAdd = () => {
         const newItem: SocialMedia = {
@@ -275,6 +280,9 @@ export default function AddLocation() {
     const handleRemove = (id: string) => {
         setCountSocial(prev => prev.filter(item => item.id !== id));
     };
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const formRef = useRef<HTMLFormElement>(null);
 
     const handleClick = () => {
         fileInputRef.current?.click();
@@ -310,12 +318,15 @@ export default function AddLocation() {
 
         setError(false);
 
-        // Normalize hours
+        // ⭐ THÊM: Cập nhật dayStatus - nếu 1 trong 2 rỗng thì set cả 2 thành "close"
         setDayStatus(prev => {
             const updated = { ...prev };
+
             days.forEach(day => {
                 const openValue = prev[day].valueOpen;
                 const closeValue = prev[day].valueClose;
+
+                // Nếu 1 trong 2 rỗng hoặc "close", set cả 2 thành "close" và disabled = true
                 if (!openValue || !closeValue || openValue === "close" || closeValue === "close") {
                     updated[day] = {
                         disabled: true,
@@ -324,9 +335,11 @@ export default function AddLocation() {
                     };
                 }
             });
+
             return updated;
         });
 
+        // ⭐ THÊM: Đợi state update xong rồi mới submit
         setTimeout(() => {
             if (formRef.current) {
                 fetcher.submit(formRef.current, { method: "post" });
@@ -340,6 +353,7 @@ export default function AddLocation() {
         isDiscardingRef.current = true;
 
         const form = formRef.current;
+
         for (const [key, value] of initialFormRef.current.entries()) {
             const element = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
             if (element && key !== "image") {
@@ -347,16 +361,19 @@ export default function AddLocation() {
             }
         }
 
-        setPreview(initialImageRef.current);
-        setImageBase64(initialImageRef.current);
+        const initialImage = initialFormRef.current.get("image")?.toString();
+        setPreview(initialImage || null);
+        setImageBase64(initialImage || null);
+
         setVisibility(initialVisibilityRef.current);
+
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
 
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
         }
-
+        // ✅ Reset preview text (Add = về rỗng)
         setPreviewData({
             storeName: "",
             address: "",
@@ -365,6 +382,7 @@ export default function AddLocation() {
             state: "",
             code: "",
         });
+
 
         setError(false);
 
@@ -447,6 +465,7 @@ export default function AddLocation() {
                                         <s-stack>
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
+                                                {/* <s-badge tone="info">Manual</s-badge> */}
                                             </s-stack>
                                             <s-paragraph >Customize your location information</s-paragraph>
                                         </s-stack>
@@ -463,7 +482,7 @@ export default function AddLocation() {
                                                             ...prev,
                                                             storeName: e.target.value
                                                         }));
-                                                        checkDirty();
+                                                        checkDirtyAndToggleSaveBar();
                                                     }}
                                                 />
                                             </s-box>
@@ -479,7 +498,7 @@ export default function AddLocation() {
                                                             ...prev,
                                                             address: e.target.value
                                                         }));
-                                                        checkDirty();
+                                                        checkDirtyAndToggleSaveBar();
                                                     }}
                                                 />
                                             </s-box>
@@ -499,10 +518,34 @@ export default function AddLocation() {
                                                                 ...prev,
                                                                 city: e.target.value
                                                             }));
-                                                            checkDirty();
+                                                            checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
                                                 </s-grid-item>
+
+                                                {/* <s-box inlineSize="32%">
+                                                    <s-select
+                                                        label="State"
+                                                        name="state"
+                                                        required
+                                                        error={error === true ? "State is required" : ""}
+                                                        onChange={(e: any) => {
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                state: e.target.value
+                                                            }));
+                                                            checkDirtyAndToggleSaveBar();
+                                                        }}
+                                                    >
+                                                        {
+                                                            stateList.map((state) => (
+                                                                <s-option key={state} value={state}>
+                                                                    {state}
+                                                                </s-option>
+                                                            ))
+                                                        }
+                                                    </s-select>
+                                                </s-box> */}
 
                                                 <s-grid-item>
                                                     <s-text-field
@@ -516,7 +559,7 @@ export default function AddLocation() {
                                                                 ...prev,
                                                                 code: e.target.value
                                                             }));
-                                                            checkDirty();
+                                                            checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
 
@@ -536,7 +579,7 @@ export default function AddLocation() {
                                                                 ...prev,
                                                                 phone: e.target.value
                                                             }));
-                                                            checkDirty();
+                                                            checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -546,7 +589,7 @@ export default function AddLocation() {
                                                         label="Website"
                                                         name="url"
                                                         defaultValue=""
-                                                        onInput={checkDirty}
+                                                        onInput={checkDirtyAndToggleSaveBar}
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
@@ -555,7 +598,7 @@ export default function AddLocation() {
                                                 label="Direction"
                                                 name="directions"
                                                 defaultValue=""
-                                                onInput={checkDirty}
+                                                onInput={checkDirtyAndToggleSaveBar}
                                             />
                                         </s-stack>
                                     </s-section>
@@ -611,6 +654,7 @@ export default function AddLocation() {
                                             </table>
                                         </s-stack>
                                     </s-section>
+
                                     <s-section >
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-stack >
@@ -691,6 +735,7 @@ export default function AddLocation() {
                                                 value={visibility}
                                                 onChange={(e: any) => {
                                                     setVisibility(e.target.value);
+                                                    setTimeout(checkDirtyAndToggleSaveBar);
                                                 }}
                                             >
                                                 <s-option value="hidden">Hidden</s-option>
@@ -717,8 +762,8 @@ export default function AddLocation() {
                                                             </s-box>
                                                             <s-box>
                                                                 <s-clickable
-                                                                    onClick={(e: any) => {
-                                                                        e.stopPropagation?.();
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         setPreview(null)
                                                                         setImageBase64(null);
                                                                     }}
@@ -750,7 +795,9 @@ export default function AddLocation() {
                                 </s-grid-item>
 
                                 <s-grid-item>
-                                    <div className={styles.boxOverlay}>
+                                    <div
+                                        className={styles.boxOverlay}
+                                    >
                                         <div className={styles.overlayImageContainer}>
                                             <img src={preview || "/shop.png"} alt="Store" />
                                         </div>
@@ -772,6 +819,7 @@ export default function AddLocation() {
                                                     <tbody>
                                                         {days.map(day => {
                                                             const status = dayStatus[day];
+                                                            // ⭐ SỬA: Ẩn nếu disabled HOẶC nếu open/close là rỗng hoặc "close"
                                                             if (status.disabled ||
                                                                 !status.valueOpen ||
                                                                 !status.valueClose ||
@@ -796,8 +844,9 @@ export default function AddLocation() {
                                                     .map(item => {
                                                         const iconClass = socialIcons[item.platform];
                                                         return (
-                                                            <a href={item.url} target="_blank" key={item.id}>
+                                                            <a href={item.url} target="_blank">
                                                                 <i
+                                                                    key={item.id}
                                                                     className={`fa-brands ${iconClass}`}
                                                                 />
                                                             </a>

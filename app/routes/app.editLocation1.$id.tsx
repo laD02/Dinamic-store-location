@@ -1,34 +1,44 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useNavigate } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, redirect, useActionData, useFetcher, useLoaderData, useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
-import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
+import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { getLatLngFromAddress } from "app/utils/geocode.server";
-import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
 import { stateList } from "app/utils/state";
-import styles from "../css/addLocation.module.css"
+import styles from "../css/addLocation.module.css";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
+    const { id } = params;
     const filter = await prisma.attribute.findMany()
-    return filter;
+    const store = await prisma.store.findUnique({
+        where: { id },
+    });
+
+    return { store, filter };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
     const formData = await request.formData();
-    const contract: Record<string, string[]> = {};
     const urls = formData.getAll("contract") as string[];
+    const actionType = formData.get('actionType')
+    const { id } = params;
+    const contract: Record<string, string[]> = {};
     const imageBase64 = formData.get("image")?.toString() ?? "";
-    const address = formData.get("address")?.toString() ?? "";
-    const location = await getLatLngFromAddress(address);
+    const address = formData.get("address")?.toString() ?? ""
+    const location = await getLatLngFromAddress(address)
     const tagsString = formData.get("tags")?.toString() ?? "";
     const tags = tagsString ? JSON.parse(tagsString) : [];
-    const { session } = await authenticate.admin(request);
-    const shop = session?.shop;
 
     let imageUrl = "";
     if (imageBase64) {
         const uploadedUrl = await uploadImageToCloudinary(imageBase64);
         imageUrl = uploadedUrl ?? "";
+    }
+
+    if (actionType === "deleteId") {
+        const id = formData.get("id") as string;
+        await prisma.store.delete({ where: { id } });
+        return redirect("/app/allLocation?message=deleted");
     }
 
     urls.forEach((url) => {
@@ -57,9 +67,9 @@ export async function action({ request }: ActionFunctionArgs) {
         }
     });
 
-    await prisma.store.create({
+    await prisma.store.update({
+        where: { id },
         data: {
-            shop,
             storeName: formData.get("storeName")?.toString() ?? "",
             address: formData.get("address")?.toString() ?? "",
             city: formData.get("city")?.toString() ?? "",
@@ -69,30 +79,31 @@ export async function action({ request }: ActionFunctionArgs) {
             image: imageUrl,
             directions: formData.get("directions")?.toString() ?? "",
             contract,
-            source: formData.get('source')?.toString() ?? "Manual",
-            visibility: formData.get('visibility')?.toString() ?? "",
+            source: formData.get("source")?.toString() ?? "Manual",
+            visibility: formData.get("visibility")?.toString() ?? "",
             time: {
-                mondayOpen: formData.get('Monday-open')?.toString() ?? "",
-                mondayClose: formData.get('Monday-close')?.toString() ?? "",
-                tuesdayOpen: formData.get('Tuesday-open')?.toString() ?? "",
-                tuesdayClose: formData.get('Tuesday-close')?.toString() ?? "",
-                fridayOpen: formData.get('Friday-open')?.toString() ?? "",
-                fridayClose: formData.get('Friday-close')?.toString() ?? "",
-                thursdayOpen: formData.get('Thursday-open')?.toString() ?? "",
-                thursdayClose: formData.get('Thursday-close')?.toString() ?? "",
-                wednesdayOpen: formData.get('Wednesday-open')?.toString() ?? "",
-                wednesdayClose: formData.get('Wednesday-close')?.toString() ?? "",
-                saturdayOpen: formData.get('Saturday-open')?.toString() ?? "",
-                saturdayClose: formData.get('Saturday-close')?.toString() ?? "",
-                sundayOpen: formData.get('Sunday-open')?.toString() ?? "",
-                sundayClose: formData.get('Sunday-close')?.toString() ?? "",
+                mondayOpen: formData.get("Monday-open")?.toString() ?? "",
+                mondayClose: formData.get("Monday-close")?.toString() ?? "",
+                tuesdayOpen: formData.get("Tuesday-open")?.toString() ?? "",
+                tuesdayClose: formData.get("Tuesday-close")?.toString() ?? "",
+                wednesdayOpen: formData.get("Wednesday-open")?.toString() ?? "",
+                wednesdayClose: formData.get("Wednesday-close")?.toString() ?? "",
+                thursdayOpen: formData.get("Thursday-open")?.toString() ?? "",
+                thursdayClose: formData.get("Thursday-close")?.toString() ?? "",
+                fridayOpen: formData.get("Friday-open")?.toString() ?? "",
+                fridayClose: formData.get("Friday-close")?.toString() ?? "",
+                saturdayOpen: formData.get("Saturday-open")?.toString() ?? "",
+                saturdayClose: formData.get("Saturday-close")?.toString() ?? "",
+                sundayOpen: formData.get("Sunday-open")?.toString() ?? "",
+                sundayClose: formData.get("Sunday-close")?.toString() ?? "",
             },
             tags,
             lat: location?.lat ?? null,
             lng: location?.lng ?? null,
         },
     });
-    return { ok: true }
+
+    return { ok: true };
 }
 
 type SocialMedia = {
@@ -101,15 +112,13 @@ type SocialMedia = {
     url: string;
 };
 
-export default function AddLocation() {
-    const navigate = useNavigate();
+export default function EditLocation() {
     const fetcher = useFetcher()
+    const { store, filter } = useLoaderData()
+    const navigate = useNavigate();
     const shopify = useAppBridge()
-    const [visibility, setVisibility] = useState("hidden");
-    const [countSocial, setCountSocial] = useState<SocialMedia[]>([
-        { id: crypto.randomUUID(), platform: "linkedin", url: "" },
-        { id: crypto.randomUUID(), platform: "linkedin", url: "" },
-    ]);
+    const [visibility, setVisibility] = useState("visible");
+    const [countSocial, setCountSocial] = useState<SocialMedia[]>([]);
     const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -118,9 +127,8 @@ export default function AddLocation() {
     const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
-    const initialVisibilityRef = useRef<string>("hidden");
-    const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [dataLoaded, setDataLoaded] = useState(false);
     const [previewData, setPreviewData] = useState({
         storeName: "",
         address: "",
@@ -140,6 +148,15 @@ export default function AddLocation() {
         }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
     );
 
+    const initialPreviewRef = useRef<{
+        storeName: string;
+        address: string;
+        phone: string;
+        city: string;
+        state: string;
+        code: string;
+    } | null>(null);
+
     const socialIcons: Record<string, string> = {
         facebook: 'fa-facebook',
         youtube: 'fa-youtube',
@@ -149,108 +166,157 @@ export default function AddLocation() {
         pinterest: 'fa-pinterest',
         tiktok: 'fa-tiktok'
     };
-
+    const initialVisibilityRef = useRef<string>("visible");
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Initialize
+    // Load data từ store vào state
     useEffect(() => {
-        if (isInitialized || !formRef.current) return;
+        if (store && !dataLoaded) {
+            setVisibility(store.visibility || "visible");
+            setPreview(store.image || null);
+            setImageBase64(store.image || null);
+            setPreviewData({
+                storeName: store.storeName || "",
+                address: store.address || "",
+                phone: store.phone || "",
+                city: store.city || "",
+                state: store.state || "",
+                code: store.code || "",
+            });
+
+            initialPreviewRef.current = {
+                storeName: store.storeName || "",
+                address: store.address || "",
+                phone: store.phone || "",
+                city: store.city || "",
+                state: store.state || "",
+                code: store.code || "",
+            };
+
+            // Load hours từ store
+            const loadedDayStatus = days.reduce((acc, day) => {
+                const key = day.toLowerCase();
+                const openValue = store.time?.[`${key}Open`] || "";
+                const closeValue = store.time?.[`${key}Close`] || "";
+
+                acc[day] = {
+                    disabled: !openValue || !closeValue || (openValue === "close" && closeValue === "close"),
+                    valueOpen: openValue || "9:00",
+                    valueClose: closeValue || "17:00"
+                };
+                return acc;
+            }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>);
+
+            setDayStatus(loadedDayStatus);
+
+            // ⭐ Load social media vào state
+            const existingSocials: SocialMedia[] = [];
+
+            Object.entries(store.contract || {}).forEach(([platform, urls]: [string, any]) => {
+                urls.forEach((url: string) => {
+                    existingSocials.push({
+                        id: crypto.randomUUID(),
+                        platform: platform,
+                        url: url
+                    });
+                });
+            });
+
+            // Nếu không có social nào, khởi tạo 2 cái rỗng
+            // if (existingSocials.length === 0) {
+            //     existingSocials.push(
+            //         { id: crypto.randomUUID(), platform: "linkedin", url: "" },
+            //         { id: crypto.randomUUID(), platform: "linkedin", url: "" }
+            //     );
+            // }
+
+            setVisibility(store.visibility || "visible");
+            initialVisibilityRef.current = store.visibility || "visible";
+
+            setCountSocial(existingSocials);
+            initialSocialRef.current = JSON.parse(JSON.stringify(existingSocials));
+
+            // Đánh dấu đã load xong
+            setDataLoaded(true);
+        }
+    }, [store, dataLoaded]);
+
+    // Initialize SAU KHI data đã load xong
+    useEffect(() => {
+        if (isInitialized || !formRef.current || !dataLoaded) return;
 
         requestAnimationFrame(() => {
             if (formRef.current) {
                 initialFormRef.current = new FormData(formRef.current);
                 initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
-                initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
-                initialVisibilityRef.current = "hidden";
-                initialImageRef.current = null;
                 setIsInitialized(true);
             }
         });
-    }, [isInitialized]);
+    }, [dataLoaded, isInitialized, dayStatus]);
 
-    // Debounced dirty check - CHỈ 1 HÀM DUY NHẤT
-    const checkDirty = () => {
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
+    const checkDirtyAndToggleSaveBar = () => {
+        if (isDiscardingRef.current || !isInitialized) return;
+        if (!formRef.current || !initialFormRef.current) return;
+
+        let dirty = false;
+
+        // 1. Check FormData (BỎ hours và contract)
+        const current = new FormData(formRef.current);
+        for (const [key, value] of current.entries()) {
+            if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
+
+            const initialValue = initialFormRef.current.get(key);
+            const currentStr = String(value).trim();
+            const initialStr = String(initialValue ?? "").trim();
+
+            if (currentStr !== initialStr) {
+                dirty = true;
+                break;
+            }
         }
 
-        debounceTimerRef.current = setTimeout(() => {
-            if (isDiscardingRef.current || !isInitialized || !formRef.current || !initialFormRef.current) return;
-
-            let dirty = false;
-
-            // Check form fields
-            const current = new FormData(formRef.current);
-            for (const [key, value] of current.entries()) {
-                if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
-                const initialValue = initialFormRef.current.get(key);
-                if (String(value).trim() !== String(initialValue ?? "").trim()) {
-                    dirty = true;
-                    break;
-                }
+        // 2. Check HOURS từ STATE
+        if (!dirty && initialHoursRef.current) {
+            const initialHours = JSON.stringify(initialHoursRef.current);
+            const currentHours = JSON.stringify(dayStatus);
+            if (currentHours !== initialHours) {
+                dirty = true;
             }
+        }
 
-            // Check hours
-            if (!dirty && initialHoursRef.current) {
-                if (JSON.stringify(dayStatus) !== JSON.stringify(initialHoursRef.current)) {
-                    dirty = true;
-                }
-            }
+        // 3. Check IMAGE
+        if (!dirty) {
+            const hadInitialImage = initialFormRef.current.get("image");
+            const hasCurrentImage = imageBase64;
 
-            // Check image
-            if (!dirty) {
-                if (imageBase64 !== initialImageRef.current) {
-                    dirty = true;
-                }
+            if (!!hadInitialImage !== !!hasCurrentImage ||
+                (hadInitialImage && hasCurrentImage && hadInitialImage !== hasCurrentImage)) {
+                dirty = true;
             }
+        }
 
-            // Check social
-            if (!dirty) {
-                if (JSON.stringify(countSocial) !== JSON.stringify(initialSocialRef.current)) {
-                    dirty = true;
-                }
-            }
+        // 4. ⭐ CHECK SOCIAL từ STATE
+        if (!dirty) {
+            const currentSocials = JSON.stringify(countSocial);
+            const initialSocials = JSON.stringify(initialSocialRef.current);
 
-            // Check visibility
-            if (!dirty) {
-                if (visibility !== initialVisibilityRef.current) {
-                    dirty = true;
-                }
+            if (currentSocials !== initialSocials) {
+                dirty = true;
             }
+        }
 
-            if (dirty) {
-                shopify.saveBar.show("location-save-bar");
-            } else {
-                shopify.saveBar.hide("location-save-bar");
-            }
-        }, 150); // 150ms debounce
+        if (dirty) {
+            shopify.saveBar.show("location-edit-bar");
+        } else {
+            shopify.saveBar.hide("location-edit-bar");
+        }
     };
-
-    // GỌI checkDirty khi có thay đổi
-    useEffect(() => {
-        if (!isInitialized) return;
-        checkDirty();
-    }, [dayStatus, imageBase64, countSocial, visibility, isInitialized]);
-
-    // Save success
-    useEffect(() => {
-        if (fetcher.data?.ok && formRef.current) {
-            initialFormRef.current = new FormData(formRef.current);
-            initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
-            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
-            initialVisibilityRef.current = visibility;
-            initialImageRef.current = imageBase64;
-
-            shopify.toast.show('Store saved successfully!')
-            shopify.saveBar.hide("location-save-bar");
-        }
-    }, [fetcher.data]);
 
     const handleClickDay = (day: string) => {
         setDayStatus(prev => {
             const isDisabled = prev[day].disabled;
+
             return {
                 ...prev,
                 [day]: {
@@ -263,6 +329,39 @@ export default function AddLocation() {
         });
     };
 
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [visibility, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [dayStatus, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [imageBase64, isInitialized]);
+
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirtyAndToggleSaveBar();
+    }, [countSocial, isInitialized]);
+
+    useEffect(() => {
+        if (fetcher.data?.ok && formRef.current) {
+            // Update initial refs sau khi save thành công
+            initialFormRef.current = new FormData(formRef.current);
+            initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
+            initialVisibilityRef.current = visibility;
+
+            shopify.toast.show('Store updated successfully!')
+            shopify.saveBar.hide("location-edit-bar");
+        }
+    }, [fetcher.data, visibility]);
+
     const handleAdd = () => {
         const newItem: SocialMedia = {
             id: crypto.randomUUID(),
@@ -270,11 +369,12 @@ export default function AddLocation() {
             url: ""
         };
         setCountSocial([...countSocial, newItem]);
-    };
+    }
 
     const handleRemove = (id: string) => {
-        setCountSocial(prev => prev.filter(item => item.id !== id));
-    };
+        const newArr = countSocial.filter(item => item.id !== id);
+        setCountSocial(newArr);
+    }
 
     const handleClick = () => {
         fileInputRef.current?.click();
@@ -310,12 +410,15 @@ export default function AddLocation() {
 
         setError(false);
 
-        // Normalize hours
+        // ⭐ Cập nhật dayStatus: nếu 1 trong 2 rỗng thì set cả 2 thành "close"
         setDayStatus(prev => {
             const updated = { ...prev };
+
             days.forEach(day => {
                 const openValue = prev[day].valueOpen;
                 const closeValue = prev[day].valueClose;
+
+                // Nếu 1 trong 2 rỗng hoặc "close", set cả 2 thành "close" và disabled = true
                 if (!openValue || !closeValue || openValue === "close" || closeValue === "close") {
                     updated[day] = {
                         disabled: true,
@@ -324,9 +427,11 @@ export default function AddLocation() {
                     };
                 }
             });
+
             return updated;
         });
 
+        // ⭐ Đợi state update xong rồi mới submit
         setTimeout(() => {
             if (formRef.current) {
                 fetcher.submit(formRef.current, { method: "post" });
@@ -340,6 +445,8 @@ export default function AddLocation() {
         isDiscardingRef.current = true;
 
         const form = formRef.current;
+
+        // Restore từng field về giá trị initial
         for (const [key, value] of initialFormRef.current.entries()) {
             const element = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
             if (element && key !== "image") {
@@ -347,36 +454,48 @@ export default function AddLocation() {
             }
         }
 
-        setPreview(initialImageRef.current);
-        setImageBase64(initialImageRef.current);
+        // Reset image
+        const initialImage = initialFormRef.current.get("image")?.toString();
+        setPreview(initialImage || null);
+        setImageBase64(initialImage || null);
+
+        // Reset visibility
         setVisibility(initialVisibilityRef.current);
+
+        // ✅ Reset preview text
+        if (initialPreviewRef.current) {
+            setPreviewData({ ...initialPreviewRef.current });
+        }
+
+        // Reset social media về initial và force re-render
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
 
+        // Reset hours về initial
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
         }
 
-        setPreviewData({
-            storeName: "",
-            address: "",
-            phone: "",
-            city: "",
-            state: "",
-            code: "",
-        });
-
         setError(false);
 
         requestAnimationFrame(() => {
-            shopify.saveBar.hide("location-save-bar");
+            shopify.saveBar.hide("location-edit-bar");
             isDiscardingRef.current = false;
         });
     };
 
+    const handleDelete = (id: string) => {
+        const formData = new FormData()
+        formData.append("actionType", "deleteId");
+        formData.append("id", id);
+        fetcher.submit(formData, { method: "post" });
+    }
+
+    if (!store) return <div>Loading...</div>;
+
     return (
         <s-page heading="Dynamic Store Locator">
-            <SaveBar id="location-save-bar">
+            <SaveBar id="location-edit-bar">
                 <button
                     variant="primary"
                     onClick={() => handleSubmit()}
@@ -409,23 +528,58 @@ export default function AddLocation() {
                     </s-box>
                     <s-text type="strong">Location Editor</s-text>
                     <s-box>
-                        {
-                            visibility === "visible" ?
-                                <s-badge tone="success">
-                                    <s-stack direction="inline" alignItems="center">
-                                        <s-icon type="eye-check-mark" />
-                                        visible
-                                    </s-stack>
-                                </s-badge>
-                                :
-                                <s-badge>
-                                    <s-stack direction="inline" alignItems="center">
-                                        <s-icon type="hide" tone="info" />
-                                        hidden
-                                    </s-stack>
-                                </s-badge>
-                        }
+                        <s-box>
+                            {
+                                visibility === "visible" ?
+                                    <s-badge tone="success">
+                                        <s-stack direction="inline" alignItems="center">
+                                            <s-icon type="eye-check-mark" />
+                                            visible
+                                        </s-stack>
+                                    </s-badge>
+                                    :
+                                    <s-badge>
+                                        <s-stack direction="inline" alignItems="center">
+                                            <s-icon type="hide" tone="info" />
+                                            hidden
+                                        </s-stack>
+                                    </s-badge>
+                            }
+                        </s-box>
                     </s-box>
+                </s-stack>
+                <s-stack direction="inline" justifyContent="space-between" gap="small-300">
+                    <s-button
+                        tone="critical"
+                        commandFor="deleteTrash-modal"
+                    >
+                        Delete
+                    </s-button>
+                    <s-modal id="deleteTrash-modal" heading="Delete Location">
+                        <s-text>
+                            Are you sure you want to delete this store? This action cannot be undone.
+                        </s-text>
+
+                        <s-button
+                            slot="secondary-actions"
+                            variant="secondary"
+                            commandFor="deleteTrash-modal"
+                            command="--hide"
+                        >
+                            Cancel
+                        </s-button>
+
+                        <s-button
+                            slot="primary-action"
+                            variant="primary"
+                            tone="critical"
+                            commandFor="deleteTrash-modal"
+                            command="--hide"
+                            onClick={() => handleDelete(store.id)}
+                        >
+                            Delete
+                        </s-button>
+                    </s-modal>
                 </s-stack>
             </s-stack>
 
@@ -447,6 +601,7 @@ export default function AddLocation() {
                                         <s-stack>
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
+                                                {/* <s-badge tone="info">{store.source || "Manual"}</s-badge> */}
                                             </s-stack>
                                             <s-paragraph >Customize your location information</s-paragraph>
                                         </s-stack>
@@ -457,13 +612,13 @@ export default function AddLocation() {
                                                     name="storeName"
                                                     error={error === true ? "Location name is required" : ""}
                                                     required
-                                                    defaultValue=""
+                                                    defaultValue={store.storeName || ""}
                                                     onInput={(e: any) => {
                                                         setPreviewData(prev => ({
                                                             ...prev,
                                                             storeName: e.target.value
                                                         }));
-                                                        checkDirty();
+                                                        checkDirtyAndToggleSaveBar();
                                                     }}
                                                 />
                                             </s-box>
@@ -473,13 +628,13 @@ export default function AddLocation() {
                                                     name="address"
                                                     error={error === true ? "Address line 1 is required" : ""}
                                                     required
-                                                    defaultValue=""
+                                                    defaultValue={store.address || ""}
                                                     onInput={(e: any) => {
                                                         setPreviewData(prev => ({
                                                             ...prev,
                                                             address: e.target.value
                                                         }));
-                                                        checkDirty();
+                                                        checkDirtyAndToggleSaveBar();
                                                     }}
                                                 />
                                             </s-box>
@@ -487,36 +642,62 @@ export default function AddLocation() {
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"
                                             >
+
                                                 <s-grid-item>
                                                     <s-text-field
                                                         label="City"
                                                         name="city"
                                                         error={error === true ? "City is required" : ""}
                                                         required
-                                                        defaultValue=""
+                                                        defaultValue={store.city || ""}
                                                         onInput={(e: any) => {
                                                             setPreviewData(prev => ({
                                                                 ...prev,
                                                                 city: e.target.value
                                                             }));
-                                                            checkDirty();
+                                                            checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
                                                 </s-grid-item>
 
-                                                <s-grid-item>
+                                                {/* <s-grid-item inlineSize="32%">
+                                                    <s-select
+                                                        label="State"
+                                                        name="state"
+                                                        required
+                                                        error={error === true ? "State is required" : ""}
+                                                        onChange={(e: any) => {
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                state: e.target.value
+                                                            }));
+                                                            checkDirtyAndToggleSaveBar();
+                                                        }}
+                                                        value={store.state || "AL"}
+                                                    >
+                                                        {
+                                                            stateList.map((state) => (
+                                                                <s-option key={state} value={state}>
+                                                                    {state}
+                                                                </s-option>
+                                                            ))
+                                                        }
+                                                    </s-select>
+                                                </s-grid-item> */}
+
+                                                <s-grid-item >
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
                                                         error={error === true ? "Zip code is required" : ""}
                                                         required
-                                                        defaultValue=""
+                                                        defaultValue={store.code || ""}
                                                         onInput={(e: any) => {
                                                             setPreviewData(prev => ({
                                                                 ...prev,
                                                                 code: e.target.value
                                                             }));
-                                                            checkDirty();
+                                                            checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
 
@@ -526,27 +707,27 @@ export default function AddLocation() {
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"
                                             >
-                                                <s-grid-item>
+                                                <s-grid-item >
                                                     <s-text-field
                                                         label="Phone Number"
                                                         name="phone"
-                                                        defaultValue=""
+                                                        defaultValue={store.phone || ""}
                                                         onInput={(e: any) => {
                                                             setPreviewData(prev => ({
                                                                 ...prev,
                                                                 phone: e.target.value
                                                             }));
-                                                            checkDirty();
+                                                            checkDirtyAndToggleSaveBar();
                                                         }}
                                                     />
                                                 </s-grid-item>
 
-                                                <s-grid-item>
+                                                <s-grid-item >
                                                     <s-text-field
                                                         label="Website"
                                                         name="url"
-                                                        defaultValue=""
-                                                        onInput={checkDirty}
+                                                        defaultValue={store.url || ""}
+                                                        onInput={checkDirtyAndToggleSaveBar}
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
@@ -554,8 +735,8 @@ export default function AddLocation() {
                                             <s-text-area
                                                 label="Direction"
                                                 name="directions"
-                                                defaultValue=""
-                                                onInput={checkDirty}
+                                                defaultValue={store.directions || ""}
+                                                onInput={checkDirtyAndToggleSaveBar}
                                             />
                                         </s-stack>
                                     </s-section>
@@ -611,9 +792,10 @@ export default function AddLocation() {
                                             </table>
                                         </s-stack>
                                     </s-section>
-                                    <s-section >
+
+                                    <s-section>
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                                            <s-stack >
+                                            <s-stack>
                                                 <s-heading>Social Media</s-heading>
                                                 <s-paragraph>Customize your location information</s-paragraph>
                                             </s-stack>
@@ -691,13 +873,13 @@ export default function AddLocation() {
                                                 value={visibility}
                                                 onChange={(e: any) => {
                                                     setVisibility(e.target.value);
+                                                    setTimeout(checkDirtyAndToggleSaveBar);
                                                 }}
                                             >
                                                 <s-option value="hidden">Hidden</s-option>
                                                 <s-option value="visible">Visible</s-option>
                                             </s-select>
                                         </s-section>
-
                                         <s-section>
                                             <s-box>
                                                 <s-heading>Add a logo for this location</s-heading>
@@ -717,8 +899,8 @@ export default function AddLocation() {
                                                             </s-box>
                                                             <s-box>
                                                                 <s-clickable
-                                                                    onClick={(e: any) => {
-                                                                        e.stopPropagation?.();
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         setPreview(null)
                                                                         setImageBase64(null);
                                                                     }}
@@ -750,20 +932,22 @@ export default function AddLocation() {
                                 </s-grid-item>
 
                                 <s-grid-item>
-                                    <div className={styles.boxOverlay}>
+                                    <div
+                                        className={styles.boxOverlay}
+                                    >
                                         <div className={styles.overlayImageContainer}>
-                                            <img src={preview || "/shop.png"} alt="Store" />
+                                            <img src={preview || '/shop.png'} alt="Store" />
                                         </div>
 
                                         <div className={styles.storeInfo}>
-                                            <h3 className={styles.storeName}>{previewData.storeName || 'Apple Park'}</h3>
+                                            <h3 className={styles.storeName}>{previewData.storeName || ''}</h3>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-location-dot" ></i>
-                                                <span className={styles.storeAddress}> {previewData.address || 'Apple Park Way'}, {previewData.city || 'Cupertino'}, {previewData.code || '95014'}</span>
+                                                <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''}, {previewData.code || ''}</span>
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone" ></i>
-                                                <span>{previewData.phone || '+1 408-996-1010'}</span>
+                                                <span>{previewData.phone || ''}</span>
                                             </div>
 
                                             <div className={styles.contactRow}>
@@ -772,6 +956,7 @@ export default function AddLocation() {
                                                     <tbody>
                                                         {days.map(day => {
                                                             const status = dayStatus[day];
+                                                            // ⭐ Ẩn nếu disabled HOẶC nếu open/close là rỗng hoặc "close"
                                                             if (status.disabled ||
                                                                 !status.valueOpen ||
                                                                 !status.valueClose ||
@@ -796,8 +981,9 @@ export default function AddLocation() {
                                                     .map(item => {
                                                         const iconClass = socialIcons[item.platform];
                                                         return (
-                                                            <a href={item.url} target="_blank" key={item.id}>
+                                                            <a href={item.url} target="_blank">
                                                                 <i
+                                                                    key={item.id}
                                                                     className={`fa-brands ${iconClass}`}
                                                                 />
                                                             </a>

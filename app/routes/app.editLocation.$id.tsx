@@ -127,6 +127,8 @@ export default function EditLocation() {
     const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
+    const initialVisibilityRef = useRef<string>("visible");
+    const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
     const [previewData, setPreviewData] = useState({
@@ -148,14 +150,7 @@ export default function EditLocation() {
         }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
     );
 
-    const initialPreviewRef = useRef<{
-        storeName: string;
-        address: string;
-        phone: string;
-        city: string;
-        state: string;
-        code: string;
-    } | null>(null);
+    const initialPreviewRef = useRef<typeof previewData | null>(null);
 
     const socialIcons: Record<string, string> = {
         facebook: 'fa-facebook',
@@ -166,9 +161,10 @@ export default function EditLocation() {
         pinterest: 'fa-pinterest',
         tiktok: 'fa-tiktok'
     };
-    const initialVisibilityRef = useRef<string>("visible");
+
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Load data từ store vào state
     useEffect(() => {
@@ -176,16 +172,8 @@ export default function EditLocation() {
             setVisibility(store.visibility || "visible");
             setPreview(store.image || null);
             setImageBase64(store.image || null);
-            setPreviewData({
-                storeName: store.storeName || "",
-                address: store.address || "",
-                phone: store.phone || "",
-                city: store.city || "",
-                state: store.state || "",
-                code: store.code || "",
-            });
 
-            initialPreviewRef.current = {
+            const initialData = {
                 storeName: store.storeName || "",
                 address: store.address || "",
                 phone: store.phone || "",
@@ -194,7 +182,10 @@ export default function EditLocation() {
                 code: store.code || "",
             };
 
-            // Load hours từ store
+            setPreviewData(initialData);
+            initialPreviewRef.current = initialData;
+
+            // Load hours
             const loadedDayStatus = days.reduce((acc, day) => {
                 const key = day.toLowerCase();
                 const openValue = store.time?.[`${key}Open`] || "";
@@ -210,9 +201,8 @@ export default function EditLocation() {
 
             setDayStatus(loadedDayStatus);
 
-            // ⭐ Load social media vào state
+            // Load social media
             const existingSocials: SocialMedia[] = [];
-
             Object.entries(store.contract || {}).forEach(([platform, urls]: [string, any]) => {
                 urls.forEach((url: string) => {
                     existingSocials.push({
@@ -223,26 +213,16 @@ export default function EditLocation() {
                 });
             });
 
-            // Nếu không có social nào, khởi tạo 2 cái rỗng
-            if (existingSocials.length === 0) {
-                existingSocials.push(
-                    { id: crypto.randomUUID(), platform: "linkedin", url: "" },
-                    { id: crypto.randomUUID(), platform: "linkedin", url: "" }
-                );
-            }
-
-            setVisibility(store.visibility || "visible");
-            initialVisibilityRef.current = store.visibility || "visible";
-
             setCountSocial(existingSocials);
             initialSocialRef.current = JSON.parse(JSON.stringify(existingSocials));
+            initialVisibilityRef.current = store.visibility || "visible";
+            initialImageRef.current = store.image || null;
 
-            // Đánh dấu đã load xong
             setDataLoaded(true);
         }
     }, [store, dataLoaded]);
 
-    // Initialize SAU KHI data đã load xong
+    // Initialize sau khi data loaded
     useEffect(() => {
         if (isInitialized || !formRef.current || !dataLoaded) return;
 
@@ -255,68 +235,87 @@ export default function EditLocation() {
         });
     }, [dataLoaded, isInitialized, dayStatus]);
 
-    const checkDirtyAndToggleSaveBar = () => {
-        if (isDiscardingRef.current || !isInitialized) return;
-        if (!formRef.current || !initialFormRef.current) return;
-
-        let dirty = false;
-
-        // 1. Check FormData (BỎ hours và contract)
-        const current = new FormData(formRef.current);
-        for (const [key, value] of current.entries()) {
-            if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
-
-            const initialValue = initialFormRef.current.get(key);
-            const currentStr = String(value).trim();
-            const initialStr = String(initialValue ?? "").trim();
-
-            if (currentStr !== initialStr) {
-                dirty = true;
-                break;
-            }
+    // Debounced dirty check
+    const checkDirty = () => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
         }
 
-        // 2. Check HOURS từ STATE
-        if (!dirty && initialHoursRef.current) {
-            const initialHours = JSON.stringify(initialHoursRef.current);
-            const currentHours = JSON.stringify(dayStatus);
-            if (currentHours !== initialHours) {
-                dirty = true;
+        debounceTimerRef.current = setTimeout(() => {
+            if (isDiscardingRef.current || !isInitialized || !formRef.current || !initialFormRef.current) return;
+
+            let dirty = false;
+
+            // Check form fields
+            const current = new FormData(formRef.current);
+            for (const [key, value] of current.entries()) {
+                if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
+                const initialValue = initialFormRef.current.get(key);
+                if (String(value).trim() !== String(initialValue ?? "").trim()) {
+                    dirty = true;
+                    break;
+                }
             }
-        }
 
-        // 3. Check IMAGE
-        if (!dirty) {
-            const hadInitialImage = initialFormRef.current.get("image");
-            const hasCurrentImage = imageBase64;
-
-            if (!!hadInitialImage !== !!hasCurrentImage ||
-                (hadInitialImage && hasCurrentImage && hadInitialImage !== hasCurrentImage)) {
-                dirty = true;
+            // Check hours
+            if (!dirty && initialHoursRef.current) {
+                if (JSON.stringify(dayStatus) !== JSON.stringify(initialHoursRef.current)) {
+                    dirty = true;
+                }
             }
-        }
 
-        // 4. ⭐ CHECK SOCIAL từ STATE
-        if (!dirty) {
-            const currentSocials = JSON.stringify(countSocial);
-            const initialSocials = JSON.stringify(initialSocialRef.current);
-
-            if (currentSocials !== initialSocials) {
-                dirty = true;
+            // Check image
+            if (!dirty) {
+                if (imageBase64 !== initialImageRef.current) {
+                    dirty = true;
+                }
             }
-        }
 
-        if (dirty) {
-            shopify.saveBar.show("location-edit-bar");
-        } else {
+            // Check social
+            if (!dirty) {
+                if (JSON.stringify(countSocial) !== JSON.stringify(initialSocialRef.current)) {
+                    dirty = true;
+                }
+            }
+
+            // Check visibility
+            if (!dirty) {
+                if (visibility !== initialVisibilityRef.current) {
+                    dirty = true;
+                }
+            }
+
+            if (dirty) {
+                shopify.saveBar.show("location-edit-bar");
+            } else {
+                shopify.saveBar.hide("location-edit-bar");
+            }
+        }, 150);
+    };
+
+    // Gọi checkDirty khi state thay đổi
+    useEffect(() => {
+        if (!isInitialized) return;
+        checkDirty();
+    }, [dayStatus, imageBase64, countSocial, visibility, isInitialized]);
+
+    // Save success
+    useEffect(() => {
+        if (fetcher.data?.ok && formRef.current) {
+            initialFormRef.current = new FormData(formRef.current);
+            initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
+            initialVisibilityRef.current = visibility;
+            initialImageRef.current = imageBase64;
+
+            shopify.toast.show('Store updated successfully!')
             shopify.saveBar.hide("location-edit-bar");
         }
-    };
+    }, [fetcher.data]);
 
     const handleClickDay = (day: string) => {
         setDayStatus(prev => {
             const isDisabled = prev[day].disabled;
-
             return {
                 ...prev,
                 [day]: {
@@ -329,39 +328,6 @@ export default function EditLocation() {
         });
     };
 
-    useEffect(() => {
-        if (!isInitialized) return;
-        checkDirtyAndToggleSaveBar();
-    }, [visibility, isInitialized]);
-
-    useEffect(() => {
-        if (!isInitialized) return;
-        checkDirtyAndToggleSaveBar();
-    }, [dayStatus, isInitialized]);
-
-    useEffect(() => {
-        if (!isInitialized) return;
-        checkDirtyAndToggleSaveBar();
-    }, [imageBase64, isInitialized]);
-
-    useEffect(() => {
-        if (!isInitialized) return;
-        checkDirtyAndToggleSaveBar();
-    }, [countSocial, isInitialized]);
-
-    useEffect(() => {
-        if (fetcher.data?.ok && formRef.current) {
-            // Update initial refs sau khi save thành công
-            initialFormRef.current = new FormData(formRef.current);
-            initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
-            initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
-            initialVisibilityRef.current = visibility;
-
-            shopify.toast.show('Store updated successfully!')
-            shopify.saveBar.hide("location-edit-bar");
-        }
-    }, [fetcher.data, visibility]);
-
     const handleAdd = () => {
         const newItem: SocialMedia = {
             id: crypto.randomUUID(),
@@ -372,8 +338,7 @@ export default function EditLocation() {
     }
 
     const handleRemove = (id: string) => {
-        const newArr = countSocial.filter(item => item.id !== id);
-        setCountSocial(newArr);
+        setCountSocial(prev => prev.filter(item => item.id !== id));
     }
 
     const handleClick = () => {
@@ -410,15 +375,12 @@ export default function EditLocation() {
 
         setError(false);
 
-        // ⭐ Cập nhật dayStatus: nếu 1 trong 2 rỗng thì set cả 2 thành "close"
+        // Normalize hours
         setDayStatus(prev => {
             const updated = { ...prev };
-
             days.forEach(day => {
                 const openValue = prev[day].valueOpen;
                 const closeValue = prev[day].valueClose;
-
-                // Nếu 1 trong 2 rỗng hoặc "close", set cả 2 thành "close" và disabled = true
                 if (!openValue || !closeValue || openValue === "close" || closeValue === "close") {
                     updated[day] = {
                         disabled: true,
@@ -427,11 +389,9 @@ export default function EditLocation() {
                     };
                 }
             });
-
             return updated;
         });
 
-        // ⭐ Đợi state update xong rồi mới submit
         setTimeout(() => {
             if (formRef.current) {
                 fetcher.submit(formRef.current, { method: "post" });
@@ -445,8 +405,6 @@ export default function EditLocation() {
         isDiscardingRef.current = true;
 
         const form = formRef.current;
-
-        // Restore từng field về giá trị initial
         for (const [key, value] of initialFormRef.current.entries()) {
             const element = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
             if (element && key !== "image") {
@@ -454,26 +412,18 @@ export default function EditLocation() {
             }
         }
 
-        // Reset image
-        const initialImage = initialFormRef.current.get("image")?.toString();
-        setPreview(initialImage || null);
-        setImageBase64(initialImage || null);
-
-        // Reset visibility
+        setPreview(initialImageRef.current);
+        setImageBase64(initialImageRef.current);
         setVisibility(initialVisibilityRef.current);
-
-        // ✅ Reset preview text
-        if (initialPreviewRef.current) {
-            setPreviewData({ ...initialPreviewRef.current });
-        }
-
-        // Reset social media về initial và force re-render
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
 
-        // Reset hours về initial
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
+        }
+
+        if (initialPreviewRef.current) {
+            setPreviewData({ ...initialPreviewRef.current });
         }
 
         setError(false);
@@ -601,7 +551,6 @@ export default function EditLocation() {
                                         <s-stack>
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
-                                                {/* <s-badge tone="info">{store.source || "Manual"}</s-badge> */}
                                             </s-stack>
                                             <s-paragraph >Customize your location information</s-paragraph>
                                         </s-stack>
@@ -618,7 +567,7 @@ export default function EditLocation() {
                                                             ...prev,
                                                             storeName: e.target.value
                                                         }));
-                                                        checkDirtyAndToggleSaveBar();
+                                                        checkDirty();
                                                     }}
                                                 />
                                             </s-box>
@@ -634,7 +583,7 @@ export default function EditLocation() {
                                                             ...prev,
                                                             address: e.target.value
                                                         }));
-                                                        checkDirtyAndToggleSaveBar();
+                                                        checkDirty();
                                                     }}
                                                 />
                                             </s-box>
@@ -642,7 +591,6 @@ export default function EditLocation() {
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"
                                             >
-
                                                 <s-grid-item>
                                                     <s-text-field
                                                         label="City"
@@ -655,35 +603,10 @@ export default function EditLocation() {
                                                                 ...prev,
                                                                 city: e.target.value
                                                             }));
-                                                            checkDirtyAndToggleSaveBar();
+                                                            checkDirty();
                                                         }}
                                                     />
                                                 </s-grid-item>
-
-                                                {/* <s-grid-item inlineSize="32%">
-                                                    <s-select
-                                                        label="State"
-                                                        name="state"
-                                                        required
-                                                        error={error === true ? "State is required" : ""}
-                                                        onChange={(e: any) => {
-                                                            setPreviewData(prev => ({
-                                                                ...prev,
-                                                                state: e.target.value
-                                                            }));
-                                                            checkDirtyAndToggleSaveBar();
-                                                        }}
-                                                        value={store.state || "AL"}
-                                                    >
-                                                        {
-                                                            stateList.map((state) => (
-                                                                <s-option key={state} value={state}>
-                                                                    {state}
-                                                                </s-option>
-                                                            ))
-                                                        }
-                                                    </s-select>
-                                                </s-grid-item> */}
 
                                                 <s-grid-item >
                                                     <s-text-field
@@ -697,10 +620,9 @@ export default function EditLocation() {
                                                                 ...prev,
                                                                 code: e.target.value
                                                             }));
-                                                            checkDirtyAndToggleSaveBar();
+                                                            checkDirty();
                                                         }}
                                                     />
-
                                                 </s-grid-item>
                                             </s-grid>
                                             <s-grid
@@ -717,7 +639,7 @@ export default function EditLocation() {
                                                                 ...prev,
                                                                 phone: e.target.value
                                                             }));
-                                                            checkDirtyAndToggleSaveBar();
+                                                            checkDirty();
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -727,7 +649,7 @@ export default function EditLocation() {
                                                         label="Website"
                                                         name="url"
                                                         defaultValue={store.url || ""}
-                                                        onInput={checkDirtyAndToggleSaveBar}
+                                                        onInput={checkDirty}
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
@@ -736,7 +658,7 @@ export default function EditLocation() {
                                                 label="Direction"
                                                 name="directions"
                                                 defaultValue={store.directions || ""}
-                                                onInput={checkDirtyAndToggleSaveBar}
+                                                onInput={checkDirty}
                                             />
                                         </s-stack>
                                     </s-section>
@@ -792,7 +714,6 @@ export default function EditLocation() {
                                             </table>
                                         </s-stack>
                                     </s-section>
-
                                     <s-section>
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-stack>
@@ -873,7 +794,6 @@ export default function EditLocation() {
                                                 value={visibility}
                                                 onChange={(e: any) => {
                                                     setVisibility(e.target.value);
-                                                    setTimeout(checkDirtyAndToggleSaveBar);
                                                 }}
                                             >
                                                 <s-option value="hidden">Hidden</s-option>
@@ -899,8 +819,8 @@ export default function EditLocation() {
                                                             </s-box>
                                                             <s-box>
                                                                 <s-clickable
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
+                                                                    onClick={(e: any) => {
+                                                                        e.stopPropagation?.();
                                                                         setPreview(null)
                                                                         setImageBase64(null);
                                                                     }}
@@ -932,9 +852,7 @@ export default function EditLocation() {
                                 </s-grid-item>
 
                                 <s-grid-item>
-                                    <div
-                                        className={styles.boxOverlay}
-                                    >
+                                    <div className={styles.boxOverlay}>
                                         <div className={styles.overlayImageContainer}>
                                             <img src={preview || '/shop.png'} alt="Store" />
                                         </div>
@@ -956,7 +874,6 @@ export default function EditLocation() {
                                                     <tbody>
                                                         {days.map(day => {
                                                             const status = dayStatus[day];
-                                                            // ⭐ Ẩn nếu disabled HOẶC nếu open/close là rỗng hoặc "close"
                                                             if (status.disabled ||
                                                                 !status.valueOpen ||
                                                                 !status.valueClose ||
@@ -981,9 +898,8 @@ export default function EditLocation() {
                                                     .map(item => {
                                                         const iconClass = socialIcons[item.platform];
                                                         return (
-                                                            <a href={item.url} target="_blank">
+                                                            <a href={item.url} target="_blank" key={item.id}>
                                                                 <i
-                                                                    key={item.id}
                                                                     className={`fa-brands ${iconClass}`}
                                                                 />
                                                             </a>

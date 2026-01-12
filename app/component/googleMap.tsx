@@ -78,7 +78,7 @@ export default function GoogleMap() {
                                 <s-stack inlineSize="100%" gap="small">
                                     <s-stack gap="small">
                                         <h3 style={{ margin: 0 }}>API Key Connection</h3>
-                                        <s-paragraph>In order to use Google Maps on your site you must sign up for an API Key with Google. <s-link href="https://cloud.google.com/?hl=en">Click here</s-link> to get an API key and paste it below when you have created one.</s-paragraph>
+                                        <s-paragraph>In order to use Google Maps on your site you must sign up for an API Key with Google. <span style={{ color: 'blue' }}><s-link href="https://cloud.google.com/?hl=en">Click here</s-link></span> to get an API key and paste it below when you have created one.</s-paragraph>
                                     </s-stack>
                                     <s-text-field
                                         placeholder="Enter an API key for your map"
