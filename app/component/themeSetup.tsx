@@ -48,8 +48,6 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
     if (config?.secondaryFont && config.secondaryFont !== secondaryFont)
       setSecondaryFont(config.secondaryFont);
 
-    console.log('Config changed:', config);
-
     // Reset flag sau một chút
     setTimeout(() => {
       isSyncingRef.current = false;
@@ -60,7 +58,6 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   useEffect(() => {
     // Không gọi nếu đang sync từ config
     if (isSyncingRef.current) {
-      console.log('Skipping onChange - syncing from config');
       return;
     }
 
@@ -68,7 +65,6 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
 
     // Chỉ gọi onChange nếu giá trị khác với lần trước
     if (currentValue !== lastSentRef.current) {
-      console.log('123 - calling onChange');
       lastSentRef.current = currentValue;
       onChange({ primaryColor, secondaryColor, primaryFont, secondaryFont });
     }

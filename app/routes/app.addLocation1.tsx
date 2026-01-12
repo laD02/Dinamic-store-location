@@ -5,7 +5,6 @@ import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
 import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
-import { stateList } from "app/utils/state";
 import styles from "../css/addLocation.module.css"
 
 export async function loader({ request }: LoaderFunctionArgs) {
