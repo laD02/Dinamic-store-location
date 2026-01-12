@@ -167,6 +167,20 @@ function showOverlay(store, marker) {
             this.div = document.createElement('div');
             this.div.className = 'map-overlay-card';
             this.div.style.zIndex = '1000';
+            this.div.style.borderRadius = `${mapStyle.cornerRadius}px`;
+
+            // Thêm shadow từ mapStyle
+            if (mapStyle.shadowColor) {
+                const shadowRgba = hexToRgba(
+                    mapStyle.shadowColor,
+                    mapStyle.transparency / 100 // convert 0-100 thành 0-1
+                );
+                const offsetX = mapStyle.anchorx;
+                const offsetY = mapStyle.anchory;
+                const blur = mapStyle.blur;
+
+                this.div.style.boxShadow = `${offsetX}px ${offsetY}px ${blur}px 0px ${shadowRgba}`;
+            }
 
             // Dynamic styles that must be inline because they come from backend config
             // We apply color/font settings to a wrapper or specific elements
