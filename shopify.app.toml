@@ -27,6 +27,6 @@ scopes = "write_products,read_themes"
 redirect_urls = [ "https://example.com/api/auth" ]
 
 [app_proxy]
-url = "/app/storeLoader"
-subpath = "storeLoader"
+url = "/app/store-locator"
+subpath = "store-locator"
 prefix = "apps"

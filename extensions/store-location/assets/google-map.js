@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const apiKey = mapEl.dataset.gmapKey;
     if (!apiKey) {
-        console.warn("Missing Google Maps API key");
         return;
     }
 
@@ -46,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function googleMap() {
     try {
         const mapLoading = document.getElementById("map-loading");
-        const res = await fetch("/apps/storeLoader");
+        const res = await fetch("/apps/store-locator");
         const { stores, style } = await res.json();
         mapStyle = style;
 

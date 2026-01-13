@@ -1,6 +1,6 @@
 async function loadStores() {
   try {
-    const res = await fetch("/apps/storeLoader");
+    const res = await fetch("/apps/store-locator");
     const { stores, style } = await res.json();
     const storeListLoading = document.getElementById("store-list-loading");
     const storeListContainer = document.getElementById("store-list");
