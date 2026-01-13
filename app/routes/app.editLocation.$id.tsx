@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { getLatLngFromAddress } from "app/utils/geocode.server";
-import { uploadImageToCloudinary } from "app/utils/upload.server";
+import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
 import { stateList } from "app/utils/state";
 import styles from "../css/addLocation.module.css";
 
@@ -29,16 +29,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const tagsString = formData.get("tags")?.toString() ?? "";
     const tags = tagsString ? JSON.parse(tagsString) : [];
 
-    let imageUrl = "";
-    if (imageBase64) {
-        const uploadedUrl = await uploadImageToCloudinary(imageBase64);
-        imageUrl = uploadedUrl ?? "";
+    if (actionType === "deleteId") {
+        const deleteId = formData.get("id") as string;
+
+        // 1. Lấy thông tin store để lấy URL ảnh
+        const store = await prisma.store.findUnique({
+            where: { id: deleteId },
+            select: { image: true }
+        });
+
+        // 2. Xóa ảnh từ Cloudinary nếu có
+        if (store?.image) {
+            await deleteImageFromCloudinary(store.image);
+        }
+
+        // 3. Xóa store từ database
+        await prisma.store.delete({ where: { id: deleteId } });
+
+        return redirect("/app/allLocation?message=deleted");
     }
 
-    if (actionType === "deleteId") {
-        const id = formData.get("id") as string;
-        await prisma.store.delete({ where: { id } });
-        return redirect("/app/allLocation?message=deleted");
+    let imageUrl = "";
+    if (imageBase64) {
+        // 1. Lấy ảnh cũ từ database
+        const oldStore = await prisma.store.findUnique({
+            where: { id },
+            select: { image: true }
+        });
+
+        // 2. Upload ảnh mới
+        const uploadedUrl = await uploadImageToCloudinary(imageBase64);
+        imageUrl = uploadedUrl ?? "";
+
+        // 3. Xóa ảnh cũ từ Cloudinary (nếu có và khác ảnh mới)
+        if (oldStore?.image && oldStore.image !== imageUrl) {
+            await deleteImageFromCloudinary(oldStore.image);
+        }
+    } else {
+        // Giữ nguyên ảnh cũ nếu không upload ảnh mới
+        const oldStore = await prisma.store.findUnique({
+            where: { id },
+            select: { image: true }
+        });
+        imageUrl = oldStore?.image ?? "";
     }
 
     urls.forEach((url) => {

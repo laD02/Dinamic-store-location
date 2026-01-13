@@ -12,6 +12,7 @@ import { Store } from "@prisma/client";
 import { exportStoresToCSV } from "../utils/exportCSV";
 import { useAppBridge } from '@shopify/app-bridge-react';
 import { authenticate } from "../shopify.server";
+import { deleteImageFromCloudinary } from "../utils/upload.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -36,13 +37,43 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (actionType === "deleteId") {
     const id = formData.get("id") as string;
+
+    // 1. Lấy thông tin store để lấy URL ảnh
+    const store = await prisma.store.findUnique({
+      where: { id },
+      select: { image: true }
+    });
+
+    // 2. Xóa ảnh từ Cloudinary nếu có
+    if (store?.image) {
+      await deleteImageFromCloudinary(store.image);
+    }
+
+    // 3. Xóa store từ database
     await prisma.store.delete({ where: { id } });
+
     return { success: true };
   }
 
   if (actionType === "delete") {
     const ids = formData.getAll("ids") as string[];
+
+    // 1. Lấy danh sách ảnh của các store cần xóa
+    const stores = await prisma.store.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, image: true }
+    });
+
+    // 2. Xóa tất cả ảnh từ Cloudinary
+    const deletePromises = stores
+      .filter(store => store.image) // Chỉ xóa những store có ảnh
+      .map(store => deleteImageFromCloudinary(store.image!));
+
+    await Promise.all(deletePromises);
+
+    // 3. Xóa stores từ database
     await prisma.store.deleteMany({ where: { id: { in: ids } } });
+
     return { success: true };
   }
 
@@ -272,7 +303,7 @@ export default function AllLocation() {
                 </s-button>
               </s-modal>
               <Link to="/app/addLocation" >
-                <s-button variant="primary" icon="plus-circle">Add Product</s-button>
+                <s-button variant="primary" icon="plus-circle">Add Location</s-button>
               </Link>
             </s-stack>
             :
