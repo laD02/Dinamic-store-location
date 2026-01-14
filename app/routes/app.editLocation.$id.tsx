@@ -7,6 +7,7 @@ import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/up
 import { stateList } from "app/utils/state";
 import styles from "../css/addLocation.module.css";
 import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
+import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 
 export async function loader({ params }: LoaderFunctionArgs) {
     const { id } = params;
@@ -164,6 +165,7 @@ export default function EditLocation() {
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
     const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
+    const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
     const [dataLoaded, setDataLoaded] = useState(false);
     const [previewData, setPreviewData] = useState({
         storeName: "",
@@ -430,6 +432,32 @@ export default function EditLocation() {
         setCountSocial(prev => prev.filter(item => item.id !== id));
     }
 
+    const validateSocialMedia = (id: string, url: string, platform: SocialPlatform): void => {
+        if (!url.trim()) {
+            setSocialErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[id];
+                return newErrors;
+            });
+            return;
+        }
+
+        const validation = validateSocialUrl(url, platform);
+
+        if (!validation.isValid) {
+            setSocialErrors(prev => ({
+                ...prev,
+                [id]: validation.message || 'Invalid URL'
+            }));
+        } else {
+            setSocialErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[id];
+                return newErrors;
+            });
+        }
+    };
+
     const handleClick = () => {
         fileInputRef.current?.click();
     }
@@ -467,6 +495,22 @@ export default function EditLocation() {
         if (Object.keys(allTimeErrors).length > 0) {
             setTimeErrors(allTimeErrors);
             shopify.toast.show('Please fix time format errors', { isError: true });
+            return;
+        }
+
+        const socialValidationErrors: Record<string, string> = {};
+        countSocial.forEach(item => {
+            if (item.url.trim()) {
+                const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
+                if (!validation.isValid) {
+                    socialValidationErrors[item.id] = validation.message || 'Invalid URL';
+                }
+            }
+        });
+
+        if (Object.keys(socialValidationErrors).length > 0) {
+            setSocialErrors(socialValidationErrors);
+            shopify.toast.show('Please fix social media URL errors', { isError: true });
             return;
         }
 
@@ -523,6 +567,7 @@ export default function EditLocation() {
         }
 
         setTimeErrors({}); // Reset time errors
+        setSocialErrors({});
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-edit-bar");
@@ -825,6 +870,9 @@ export default function EditLocation() {
                                                                                 : social
                                                                         )
                                                                     );
+                                                                    if (item.url.trim()) {
+                                                                        validateSocialMedia(item.id, item.url, item.platform as SocialPlatform);
+                                                                    }
                                                                 }}
                                                             >
                                                                 <s-option value="linkedin">LinkedIn</s-option>
@@ -849,6 +897,13 @@ export default function EditLocation() {
                                                                                 : social
                                                                         )
                                                                     );
+                                                                }}
+                                                                onBlur={(e: any) => {
+                                                                    // Validate khi user rời khỏi input
+                                                                    const url = e.target.value;
+                                                                    if (url.trim()) {
+                                                                        validateSocialMedia(item.id, url, item.platform as SocialPlatform);
+                                                                    }
                                                                 }}
                                                             />
                                                         </s-box>

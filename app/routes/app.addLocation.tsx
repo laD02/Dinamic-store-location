@@ -7,6 +7,7 @@ import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
 import styles from "../css/addLocation.module.css"
 import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
+import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -121,6 +122,7 @@ export default function AddLocation() {
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
     const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
+    const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
     const [previewData, setPreviewData] = useState({
         storeName: "",
         address: "",
@@ -334,6 +336,32 @@ export default function AddLocation() {
         setCountSocial(prev => prev.filter(item => item.id !== id));
     };
 
+    const validateSocialMedia = (id: string, url: string, platform: SocialPlatform): void => {
+        if (!url.trim()) {
+            setSocialErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[id];
+                return newErrors;
+            });
+            return;
+        }
+
+        const validation = validateSocialUrl(url, platform);
+
+        if (!validation.isValid) {
+            setSocialErrors(prev => ({
+                ...prev,
+                [id]: validation.message || 'Invalid URL'
+            }));
+        } else {
+            setSocialErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[id];
+                return newErrors;
+            });
+        }
+    };
+
     const handleClick = () => {
         fileInputRef.current?.click();
     }
@@ -371,6 +399,23 @@ export default function AddLocation() {
         if (Object.keys(allTimeErrors).length > 0) {
             setTimeErrors(allTimeErrors);
             shopify.toast.show('Please fix time format errors', { isError: true });
+            return;
+        }
+
+        // THÊM PHẦN NÀY - Validate social media
+        const socialValidationErrors: Record<string, string> = {};
+        countSocial.forEach(item => {
+            if (item.url.trim()) {
+                const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
+                if (!validation.isValid) {
+                    socialValidationErrors[item.id] = validation.message || 'Invalid URL';
+                }
+            }
+        });
+
+        if (Object.keys(socialValidationErrors).length > 0) {
+            setSocialErrors(socialValidationErrors);
+            shopify.toast.show('Please fix social media URL errors', { isError: true });
             return;
         }
 
@@ -429,7 +474,8 @@ export default function AddLocation() {
             code: "",
         });
 
-        setTimeErrors({}); // Reset time errors
+        setTimeErrors({});
+        setSocialErrors({}); // THÊM DÒNG NÀY
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-save-bar");
@@ -689,6 +735,9 @@ export default function AddLocation() {
                                                                                 : social
                                                                         )
                                                                     );
+                                                                    if (item.url.trim()) {
+                                                                        validateSocialMedia(item.id, item.url, e.target.value as SocialPlatform);
+                                                                    }
                                                                 }}
                                                             >
                                                                 <s-option value="linkedin">LinkedIn</s-option>
@@ -713,6 +762,12 @@ export default function AddLocation() {
                                                                                 : social
                                                                         )
                                                                     );
+                                                                }}
+                                                                onBlur={(e: any) => {
+                                                                    const url = e.target.value;
+                                                                    if (url.trim()) {
+                                                                        validateSocialMedia(item.id, url, item.platform as SocialPlatform);
+                                                                    }
                                                                 }}
                                                             />
                                                         </s-box>
