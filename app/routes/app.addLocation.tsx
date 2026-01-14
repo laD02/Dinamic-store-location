@@ -6,6 +6,7 @@ import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
 import styles from "../css/addLocation.module.css"
+import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -112,7 +113,6 @@ export default function AddLocation() {
     const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
-    const [error, setError] = useState(false)
     const initialFormRef = useRef<FormData | null>(null);
     const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
@@ -120,6 +120,7 @@ export default function AddLocation() {
     const initialVisibilityRef = useRef<string>("hidden");
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
     const [previewData, setPreviewData] = useState({
         storeName: "",
         address: "",
@@ -134,9 +135,9 @@ export default function AddLocation() {
 
     const [dayStatus, setDayStatus] = useState(
         days.reduce((acc, day) => {
-            acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
+            acc[day] = { valueOpen: "09:00", valueClose: "17:00" };
             return acc;
-        }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+        }, {} as Record<string, { valueOpen: string; valueClose: string }>)
     );
 
     const socialIcons: Record<string, string> = {
@@ -252,17 +253,72 @@ export default function AddLocation() {
 
     const handleClickDay = (day: string) => {
         setDayStatus(prev => {
-            const isDisabled = prev[day].disabled;
+            // const isDisabled = prev[day].disabled;
             return {
                 ...prev,
                 [day]: {
                     ...prev[day],
-                    disabled: !isDisabled,
-                    valueOpen: !isDisabled ? "close" : "9:00",
-                    valueClose: !isDisabled ? "close" : "17:00",
+                    valueOpen: '',
+                    valueClose: '',
                 }
             };
         });
+    };
+
+    const handleTimeOpenChange = (day: string, value: string) => {
+        const formatted = formatTimeInput(value);
+
+        setDayStatus(prev => ({
+            ...prev,
+            [day]: { ...prev[day], valueOpen: formatted }
+        }));
+
+        // Validate
+        if (formatted && !validateTimeFormat(formatted)) {
+            setTimeErrors(prev => ({
+                ...prev,
+                [day]: { ...prev[day], open: 'Invalid time format (HH:MM)' }
+            }));
+        } else {
+            setTimeErrors(prev => {
+                const newErrors = { ...prev };
+                if (newErrors[day]) {
+                    delete newErrors[day].open;
+                    if (Object.keys(newErrors[day]).length === 0) {
+                        delete newErrors[day];
+                    }
+                }
+                return newErrors;
+            });
+        }
+    };
+
+    const handleTimeCloseChange = (day: string, value: string) => {
+        const formatted = formatTimeInput(value);
+
+        setDayStatus(prev => ({
+            ...prev,
+            [day]: { ...prev[day], valueClose: formatted }
+        }));
+
+        // Validate
+        if (formatted && !validateTimeFormat(formatted)) {
+            setTimeErrors(prev => ({
+                ...prev,
+                [day]: { ...prev[day], close: 'Invalid time format (HH:MM)' }
+            }));
+        } else {
+            setTimeErrors(prev => {
+                const newErrors = { ...prev };
+                if (newErrors[day]) {
+                    delete newErrors[day].close;
+                    if (Object.keys(newErrors[day]).length === 0) {
+                        delete newErrors[day];
+                    }
+                }
+                return newErrors;
+            });
+        }
     };
 
     const handleAdd = () => {
@@ -306,11 +362,17 @@ export default function AddLocation() {
         });
 
         if (emptyFields.length > 0) {
-            setError(true);
+            shopify.toast.show('Please fill in all required fields', { isError: true });
             return;
         }
 
-        setError(false);
+        // Validate all times
+        const allTimeErrors = validateAllTimes(dayStatus, days);
+        if (Object.keys(allTimeErrors).length > 0) {
+            setTimeErrors(allTimeErrors);
+            shopify.toast.show('Please fix time format errors', { isError: true });
+            return;
+        }
 
         // Normalize hours
         setDayStatus(prev => {
@@ -318,9 +380,8 @@ export default function AddLocation() {
             days.forEach(day => {
                 const openValue = prev[day].valueOpen;
                 const closeValue = prev[day].valueClose;
-                if (!openValue || !closeValue || openValue === "close" || closeValue === "close") {
+                if (!openValue || !closeValue || openValue === "" || closeValue === "") {
                     updated[day] = {
-                        disabled: true,
                         valueOpen: "close",
                         valueClose: "close"
                     };
@@ -368,7 +429,7 @@ export default function AddLocation() {
             code: "",
         });
 
-        setError(false);
+        setTimeErrors({}); // Reset time errors
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-save-bar");
@@ -409,7 +470,7 @@ export default function AddLocation() {
                             <s-icon type="arrow-left" />
                         </s-clickable>
                     </s-box>
-                    <s-text type="strong">Location Editor</s-text>
+                    <text style={{ fontSize: 16, fontWeight: 600 }}>Add Location</text>
                     <s-box>
                         {
                             visibility === "visible" ?
@@ -450,14 +511,12 @@ export default function AddLocation() {
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
                                             </s-stack>
-                                            <s-paragraph >Customize your location information</s-paragraph>
                                         </s-stack>
-                                        <s-stack padding="small" gap="small-200">
+                                        <s-stack paddingBlockStart="small" gap="small-200">
                                             <s-box>
                                                 <s-text-field
                                                     label="Location Name"
                                                     name="storeName"
-                                                    error={error === true ? "Location name is required" : ""}
                                                     required
                                                     defaultValue=""
                                                     onInput={(e: any) => {
@@ -473,7 +532,6 @@ export default function AddLocation() {
                                                 <s-text-field
                                                     label="Address"
                                                     name="address"
-                                                    error={error === true ? "Address line 1 is required" : ""}
                                                     required
                                                     defaultValue=""
                                                     onInput={(e: any) => {
@@ -493,7 +551,6 @@ export default function AddLocation() {
                                                     <s-text-field
                                                         label="City"
                                                         name="city"
-                                                        error={error === true ? "City is required" : ""}
                                                         required
                                                         defaultValue=""
                                                         onInput={(e: any) => {
@@ -510,7 +567,6 @@ export default function AddLocation() {
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
-                                                        error={error === true ? "Zip code is required" : ""}
                                                         required
                                                         defaultValue=""
                                                         onInput={(e: any) => {
@@ -566,7 +622,7 @@ export default function AddLocation() {
                                         <s-box>
                                             <s-heading>Hours of Operation</s-heading>
                                         </s-box>
-                                        <s-stack paddingInline="small">
+                                        <s-stack>
                                             <table>
                                                 <tbody>
                                                     <tr>
@@ -582,30 +638,22 @@ export default function AddLocation() {
                                                                 <s-text-field
                                                                     name={`${item}-open`}
                                                                     value={dayStatus[item].valueOpen}
-                                                                    readOnly={dayStatus[item].disabled}
-                                                                    onInput={(e: any) => {
-                                                                        setDayStatus(prev => ({
-                                                                            ...prev,
-                                                                            [item]: { ...prev[item], valueOpen: e.target.value }
-                                                                        }))
-                                                                    }}
+                                                                    placeholder="HH:MM"
+                                                                    readOnly={dayStatus[item].valueOpen === "close"}
+                                                                    onInput={(e: any) => handleTimeOpenChange(item, e.target.value)}
                                                                 />
                                                             </td>
                                                             <td>
                                                                 <s-text-field
                                                                     name={`${item}-close`}
                                                                     value={dayStatus[item].valueClose}
-                                                                    readOnly={dayStatus[item].disabled}
-                                                                    onInput={(e: any) => {
-                                                                        setDayStatus(prev => ({
-                                                                            ...prev,
-                                                                            [item]: { ...prev[item], valueClose: e.target.value }
-                                                                        }))
-                                                                    }}
+                                                                    placeholder="HH:MM"
+                                                                    readOnly={dayStatus[item].valueClose === "close"}
+                                                                    onInput={(e: any) => handleTimeCloseChange(item, e.target.value)}
                                                                 />
                                                             </td>
                                                             <td>
-                                                                <s-button icon="clock" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
+                                                                <s-button icon="edit" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -617,11 +665,10 @@ export default function AddLocation() {
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-stack >
                                                 <s-heading>Social Media</s-heading>
-                                                <s-paragraph>Customize your location information</s-paragraph>
                                             </s-stack>
                                             <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
                                         </s-stack>
-                                        <s-stack paddingBlock="small-200" paddingInlineStart="small" gap="small-400">
+                                        <s-stack paddingBlockStart="small-200" gap="small-400">
                                             {
                                                 countSocial.map((item) => (
                                                     <s-stack
@@ -656,6 +703,7 @@ export default function AddLocation() {
                                                         <s-box inlineSize="33%">
                                                             <s-text-field
                                                                 name="contract"
+                                                                placeholder={`https://www.${item.platform}.com/`}
                                                                 value={item.url}
                                                                 onInput={(e: any) => {
                                                                     setCountSocial(prev =>
@@ -705,7 +753,7 @@ export default function AddLocation() {
                                                 <s-heading>Add a logo for this location</s-heading>
                                                 <s-paragraph>Customize your location information</s-paragraph>
                                             </s-box>
-                                            <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
+                                            <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center">
                                                 <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
                                                     {preview ? (
                                                         <s-stack justifyContent="center" alignItems="center">
@@ -774,12 +822,17 @@ export default function AddLocation() {
                                                     <tbody>
                                                         {days.map(day => {
                                                             const status = dayStatus[day];
-                                                            if (status.disabled ||
+                                                            if (
                                                                 !status.valueOpen ||
                                                                 !status.valueClose ||
                                                                 status.valueOpen === "close" ||
                                                                 status.valueClose === "close") {
-                                                                return null;
+                                                                return (
+                                                                    <tr key={day}>
+                                                                        <td>{day}</td>
+                                                                        <td>Close</td>
+                                                                    </tr>
+                                                                );
                                                             }
 
                                                             return (
@@ -815,6 +868,12 @@ export default function AddLocation() {
                     </s-grid>
                 </s-query-container>
             </Form>
+
+            <s-stack alignItems="center" paddingBlock="large">
+                <s-text>
+                    Learn more about <span style={{ color: 'blue' }}><s-link href="">Location section</s-link></span>
+                </s-text>
+            </s-stack>
         </s-page>
     );
 }

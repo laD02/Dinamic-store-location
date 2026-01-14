@@ -172,6 +172,12 @@ export default function Settings() {
         {/* {active === 1 && <SearchFilter config={filter} handleDelete={handleDelete}/>} */}
         {active === 0 && <GoogleMap />}
       </s-stack>
+
+      <s-stack alignItems="center" paddingBlock="large">
+        <s-text>
+          Learn more about <span style={{ color: 'blue' }}><s-link href="">Settings section</s-link></span>
+        </s-text>
+      </s-stack>
     </s-page>
   );
 }

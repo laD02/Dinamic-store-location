@@ -6,7 +6,7 @@ import prisma from "app/db.server";
 import 'leaflet/dist/leaflet.css';
 import MapGoogle from "../component/map";
 import MapDesigner from "../component/mapDesigner";
-import { SaveBar,useAppBridge } from "@shopify/app-bridge-react";
+import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
   });
   const config = await prisma.style.findFirst({
-    where: {shop}
+    where: { shop }
   })
   const googleMapsApiKey = process.env.GOOGLE_MAP_KEY
 
@@ -91,7 +91,7 @@ export default function MapDesigners() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
   const SAVE_BAR_ID = "map-designer-save-bar";
-  
+
   const defaultTheme = {
     primaryColor: "#000",
     secondaryColor: "#000",
@@ -124,10 +124,10 @@ export default function MapDesigners() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -136,7 +136,7 @@ export default function MapDesigners() {
     const timer = setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 150);
-    
+
     return () => clearTimeout(timer);
   }, [isMobile]);
 
@@ -193,10 +193,10 @@ export default function MapDesigners() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing || !containerRef.current || isMobile) return;
-      
+
       const containerRect = containerRef.current.getBoundingClientRect();
       const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-      
+
       if (newWidth >= 30 && newWidth <= 70) {
         setLeftWidth(newWidth);
       }
@@ -220,8 +220,8 @@ export default function MapDesigners() {
   const search = useMemo(() => {
     return stores.filter(stores => {
       const matchesSearch =
-      stores.address.toLowerCase().includes(searchAddress.toLowerCase()) ||
-      stores.code.toLowerCase().includes(searchAddress.toLowerCase())
+        stores.address.toLowerCase().includes(searchAddress.toLowerCase()) ||
+        stores.code.toLowerCase().includes(searchAddress.toLowerCase())
 
       return matchesSearch
     })
@@ -268,13 +268,13 @@ export default function MapDesigners() {
           Discard
         </button>
       </SaveBar>
-      
+
       <h2>Map Designer</h2>
-      
-      <div 
+
+      <div
         ref={containerRef}
-        style={{ 
-          display: 'flex', 
+        style={{
+          display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? '16px' : '0px',
           position: 'relative',
@@ -283,7 +283,7 @@ export default function MapDesigners() {
         }}
       >
         {/* Left Column - Designer */}
-        <div 
+        <div
           style={{
             width: isMobile ? '100%' : `${leftWidth}%`,
             display: 'flex',
@@ -312,8 +312,8 @@ export default function MapDesigners() {
             }}
           />
 
-          <input type="hidden" name="theme" value={JSON.stringify(theme)}/>
-          <input type="hidden" name="popup" value={JSON.stringify(popup)}/>
+          <input type="hidden" name="theme" value={JSON.stringify(theme)} />
+          <input type="hidden" name="popup" value={JSON.stringify(popup)} />
         </div>
 
         {/* Resize Handle - Desktop Only */}
@@ -343,7 +343,7 @@ export default function MapDesigners() {
         )}
 
         {/* Right Column - Info Item + Map */}
-        <div 
+        <div
           style={{
             width: isMobile ? '100%' : `${100 - leftWidth}%`,
             flexShrink: 0,
@@ -356,8 +356,8 @@ export default function MapDesigners() {
           {/* Info Item - Always on top */}
           <div style={{ flexShrink: 0 }}>
             <s-section>
-              <s-stack  
-                gap="small-500" 
+              <s-stack
+                gap="small-500"
               >
                 <div
                   className={styles.inforItem}
@@ -366,18 +366,18 @@ export default function MapDesigners() {
                   }}
                 >
                   <h4 style={{
-                    color: theme.primaryColor, 
-                    fontFamily: theme.primaryFont, 
-                    whiteSpace: "normal", 
+                    color: theme.primaryColor,
+                    fontFamily: theme.primaryFont,
+                    whiteSpace: "normal",
                     wordBreak: "break-word"
                   }}>
                     Apple Park
                   </h4>
                   <p style={{
-                    color: theme.primaryColor, 
+                    color: theme.primaryColor,
                     fontFamily: theme.secondaryFont
                   }}>
-                    1 Apple Park Way, Cupertino, CA 95014, USA<br/>
+                    1 Apple Park Way, Cupertino, CA 95014, USA<br />
                   </p>
                   <p style={{
                     color: theme.secondaryColor
@@ -390,7 +390,7 @@ export default function MapDesigners() {
               </s-stack>
             </s-section>
           </div>
-          
+
           {/* Map - Below info item */}
           <div style={{
             height: isMobile ? '450px' : '500px',
@@ -400,16 +400,22 @@ export default function MapDesigners() {
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <MapGoogle 
+            <MapGoogle
               key={isMobile ? 'mobile-map' : 'desktop-map'}
-              stores={stores ?? []} 
-              selectedIndex={selectedIndex}  
+              stores={stores ?? []}
+              selectedIndex={selectedIndex}
               searchAddress={searchAddress}
               popupStyle={popup}
             />
           </div>
         </div>
       </div>
-    </s-page> 
+
+      <s-stack alignItems="center" paddingBlock="large">
+        <s-text>
+          Learn more about <span style={{ color: 'blue' }}><s-link href="">Map Designer section</s-link></span>
+        </s-text>
+      </s-stack>
+    </s-page>
   );
 }

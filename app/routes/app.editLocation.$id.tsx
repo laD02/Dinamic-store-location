@@ -6,6 +6,7 @@ import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
 import { stateList } from "app/utils/state";
 import styles from "../css/addLocation.module.css";
+import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
 
 export async function loader({ params }: LoaderFunctionArgs) {
     const { id } = params;
@@ -155,7 +156,6 @@ export default function EditLocation() {
     const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
-    const [error, setError] = useState(false)
     const initialFormRef = useRef<FormData | null>(null);
     const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
@@ -163,6 +163,7 @@ export default function EditLocation() {
     const initialVisibilityRef = useRef<string>("visible");
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
     const [dataLoaded, setDataLoaded] = useState(false);
     const [previewData, setPreviewData] = useState({
         storeName: "",
@@ -226,7 +227,7 @@ export default function EditLocation() {
 
                 acc[day] = {
                     disabled: !openValue || !closeValue || (openValue === "close" && closeValue === "close"),
-                    valueOpen: openValue || "9:00",
+                    valueOpen: openValue || "09:00",
                     valueClose: closeValue || "17:00"
                 };
                 return acc;
@@ -348,17 +349,72 @@ export default function EditLocation() {
 
     const handleClickDay = (day: string) => {
         setDayStatus(prev => {
-            const isDisabled = prev[day].disabled;
             return {
                 ...prev,
                 [day]: {
                     ...prev[day],
-                    disabled: !isDisabled,
-                    valueOpen: !isDisabled ? "close" : "9:00",
-                    valueClose: !isDisabled ? "close" : "17:00",
+                    valueOpen: "",
+                    valueClose: "",
                 }
             };
         });
+    };
+
+    // Thêm 2 handler functions cho time input:
+    const handleTimeOpenChange = (day: string, value: string) => {
+        const formatted = formatTimeInput(value);
+
+        setDayStatus(prev => ({
+            ...prev,
+            [day]: { ...prev[day], valueOpen: formatted }
+        }));
+
+        // Validate
+        if (formatted && !validateTimeFormat(formatted)) {
+            setTimeErrors(prev => ({
+                ...prev,
+                [day]: { ...prev[day], open: 'Invalid time format (HH:MM)' }
+            }));
+        } else {
+            setTimeErrors(prev => {
+                const newErrors = { ...prev };
+                if (newErrors[day]) {
+                    delete newErrors[day].open;
+                    if (Object.keys(newErrors[day]).length === 0) {
+                        delete newErrors[day];
+                    }
+                }
+                return newErrors;
+            });
+        }
+    };
+
+    const handleTimeCloseChange = (day: string, value: string) => {
+        const formatted = formatTimeInput(value);
+
+        setDayStatus(prev => ({
+            ...prev,
+            [day]: { ...prev[day], valueClose: formatted }
+        }));
+
+        // Validate
+        if (formatted && !validateTimeFormat(formatted)) {
+            setTimeErrors(prev => ({
+                ...prev,
+                [day]: { ...prev[day], close: 'Invalid time format (HH:MM)' }
+            }));
+        } else {
+            setTimeErrors(prev => {
+                const newErrors = { ...prev };
+                if (newErrors[day]) {
+                    delete newErrors[day].close;
+                    if (Object.keys(newErrors[day]).length === 0) {
+                        delete newErrors[day];
+                    }
+                }
+                return newErrors;
+            });
+        }
     };
 
     const handleAdd = () => {
@@ -402,11 +458,17 @@ export default function EditLocation() {
         });
 
         if (emptyFields.length > 0) {
-            setError(true);
+            shopify.toast.show('Please fill in all required fields', { isError: true });
             return;
         }
 
-        setError(false);
+        // Validate all times
+        const allTimeErrors = validateAllTimes(dayStatus, days);
+        if (Object.keys(allTimeErrors).length > 0) {
+            setTimeErrors(allTimeErrors);
+            shopify.toast.show('Please fix time format errors', { isError: true });
+            return;
+        }
 
         // Normalize hours
         setDayStatus(prev => {
@@ -432,6 +494,7 @@ export default function EditLocation() {
         }, 0);
     };
 
+    // Cập nhật handleDiscard để reset timeErrors:
     const handleDiscard = () => {
         if (!formRef.current || !initialFormRef.current) return;
 
@@ -459,7 +522,7 @@ export default function EditLocation() {
             setPreviewData({ ...initialPreviewRef.current });
         }
 
-        setError(false);
+        setTimeErrors({}); // Reset time errors
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-edit-bar");
@@ -509,7 +572,7 @@ export default function EditLocation() {
                             <s-icon type="arrow-left" />
                         </s-clickable>
                     </s-box>
-                    <s-text type="strong">Location Editor</s-text>
+                    <text style={{ fontSize: 16, fontWeight: 600 }}>{store.storeName}</text>
                     <s-box>
                         <s-box>
                             {
@@ -585,14 +648,12 @@ export default function EditLocation() {
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
                                             </s-stack>
-                                            <s-paragraph >Customize your location information</s-paragraph>
                                         </s-stack>
-                                        <s-stack padding="small" gap="small-200">
+                                        <s-stack paddingBlockStart="small-200" gap="small-200">
                                             <s-box>
                                                 <s-text-field
                                                     label="Location Name"
                                                     name="storeName"
-                                                    error={error === true ? "Location name is required" : ""}
                                                     required
                                                     defaultValue={store.storeName || ""}
                                                     onInput={(e: any) => {
@@ -608,7 +669,6 @@ export default function EditLocation() {
                                                 <s-text-field
                                                     label="Address"
                                                     name="address"
-                                                    error={error === true ? "Address line 1 is required" : ""}
                                                     required
                                                     defaultValue={store.address || ""}
                                                     onInput={(e: any) => {
@@ -628,7 +688,6 @@ export default function EditLocation() {
                                                     <s-text-field
                                                         label="City"
                                                         name="city"
-                                                        error={error === true ? "City is required" : ""}
                                                         required
                                                         defaultValue={store.city || ""}
                                                         onInput={(e: any) => {
@@ -645,7 +704,6 @@ export default function EditLocation() {
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
-                                                        error={error === true ? "Zip code is required" : ""}
                                                         required
                                                         defaultValue={store.code || ""}
                                                         onInput={(e: any) => {
@@ -700,7 +758,7 @@ export default function EditLocation() {
                                         <s-box>
                                             <s-heading>Hours of Operation</s-heading>
                                         </s-box>
-                                        <s-stack paddingInline="small">
+                                        <s-stack>
                                             <table>
                                                 <tbody>
                                                     <tr>
@@ -716,30 +774,22 @@ export default function EditLocation() {
                                                                 <s-text-field
                                                                     name={`${item}-open`}
                                                                     value={dayStatus[item].valueOpen}
-                                                                    readOnly={dayStatus[item].disabled}
-                                                                    onInput={(e: any) => {
-                                                                        setDayStatus(prev => ({
-                                                                            ...prev,
-                                                                            [item]: { ...prev[item], valueOpen: e.target.value }
-                                                                        }))
-                                                                    }}
+                                                                    placeholder="HH:MM"
+                                                                    readOnly={dayStatus[item].valueOpen === "close"}
+                                                                    onInput={(e: any) => handleTimeOpenChange(item, e.target.value)}
                                                                 />
                                                             </td>
                                                             <td>
                                                                 <s-text-field
                                                                     name={`${item}-close`}
                                                                     value={dayStatus[item].valueClose}
-                                                                    readOnly={dayStatus[item].disabled}
-                                                                    onInput={(e: any) => {
-                                                                        setDayStatus(prev => ({
-                                                                            ...prev,
-                                                                            [item]: { ...prev[item], valueClose: e.target.value }
-                                                                        }))
-                                                                    }}
+                                                                    placeholder="HH:MM"
+                                                                    readOnly={dayStatus[item].valueClose === "close"}
+                                                                    onInput={(e: any) => handleTimeCloseChange(item, e.target.value)}
                                                                 />
                                                             </td>
                                                             <td>
-                                                                <s-button icon="clock" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
+                                                                <s-button icon="edit" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -751,11 +801,10 @@ export default function EditLocation() {
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-stack>
                                                 <s-heading>Social Media</s-heading>
-                                                <s-paragraph>Customize your location information</s-paragraph>
                                             </s-stack>
                                             <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
                                         </s-stack>
-                                        <s-stack paddingBlock="small-200" paddingInlineStart="small" gap="small-400">
+                                        <s-stack paddingBlockStart="small-200" gap="small-400">
                                             {
                                                 countSocial.map((item) => (
                                                     <s-stack
@@ -791,6 +840,7 @@ export default function EditLocation() {
                                                             <s-text-field
                                                                 name="contract"
                                                                 value={item.url}
+                                                                placeholder={`https://www.${item.platform}.com/`}
                                                                 onInput={(e: any) => {
                                                                     setCountSocial(prev =>
                                                                         prev.map(social =>
@@ -838,7 +888,7 @@ export default function EditLocation() {
                                                 <s-heading>Add a logo for this location</s-heading>
                                                 <s-paragraph>Customize your location information</s-paragraph>
                                             </s-box>
-                                            <s-stack direction="inline" justifyContent="space-between" paddingBlock="small-200" alignItems="center" paddingInline="small">
+                                            <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center" >
                                                 <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
                                                     {preview ? (
                                                         <s-stack justifyContent="center" alignItems="center">
@@ -907,12 +957,17 @@ export default function EditLocation() {
                                                     <tbody>
                                                         {days.map(day => {
                                                             const status = dayStatus[day];
-                                                            if (status.disabled ||
+                                                            if (
                                                                 !status.valueOpen ||
                                                                 !status.valueClose ||
                                                                 status.valueOpen === "close" ||
                                                                 status.valueClose === "close") {
-                                                                return null;
+                                                                return (
+                                                                    <tr key={day}>
+                                                                        <td>{day}</td>
+                                                                        <td>Close</td>
+                                                                    </tr>
+                                                                );
                                                             }
 
                                                             return (
@@ -948,6 +1003,12 @@ export default function EditLocation() {
                     </s-grid>
                 </s-query-container>
             </Form>
+
+            <s-stack alignItems="center" paddingBlock="large">
+                <s-text>
+                    Learn more about <span style={{ color: 'blue' }}><s-link href="">Location section</s-link></span>
+                </s-text>
+            </s-stack>
         </s-page>
     );
 }

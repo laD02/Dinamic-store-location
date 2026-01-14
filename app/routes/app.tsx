@@ -67,11 +67,6 @@ export default function App() {
       ) : (
         <>
           <Outlet />
-          <s-stack alignItems="center" paddingBlock="base">
-            <s-text>
-              Learn more about <span style={{ color: 'blue' }}><s-link href="">Review section.</s-link></span>
-            </s-text>
-          </s-stack>
         </>
       )}
     </AppProvider>

@@ -598,6 +598,12 @@ export default function AllLocation() {
           </s-button>
         </s-stack>
       </s-section>
+
+      <s-stack alignItems="center" paddingBlock="large">
+        <s-text>
+          Learn more about <span style={{ color: 'blue' }}><s-link href="">Location section</s-link></span>
+        </s-text>
+      </s-stack>
     </s-page>
   );
 }

@@ -266,6 +266,12 @@ export default function Onboarding() {
                     </s-section>
                 </s-stack>
             </s-query-container>
+
+            <s-stack alignItems="center" paddingBlock="large">
+                <s-text>
+                    Learn more about <span style={{ color: 'blue' }}><s-link href="">Store Locator</s-link></span>
+                </s-text>
+            </s-stack>
         </s-page>
     )
 }
