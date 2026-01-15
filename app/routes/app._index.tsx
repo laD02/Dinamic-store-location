@@ -267,7 +267,7 @@ export default function Onboarding() {
                 </s-stack>
             </s-query-container>
 
-            <s-stack alignItems="center" paddingBlock="large">
+            <s-stack alignItems="center" paddingBlock="large-200">
                 <s-text>
                     Learn more about <span style={{ color: 'blue' }}><s-link href="">Store Locator</s-link></span>
                 </s-text>

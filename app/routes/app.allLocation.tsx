@@ -599,7 +599,7 @@ export default function AllLocation() {
         </s-stack>
       </s-section>
 
-      <s-stack alignItems="center" paddingBlock="large">
+      <s-stack alignItems="center" paddingBlock="large-200">
         <s-text>
           Learn more about <span style={{ color: 'blue' }}><s-link href="">Location section</s-link></span>
         </s-text>

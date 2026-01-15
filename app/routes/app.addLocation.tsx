@@ -405,11 +405,11 @@ export default function AddLocation() {
         // THÊM PHẦN NÀY - Validate social media
         const socialValidationErrors: Record<string, string> = {};
         countSocial.forEach(item => {
-            if (item.url.trim()) {
-                const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
-                if (!validation.isValid) {
-                    socialValidationErrors[item.id] = validation.message || 'Invalid URL';
-                }
+            // BỎ ĐIỀU KIỆN if (item.url.trim())
+            // LUÔN VALIDATE
+            const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
+            if (!validation.isValid) {
+                socialValidationErrors[item.id] = validation.message || 'Invalid URL';
             }
         });
 

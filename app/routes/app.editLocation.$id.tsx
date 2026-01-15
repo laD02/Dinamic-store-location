@@ -500,11 +500,9 @@ export default function EditLocation() {
 
         const socialValidationErrors: Record<string, string> = {};
         countSocial.forEach(item => {
-            if (item.url.trim()) {
-                const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
-                if (!validation.isValid) {
-                    socialValidationErrors[item.id] = validation.message || 'Invalid URL';
-                }
+            const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
+            if (!validation.isValid) {
+                socialValidationErrors[item.id] = validation.message || 'Invalid URL';
             }
         });
 
