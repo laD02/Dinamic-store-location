@@ -8,6 +8,7 @@ import { uploadImageToCloudinary } from "app/utils/upload.server";
 import styles from "../css/addLocation.module.css"
 import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
+import { validateWebsiteUrl } from "app/utils/websiteValidation";
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -68,6 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
             code: formData.get("code")?.toString() ?? "",
             phone: formData.get("phone")?.toString() ?? "",
             image: imageUrl,
+            url: formData.get("url")?.toString() ?? "",
             directions: formData.get("directions")?.toString() ?? "",
             contract,
             source: formData.get('source')?.toString() ?? "Manual",
@@ -121,8 +123,10 @@ export default function AddLocation() {
     const initialVisibilityRef = useRef<string>("hidden");
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
     const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
+    const [websiteError, setWebsiteError] = useState<string>("");
     const [previewData, setPreviewData] = useState({
         storeName: "",
         address: "",
@@ -275,23 +279,8 @@ export default function AddLocation() {
             [day]: { ...prev[day], valueOpen: formatted }
         }));
 
-        // Validate
-        if (formatted && !validateTimeFormat(formatted)) {
-            setTimeErrors(prev => ({
-                ...prev,
-                [day]: { ...prev[day], open: 'Invalid time format (HH:MM)' }
-            }));
-        } else {
-            setTimeErrors(prev => {
-                const newErrors = { ...prev };
-                if (newErrors[day]) {
-                    delete newErrors[day].open;
-                    if (Object.keys(newErrors[day]).length === 0) {
-                        delete newErrors[day];
-                    }
-                }
-                return newErrors;
-            });
+        if (validateTimeFormat(formatted)) {
+            clearTimeError(day, "open");
         }
     };
 
@@ -303,23 +292,8 @@ export default function AddLocation() {
             [day]: { ...prev[day], valueClose: formatted }
         }));
 
-        // Validate
-        if (formatted && !validateTimeFormat(formatted)) {
-            setTimeErrors(prev => ({
-                ...prev,
-                [day]: { ...prev[day], close: 'Invalid time format (HH:MM)' }
-            }));
-        } else {
-            setTimeErrors(prev => {
-                const newErrors = { ...prev };
-                if (newErrors[day]) {
-                    delete newErrors[day].close;
-                    if (Object.keys(newErrors[day]).length === 0) {
-                        delete newErrors[day];
-                    }
-                }
-                return newErrors;
-            });
+        if (validateTimeFormat(formatted)) {
+            clearTimeError(day, "close");
         }
     };
 
@@ -336,12 +310,16 @@ export default function AddLocation() {
         setCountSocial(prev => prev.filter(item => item.id !== id));
     };
 
-    const validateSocialMedia = (id: string, url: string, platform: SocialPlatform): void => {
+    const validateSocialMedia = (
+        id: string,
+        url: string,
+        platform: SocialPlatform
+    ) => {
         if (!url.trim()) {
             setSocialErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[id];
-                return newErrors;
+                const next = { ...prev };
+                delete next[id];
+                return next;
             });
             return;
         }
@@ -351,14 +329,29 @@ export default function AddLocation() {
         if (!validation.isValid) {
             setSocialErrors(prev => ({
                 ...prev,
-                [id]: validation.message || 'Invalid URL'
+                [id]: validation.message || "Invalid URL"
             }));
         } else {
             setSocialErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[id];
-                return newErrors;
+                const next = { ...prev };
+                delete next[id];
+                return next;
             });
+        }
+    };
+
+    const validateWebsite = (url: string) => {
+        if (!url.trim()) {
+            setWebsiteError("");
+            return;
+        }
+
+        const validation = validateWebsiteUrl(url);
+
+        if (!validation.isValid) {
+            setWebsiteError(validation.message || "Invalid URL");
+        } else {
+            setWebsiteError("");
         }
     };
 
@@ -380,33 +373,58 @@ export default function AddLocation() {
         }
     };
 
+    const clearTimeError = (day: string, type: "open" | "close") => {
+        setTimeErrors(prev => {
+            if (!prev[day]?.[type]) return prev;
+
+            const next = { ...prev };
+            delete next[day][type];
+
+            if (Object.keys(next[day]).length === 0) {
+                delete next[day];
+            }
+
+            return next;
+        });
+    };
+
     const handleSubmit = () => {
         if (!formRef.current) return;
 
+        const newErrors: Record<string, string> = {};
         const requiredFields = ["storeName", "address", "city", "code"];
-        const emptyFields = requiredFields.filter((name) => {
-            const el = formRef.current!.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement;
-            return !el?.value?.trim();
+        requiredFields.forEach((name) => {
+            const el = formRef.current!.elements.namedItem(name) as HTMLInputElement;
+            if (!el?.value?.trim()) {
+                newErrors[name] = "Please fill in this field";
+            }
         });
 
-        if (emptyFields.length > 0) {
-            shopify.toast.show('Please fill in all required fields', { isError: true });
+        if (Object.keys(newErrors).length > 0) {
+            setFieldErrors(newErrors);
             return;
+        }
+
+        // Validate website
+        const websiteField = formRef.current.elements.namedItem('url') as HTMLInputElement;
+        if (websiteField?.value?.trim()) {
+            const websiteValidation = validateWebsiteUrl(websiteField.value);
+            if (!websiteValidation.isValid) {
+                setWebsiteError(websiteValidation.message || 'Invalid URL');
+                return;
+            }
         }
 
         // Validate all times
         const allTimeErrors = validateAllTimes(dayStatus, days);
         if (Object.keys(allTimeErrors).length > 0) {
             setTimeErrors(allTimeErrors);
-            shopify.toast.show('Please fix time format errors', { isError: true });
             return;
         }
 
         // THÊM PHẦN NÀY - Validate social media
         const socialValidationErrors: Record<string, string> = {};
         countSocial.forEach(item => {
-            // BỎ ĐIỀU KIỆN if (item.url.trim())
-            // LUÔN VALIDATE
             const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
             if (!validation.isValid) {
                 socialValidationErrors[item.id] = validation.message || 'Invalid URL';
@@ -415,7 +433,6 @@ export default function AddLocation() {
 
         if (Object.keys(socialValidationErrors).length > 0) {
             setSocialErrors(socialValidationErrors);
-            shopify.toast.show('Please fix social media URL errors', { isError: true });
             return;
         }
 
@@ -476,6 +493,7 @@ export default function AddLocation() {
 
         setTimeErrors({});
         setSocialErrors({}); // THÊM DÒNG NÀY
+        setWebsiteError("");
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-save-bar");
@@ -523,14 +541,14 @@ export default function AddLocation() {
                                 <s-badge tone="success">
                                     <s-stack direction="inline" alignItems="center">
                                         <s-icon type="eye-check-mark" />
-                                        visible
+                                        Visible
                                     </s-stack>
                                 </s-badge>
                                 :
                                 <s-badge>
                                     <s-stack direction="inline" alignItems="center">
                                         <s-icon type="hide" tone="info" />
-                                        hidden
+                                        Hidden
                                     </s-stack>
                                 </s-badge>
                         }
@@ -563,14 +581,21 @@ export default function AddLocation() {
                                                 <s-text-field
                                                     label="Location Name"
                                                     name="storeName"
+                                                    error={fieldErrors.storeName}
                                                     required
                                                     defaultValue=""
                                                     onInput={(e: any) => {
-                                                        setPreviewData(prev => ({
-                                                            ...prev,
-                                                            storeName: e.target.value
-                                                        }));
-                                                        checkDirty();
+                                                        const value = e.target.value;
+                                                        setPreviewData(prev => ({ ...prev, storeName: value }));
+
+                                                        if (value.trim()) {
+                                                            setFieldErrors(prev => {
+                                                                const next = { ...prev };
+                                                                delete next.storeName;
+                                                                return next;
+                                                            });
+                                                        }
+                                                        checkDirty()
                                                     }}
                                                 />
                                             </s-box>
@@ -578,14 +603,20 @@ export default function AddLocation() {
                                                 <s-text-field
                                                     label="Address"
                                                     name="address"
+                                                    error={fieldErrors.address}
                                                     required
                                                     defaultValue=""
                                                     onInput={(e: any) => {
-                                                        setPreviewData(prev => ({
-                                                            ...prev,
-                                                            address: e.target.value
-                                                        }));
-                                                        checkDirty();
+                                                        const value = e.target.value;
+                                                        setPreviewData(prev => ({ ...prev, address: value }));
+
+                                                        if (value.trim()) {
+                                                            setFieldErrors(prev => {
+                                                                const next = { ...prev };
+                                                                delete next.address;
+                                                                return next;
+                                                            });
+                                                        }
                                                     }}
                                                 />
                                             </s-box>
@@ -597,14 +628,20 @@ export default function AddLocation() {
                                                     <s-text-field
                                                         label="City"
                                                         name="city"
+                                                        error={fieldErrors.city}
                                                         required
                                                         defaultValue=""
                                                         onInput={(e: any) => {
-                                                            setPreviewData(prev => ({
-                                                                ...prev,
-                                                                city: e.target.value
-                                                            }));
-                                                            checkDirty();
+                                                            const value = e.target.value;
+                                                            setPreviewData(prev => ({ ...prev, city: value }));
+
+                                                            if (value.trim()) {
+                                                                setFieldErrors(prev => {
+                                                                    const next = { ...prev };
+                                                                    delete next.city;
+                                                                    return next;
+                                                                });
+                                                            }
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -613,14 +650,20 @@ export default function AddLocation() {
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
+                                                        error={fieldErrors.code}
                                                         required
                                                         defaultValue=""
                                                         onInput={(e: any) => {
-                                                            setPreviewData(prev => ({
-                                                                ...prev,
-                                                                code: e.target.value
-                                                            }));
-                                                            checkDirty();
+                                                            const value = e.target.value;
+                                                            setPreviewData(prev => ({ ...prev, code: value }));
+
+                                                            if (value.trim()) {
+                                                                setFieldErrors(prev => {
+                                                                    const next = { ...prev };
+                                                                    delete next.code;
+                                                                    return next;
+                                                                });
+                                                            }
                                                         }}
                                                     />
 
@@ -650,7 +693,13 @@ export default function AddLocation() {
                                                         label="Website"
                                                         name="url"
                                                         defaultValue=""
-                                                        onInput={checkDirty}
+                                                        error={websiteError}
+                                                        onInput={(e: any) => {
+                                                            checkDirty();
+                                                        }}
+                                                        onBlur={(e: any) => {
+                                                            validateWebsite(e.target.value);
+                                                        }}
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
@@ -679,26 +728,28 @@ export default function AddLocation() {
                                                     </tr>
                                                     {days.map((item) => (
                                                         <tr key={item}>
-                                                            <td>{item}</td>
-                                                            <td>
+                                                            <td style={{ verticalAlign: "top" }}>{item}</td>
+                                                            <td style={{ verticalAlign: "top" }}>
                                                                 <s-text-field
                                                                     name={`${item}-open`}
                                                                     value={dayStatus[item].valueOpen}
+                                                                    error={timeErrors[item]?.open}
                                                                     placeholder="HH:MM"
                                                                     readOnly={dayStatus[item].valueOpen === "close"}
                                                                     onInput={(e: any) => handleTimeOpenChange(item, e.target.value)}
                                                                 />
                                                             </td>
-                                                            <td>
+                                                            <td style={{ verticalAlign: "top" }}>
                                                                 <s-text-field
                                                                     name={`${item}-close`}
                                                                     value={dayStatus[item].valueClose}
+                                                                    error={timeErrors[item]?.close}
                                                                     placeholder="HH:MM"
                                                                     readOnly={dayStatus[item].valueClose === "close"}
                                                                     onInput={(e: any) => handleTimeCloseChange(item, e.target.value)}
                                                                 />
                                                             </td>
-                                                            <td>
+                                                            <td style={{ verticalAlign: "top" }}>
                                                                 <s-button icon="edit" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
                                                             </td>
                                                         </tr>
@@ -721,7 +772,7 @@ export default function AddLocation() {
                                                         direction="inline"
                                                         justifyContent="start"
                                                         gap="small-200"
-                                                        alignItems="center"
+                                                        alignItems="start"
                                                         key={`${socialResetKey}-${item.id}`}
                                                     >
                                                         <s-box inlineSize="33%">
@@ -753,6 +804,7 @@ export default function AddLocation() {
                                                             <s-text-field
                                                                 name="contract"
                                                                 placeholder={`https://www.${item.platform}.com/`}
+                                                                error={socialErrors[item.id]}
                                                                 value={item.url}
                                                                 onInput={(e: any) => {
                                                                     setCountSocial(prev =>

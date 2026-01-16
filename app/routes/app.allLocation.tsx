@@ -99,6 +99,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AllLocation() {
   const storesData = useLoaderData<Store[]>();
+  const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -140,7 +141,13 @@ export default function AllLocation() {
   // Theo dõi fetcher.data cho các action trong trang này
   useEffect(() => {
     if (fetcher.data?.success) {
-      shopify.toast.show('Store deleted successfully!');
+      shopify.toast.show('Stores deleted successfully!');
+    }
+  }, [fetcher.data]);
+
+  useEffect(() => {
+    if (fetcher.data?.oks) {
+      shopify.toast.show('Stores updated visibility successfully!');
     }
   }, [fetcher.data]);
 
@@ -274,71 +281,12 @@ export default function AllLocation() {
           windowWidth > 768
             ?
             <s-stack direction="inline" gap="base">
-              <s-tooltip id="export">Export</s-tooltip>
-              <s-button variant="secondary" disabled={!hasChecked} icon="export" onClick={handleExport} interestFor="export" ></s-button>
-              <s-tooltip id="delete">Delete</s-tooltip>
-              <s-button variant="secondary" commandFor="deleteTrash-modal" disabled={!hasChecked} icon="delete" interestFor="delete"></s-button>
-              <s-modal id="deleteTrash-modal" heading="Delete Location">
-                <s-text>
-                  Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
-                </s-text>
-                <s-button
-                  slot="secondary-actions"
-                  variant="secondary"
-                  commandFor="deleteTrash-modal"
-                  command="--hide"
-                >
-                  Cancel
-                </s-button>
-
-                <s-button
-                  slot="primary-action"
-                  variant="primary"
-                  tone="critical"
-                  commandFor="deleteTrash-modal"
-                  command="--hide"
-                  onClick={() => handleDelete()}
-                >
-                  Delete
-                </s-button>
-              </s-modal>
               <Link to="/app/addLocation" >
                 <s-button variant="primary" icon="plus-circle">Add Location</s-button>
               </Link>
             </s-stack>
             :
             <s-stack direction="inline" justifyContent="end" gap="base">
-              <s-button icon="menu-horizontal" commandFor="btn-group"></s-button>
-              <s-popover id="btn-group">
-                <s-stack direction="block">
-                  <s-button variant="tertiary" disabled={!hasChecked} onClick={handleExport} >Export</s-button>
-                  <s-button variant="tertiary" commandFor="deleteTrash-modal" disabled={!hasChecked} >Delete</s-button>
-                  <s-modal id="deleteTrash-modal" heading="Delete Location">
-                    <s-text>
-                      Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
-                    </s-text>
-                    <s-button
-                      slot="secondary-actions"
-                      variant="secondary"
-                      commandFor="deleteTrash-modal"
-                      command="--hide"
-                    >
-                      Cancel
-                    </s-button>
-
-                    <s-button
-                      slot="primary-action"
-                      variant="primary"
-                      tone="critical"
-                      commandFor="deleteTrash-modal"
-                      command="--hide"
-                      onClick={() => handleDelete()}
-                    >
-                      Delete
-                    </s-button>
-                  </s-modal>
-                </s-stack>
-              </s-popover>
               <Link to="/app/addLocation" >
                 <s-button variant="primary" icon="plus-circle"></s-button>
               </Link>
@@ -354,101 +302,130 @@ export default function AllLocation() {
         // onPreviousPage={() => setCurrentPage(prev => Math.max(1, prev - 1))}
         // onNextPage={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
         >
-          <s-grid slot="filters" gap="small-200" gridTemplateColumns="1fr auto">
-            <s-text-field
-              label="Search puzzles"
-              labelAccessibilityVisibility="exclusive"
-              icon="search"
-              placeholder="Search by name, city, or address"
-              value={searchTerm}
-              onInput={(event) => {
-                const target = event.target as any;
-                setSearchTerm(target.value);
-              }}
-            />
-            <s-button
-              icon="sort"
-              variant="secondary"
-              accessibilityLabel="Sort"
-              interestFor="sort-tooltip"
-              commandFor="sort-actions"
-            />
-            <s-tooltip id="sort-tooltip">
-              <s-text>Sort</s-text>
-            </s-tooltip>
-            <s-popover id="sort-actions">
-              <s-stack gap="none">
-                {/* <s-box padding="small">
-                  Source
-                  {["Manual", "Faire", "National Retailer", "Shopify B2B"].map((src, index) => (
-                  <s-checkbox 
-                    key={index}
-                    label={src}
-                    value={src}
-                    checked={selectedSources.includes(src)}
-                    onChange={e => {
-                      const target = e.target as HTMLInputElement;
-                      const val = target.value;
-                      setSelectedSources(prev =>
-                        target.checked ? [...prev, val] : prev.filter(v => v !== val)
-                      );
-                    }}
-                  />
-                ))}
-                </s-box> */}
-                <s-divider />
-                <s-box padding="small">
-                  <s-choice-list
-                    label="Visibility"
-                    name="visi"
-                    values={selectedVisibility ? [selectedVisibility] : []}
-                    onChange={(e) => {
-                      const target = e.currentTarget.values;
-                      setSelectedVisibility(target ? target[0] : "")
-                    }}
-                  >
-                    <s-choice value="visible">Visible</s-choice>
-                    <s-choice value="hidden">Hidden</s-choice>
-                  </s-choice-list>
+          <s-grid slot="filters" gap="small-200">
+            <s-stack direction="inline" gap="small-200" justifyContent={hasChecked ? "space-between" : undefined}>
+              {hasChecked && !showSearch && (
+                <s-stack direction="inline" gap="base" justifyContent="space-between" alignItems="center">
+                  <s-stack direction="inline" gap="small-200" justifyContent="start">
+                    <s-button onClick={() => updateVisibility("visible")}>
+                      Set As Visible
+                    </s-button>
+                    <s-button onClick={() => updateVisibility("hidden")}>
+                      Set As Hidden
+                    </s-button>
+                    <s-button commandFor="customer-menu" icon="menu-horizontal"></s-button>
+                    <s-menu id="customer-menu" accessibilityLabel="Customer actions">
+                      <s-button variant="tertiary" onClick={handleExport}>Export CSV</s-button>
+                      <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical">Delete all stores</s-button>
+                      <s-modal id="deleteTrash-modal" heading="Delete Location">
+                        <s-text>
+                          Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
+                        </s-text>
+                        <s-button
+                          slot="secondary-actions"
+                          variant="secondary"
+                          commandFor="deleteTrash-modal"
+                          command="--hide"
+                        >
+                          Cancel
+                        </s-button>
+
+                        <s-button
+                          slot="primary-action"
+                          variant="primary"
+                          tone="critical"
+                          commandFor="deleteTrash-modal"
+                          command="--hide"
+                          onClick={() => handleDelete()}
+                        >
+                          Delete
+                        </s-button>
+                      </s-modal>
+                    </s-menu>
+                  </s-stack>
+                </s-stack>
+              )}
+              <div style={{ flex: 1 }}>
+                <s-stack direction="inline" gap="small-200" justifyContent={showSearch ? "space-between" : 'end'}>
+                  {
+                    showSearch ? (
+                      <div style={{ flex: 1, gap: 8, display: "flex", height: 28 }}>
+                        <s-text-field
+                          label="Search puzzles"
+                          labelAccessibilityVisibility="exclusive"
+                          icon="search"
+                          placeholder="Search by name, city, or address"
+                          value={searchTerm}
+                          onInput={(event) => {
+                            const target = event.target as any;
+                            setSearchTerm(target.value);
+                          }}
+                        />
+                        <s-button
+                          variant="tertiary"
+                          onClick={() => {
+                            setShowSearch(false)
+                            hasChecked === false
+                          }}
+                        >
+                          Cancel
+                        </s-button>
+                      </div>
+                    ) : (
+                      <s-button
+                        icon="search"
+                        onClick={() => {
+                          setShowSearch(true)
+                          hasChecked === true
+                        }}
+                      >
+
+                      </s-button>
+                    )
+                  }
                   <s-button
-                    variant="tertiary"
-                    onClick={() => setSelectedVisibility("")}
-                  >
-                    Clear
-                  </s-button>
-                </s-box>
-              </s-stack>
-            </s-popover>
+                    icon="sort"
+                    variant="secondary"
+                    accessibilityLabel="Sort"
+                    interestFor="sort-tooltip"
+                    commandFor="sort-actions"
+                  />
+                  <s-tooltip id="sort-tooltip">
+                    <s-text>Sort</s-text>
+                  </s-tooltip>
+                  <s-popover id="sort-actions">
+                    <s-stack gap="none">
+                      <s-divider />
+                      <s-box padding="small">
+                        <s-choice-list
+                          label="Visibility"
+                          name="visi"
+                          values={selectedVisibility ? [selectedVisibility] : []}
+                          onChange={(e) => {
+                            const target = e.currentTarget.values;
+                            setSelectedVisibility(target ? target[0] : "")
+                          }}
+                        >
+                          <s-choice value="visible">Visible</s-choice>
+                          <s-choice value="hidden">Hidden</s-choice>
+                        </s-choice-list>
+                        <s-button
+                          variant="tertiary"
+                          onClick={() => setSelectedVisibility("")}
+                        >
+                          Clear
+                        </s-button>
+                      </s-box>
+                    </s-stack>
+                  </s-popover>
+                </s-stack>
+              </div>
+            </s-stack>
           </s-grid>
           {
             filteredStores.length !== 0 ? (
               <>
-                {hasChecked && windowWidth >= 490 && (
-                  <s-table-header-row>
-                    <s-table-header listSlot="primary">
-                      <s-stack direction="inline" gap="small" alignItems="center">
-                        <s-checkbox
-                          onChange={selectAllVisible}
-                          checked={allVisibleSelected}
-                        />
-                        {checkedRowCount} selected
-                      </s-stack>
-                    </s-table-header>
-                    <s-table-header listSlot="inline"></s-table-header>
-                    <s-table-header listSlot="labeled">
-                      <s-button onClick={() => updateVisibility("visible")}>
-                        Set As Visible
-                      </s-button>
-                    </s-table-header>
-                    <s-table-header listSlot="labeled">
-                      <s-button onClick={() => updateVisibility("hidden")}>
-                        Set As Hidden
-                      </s-button>
-                    </s-table-header>
-                    <s-table-header listSlot="labeled"></s-table-header>
-                  </s-table-header-row>
-                )}
-                {!hasChecked && (
+                {!hasChecked ? (
                   <s-table-header-row>
                     <s-table-header listSlot="primary">
                       <s-stack direction="inline" gap="base">
@@ -459,12 +436,26 @@ export default function AllLocation() {
                         StoreName
                       </s-stack>
                     </s-table-header>
-                    {/* <s-table-header listSlot="labeled">Address</s-table-header>
-                    <s-table-header listSlot="labeled">City</s-table-header> */}
                     <s-table-header listSlot="labeled">Visibility</s-table-header>
                     <s-table-header listSlot="labeled">Created</s-table-header>
                     <s-table-header listSlot="labeled">Update</s-table-header>
                     <s-table-header listSlot="labeled">Actions</s-table-header>
+                  </s-table-header-row>
+                ) : (
+                  <s-table-header-row>
+                    <s-table-header listSlot="primary">
+                      <s-stack direction="inline" gap="base">
+                        <s-checkbox
+                          checked={allVisibleSelected}
+                          onChange={selectAllVisible}
+                        />
+                        {checkedRowCount} selected
+                      </s-stack>
+                    </s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
+                    <s-table-header listSlot="labeled"></s-table-header>
                   </s-table-header-row>
                 )}
                 <s-table-body>
@@ -485,28 +476,8 @@ export default function AllLocation() {
                           </s-stack>
                         </s-table-cell>
                         <s-table-cell>
-                          <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>{store.visibility}</s-badge>
+                          <s-badge tone={store.visibility === "visible" ? "success" : "auto"}><s-text>{store.visibility === "visible" ? "Visible" : "Hidden"}</s-text></s-badge>
                         </s-table-cell>
-                        {/* <s-table-cell>
-                          <s-badge tone="info">{store.source}</s-badge>
-                        </s-table-cell>
-                        <s-table-cell>
-                          <s-icon type="location"/>
-                        </s-table-cell>
-                        <s-table-cell>
-                          <s-tooltip id={`tags-${index}`}>
-                            <s-text>
-                              {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
-                            </s-text>
-                          </s-tooltip>
-                          <s-text interestFor={`tags-${index}`}>   
-                            <div style={{width:'80px'}}>
-                              <s-paragraph lineClamp={1}>
-                                {(Array.isArray(store.tags) ? store.tags : []).join(", ")}
-                              </s-paragraph>
-                            </div>
-                          </s-text>
-                        </s-table-cell> */}
                         <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>
