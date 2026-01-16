@@ -352,10 +352,7 @@ export default function AllLocation() {
                   {
                     showSearch ? (
                       <div style={{ flex: 1, gap: 8, display: "flex", height: 28 }}>
-                        <s-text-field
-                          label="Search puzzles"
-                          labelAccessibilityVisibility="exclusive"
-                          icon="search"
+                        <s-search-field
                           placeholder="Search by name, city, or address"
                           value={searchTerm}
                           onInput={(event) => {
@@ -368,6 +365,7 @@ export default function AllLocation() {
                           onClick={() => {
                             setShowSearch(false)
                             hasChecked === false
+                            setSearchTerm("")
                           }}
                         >
                           Cancel
@@ -532,7 +530,7 @@ export default function AllLocation() {
                   <s-table-row>
                     <s-table-cell >
                       <s-stack alignItems="center" gap="small">
-                        <s-icon type="search" size="base" />
+                        {/* <s-icon type="search" size="base" /> */}
                         <h2>No filters found</h2>
                         <s-text color="subdued">
                           Try changing the filters or search term

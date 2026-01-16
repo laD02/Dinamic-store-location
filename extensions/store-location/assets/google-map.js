@@ -193,7 +193,7 @@ function showOverlay(store, marker) {
             const socialLinks = Object.entries(this.store.contract || {})
                 .map(([platform, items]) =>
                     items.map((href) => `
-                        <a href="${href}" target="_blank" style="color: ${mapStyle.iconColor}">
+                        <a href="${href}" target="_blank" class="${platform}">
                             <i class="fa-brands ${icons[platform]}"></i>
                         </a>
                     `).join('')

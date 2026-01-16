@@ -183,9 +183,15 @@ export default function MapGoogle({
                 </div>
 
                 <div className={styles.socialIcons}>
-                  <i style={{ color: popupStyle.iconColor }} className="fa-brands fa-linkedin"></i>
-                  <i style={{ color: popupStyle.iconColor }} className="fa-brands fa-youtube"></i>
-                  <i style={{ color: popupStyle.iconColor }} className="fa-brands fa-facebook"></i>
+                  <a href="#" className={styles.linkedin}>
+                    <i className="fa-brands fa-linkedin"></i>
+                  </a>
+                  <a href="#" className={styles.youtube}>
+                    <i className="fa-brands fa-youtube"></i>
+                  </a>
+                  <a href="#" className={styles.facebook}>
+                    <i className="fa-brands fa-facebook"></i>
+                  </a>
                 </div>
               </div>
             </div>

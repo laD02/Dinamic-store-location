@@ -4,11 +4,11 @@ import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
-import { stateList } from "app/utils/state";
 import styles from "../css/addLocation.module.css";
 import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
+import { daysList, hourClose, hourOpen } from "app/utils/hourOfOperating";
 
 export async function loader({ params }: LoaderFunctionArgs) {
     const { id } = params;
@@ -856,12 +856,12 @@ export default function EditLocation() {
                                                 </s-grid-item>
                                             </s-grid>
 
-                                            <s-text-area
+                                            {/* <s-text-area
                                                 label="Direction"
                                                 name="directions"
                                                 defaultValue={store.directions || ""}
                                                 onInput={checkDirty}
-                                            />
+                                            /> */}
                                         </s-stack>
                                     </s-section>
 
@@ -869,8 +869,13 @@ export default function EditLocation() {
                                         <s-box>
                                             <s-heading>Hours of Operation</s-heading>
                                         </s-box>
-                                        <s-stack>
-                                            <table>
+                                        <s-stack
+                                            direction="inline"
+                                            justifyContent="space-between"
+                                            paddingBlockStart="small-200"
+                                            alignItems="center"
+                                        >
+                                            {/* <table>
                                                 <tbody>
                                                     <tr>
                                                         <td></td>
@@ -907,7 +912,36 @@ export default function EditLocation() {
                                                         </tr>
                                                     ))}
                                                 </tbody>
-                                            </table>
+                                            </table> */}
+                                            <div style={{ width: "31%" }}>
+                                                <s-select value="All days">
+                                                    {
+                                                        daysList.map((item) => (
+                                                            <s-option key={item} value={item}>{item}</s-option>
+                                                        ))
+                                                    }
+                                                </s-select>
+                                            </div>
+                                            <div style={{ width: "31%" }}>
+                                                <s-select value="08:00">
+                                                    {
+                                                        hourOpen.map((item) => (
+                                                            <s-option key={item} value={item}>{item}</s-option>
+                                                        ))
+                                                    }
+                                                </s-select>
+                                            </div>
+                                            to
+                                            <div style={{ width: "31%" }}>
+                                                <s-select value="17:00">
+                                                    {
+                                                        hourClose.map((item) => (
+                                                            <s-option key={item} value={item}>{item}</s-option>
+                                                        ))
+                                                    }
+                                                </s-select>
+                                            </div>
+
                                         </s-stack>
                                     </s-section>
                                     <s-section>
@@ -927,7 +961,7 @@ export default function EditLocation() {
                                                         alignItems="start"
                                                         key={`${socialResetKey}-${item.id}`}
                                                     >
-                                                        <s-box inlineSize="33%">
+                                                        <div style={{ width: "20%", marginTop: -4 }}>
                                                             <s-select
                                                                 value={item.platform}
                                                                 onChange={(e: any) => {
@@ -951,8 +985,8 @@ export default function EditLocation() {
                                                                 <s-option value="pinterest">Pinterest</s-option>
                                                                 <s-option value="tiktok">Tiktok</s-option>
                                                             </s-select>
-                                                        </s-box>
-                                                        <s-box inlineSize="33%">
+                                                        </div>
+                                                        <div style={{ flex: 1 }}>
                                                             <s-text-field
                                                                 name="contract"
                                                                 value={item.url}
@@ -975,11 +1009,13 @@ export default function EditLocation() {
                                                                     }
                                                                 }}
                                                             />
-                                                        </s-box>
-                                                        <s-button
-                                                            icon="delete"
-                                                            onClick={() => handleRemove(item.id)}
-                                                        />
+                                                        </div>
+                                                        <div style={{ marginTop: 2 }}>
+                                                            <s-button
+                                                                icon="delete"
+                                                                onClick={() => handleRemove(item.id)}
+                                                            />
+                                                        </div>
                                                     </s-stack>
                                                 ))
                                             }
@@ -1110,7 +1146,12 @@ export default function EditLocation() {
                                                     .map(item => {
                                                         const iconClass = socialIcons[item.platform];
                                                         return (
-                                                            <a href={item.url} target="_blank" key={item.id}>
+                                                            <a
+                                                                href={item.url}
+                                                                target="_blank"
+                                                                key={item.id}
+                                                                className={styles[item.platform]}
+                                                            >
                                                                 <i
                                                                     className={`fa-brands ${iconClass}`}
                                                                 />
