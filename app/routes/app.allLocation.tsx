@@ -316,7 +316,7 @@ export default function AllLocation() {
                     <s-button commandFor="customer-menu" icon="menu-horizontal"></s-button>
                     <s-menu id="customer-menu" accessibilityLabel="Customer actions">
                       <s-button variant="tertiary" onClick={handleExport}>Export CSV</s-button>
-                      <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical">Delete all stores</s-button>
+                      <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical" onClick={handleDelete}>Delete all stores</s-button>
                       <s-modal id="deleteTrash-modal" heading="Delete Location">
                         <s-text>
                           Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
