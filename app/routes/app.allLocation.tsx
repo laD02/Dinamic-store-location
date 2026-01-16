@@ -314,34 +314,36 @@ export default function AllLocation() {
                       Set As Hidden
                     </s-button>
                     <s-button commandFor="customer-menu" icon="menu-horizontal"></s-button>
-                    <s-menu id="customer-menu" accessibilityLabel="Customer actions">
-                      <s-button variant="tertiary" onClick={handleExport}>Export CSV</s-button>
-                      <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical" onClick={handleDelete}>Delete all stores</s-button>
-                      <s-modal id="deleteTrash-modal" heading="Delete Location">
-                        <s-text>
-                          Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
-                        </s-text>
-                        <s-button
-                          slot="secondary-actions"
-                          variant="secondary"
-                          commandFor="deleteTrash-modal"
-                          command="--hide"
-                        >
-                          Cancel
-                        </s-button>
+                    <s-popover id="customer-menu">
+                      <s-stack direction="block">
+                        <s-button variant="tertiary" onClick={handleExport}>Export CSV</s-button>
+                        <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical">Delete all stores</s-button>
+                      </s-stack>
+                    </s-popover>
+                    <s-modal id="deleteTrash-modal" heading="Delete Location">
+                      <s-text>
+                        Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.
+                      </s-text>
+                      <s-button
+                        slot="secondary-actions"
+                        variant="secondary"
+                        commandFor="deleteTrash-modal"
+                        command="--hide"
+                      >
+                        Cancel
+                      </s-button>
 
-                        <s-button
-                          slot="primary-action"
-                          variant="primary"
-                          tone="critical"
-                          commandFor="deleteTrash-modal"
-                          command="--hide"
-                          onClick={() => handleDelete()}
-                        >
-                          Delete
-                        </s-button>
-                      </s-modal>
-                    </s-menu>
+                      <s-button
+                        slot="primary-action"
+                        variant="primary"
+                        tone="critical"
+                        commandFor="deleteTrash-modal"
+                        command="--hide"
+                        onClick={() => handleDelete()}
+                      >
+                        Delete
+                      </s-button>
+                    </s-modal>
                   </s-stack>
                 </s-stack>
               )}
