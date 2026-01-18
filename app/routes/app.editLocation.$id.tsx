@@ -35,18 +35,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (actionType === "deleteId") {
         const deleteId = formData.get("id") as string;
 
-        // 1. Lấy thông tin store để lấy URL ảnh
         const store = await prisma.store.findUnique({
             where: { id: deleteId },
             select: { image: true }
         });
 
-        // 2. Xóa ảnh từ Cloudinary nếu có
         if (store?.image) {
             await deleteImageFromCloudinary(store.image);
         }
 
-        // 3. Xóa store từ database
         await prisma.store.delete({ where: { id: deleteId } });
 
         return redirect("/app/allLocation?message=deleted");
@@ -54,22 +51,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     let imageUrl = "";
     if (imageBase64) {
-        // 1. Lấy ảnh cũ từ database
         const oldStore = await prisma.store.findUnique({
             where: { id },
             select: { image: true }
         });
 
-        // 2. Upload ảnh mới
         const uploadedUrl = await uploadImageToCloudinary(imageBase64);
         imageUrl = uploadedUrl ?? "";
 
-        // 3. Xóa ảnh cũ từ Cloudinary (nếu có và khác ảnh mới)
         if (oldStore?.image && oldStore.image !== imageUrl) {
             await deleteImageFromCloudinary(oldStore.image);
         }
     } else {
-        // Giữ nguyên ảnh cũ nếu không upload ảnh mới
         const oldStore = await prisma.store.findUnique({
             where: { id },
             select: { image: true }
@@ -149,6 +142,12 @@ type SocialMedia = {
     url: string;
 };
 
+type HourSchedule = {
+    day: string;
+    openTime: string;
+    closeTime: string;
+};
+
 export default function EditLocation() {
     const fetcher = useFetcher()
     const { store, filter } = useLoaderData()
@@ -185,10 +184,15 @@ export default function EditLocation() {
 
     const [dayStatus, setDayStatus] = useState(
         days.reduce((acc, day) => {
-            acc[day] = { disabled: false, valueOpen: "9:00", valueClose: "17:00" };
+            acc[day] = { valueOpen: "09:00", valueClose: "17:00" };
             return acc;
-        }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>)
+        }, {} as Record<string, { valueOpen: string; valueClose: string }>)
     );
+
+    const [hourSchedules, setHourSchedules] = useState<HourSchedule[]>([
+        { day: "All days", openTime: "09:00", closeTime: "17:00" }
+    ]);
+    const initialHourSchedulesRef = useRef<HourSchedule[]>([]);
 
     const initialPreviewRef = useRef<typeof previewData | null>(null);
 
@@ -205,6 +209,51 @@ export default function EditLocation() {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Convert hour schedules to dayStatus format
+    useEffect(() => {
+        const newDayStatus = { ...dayStatus };
+
+        // Reset all days to empty
+        days.forEach(day => {
+            newDayStatus[day] = { valueOpen: "", valueClose: "" };
+        });
+
+        // Apply schedules
+        hourSchedules.forEach(schedule => {
+            if (schedule.day === "All days") {
+                days.forEach(day => {
+                    newDayStatus[day] = {
+                        valueOpen: schedule.openTime,
+                        valueClose: schedule.closeTime
+                    };
+                });
+            } else if (schedule.day === "Weekdays") {
+                const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                weekdays.forEach(day => {
+                    newDayStatus[day] = {
+                        valueOpen: schedule.openTime,
+                        valueClose: schedule.closeTime
+                    };
+                });
+            } else if (schedule.day === "Weekends") {
+                const weekends = ['Saturday', 'Sunday'];
+                weekends.forEach(day => {
+                    newDayStatus[day] = {
+                        valueOpen: schedule.openTime,
+                        valueClose: schedule.closeTime
+                    };
+                });
+            } else {
+                newDayStatus[schedule.day] = {
+                    valueOpen: schedule.openTime,
+                    valueClose: schedule.closeTime
+                };
+            }
+        });
+
+        setDayStatus(newDayStatus);
+    }, [hourSchedules]);
 
     // Load data từ store vào state
     useEffect(() => {
@@ -232,14 +281,89 @@ export default function EditLocation() {
                 const closeValue = store.time?.[`${key}Close`] || "";
 
                 acc[day] = {
-                    disabled: !openValue || !closeValue || (openValue === "close" && closeValue === "close"),
-                    valueOpen: openValue || "09:00",
-                    valueClose: closeValue || "17:00"
+                    valueOpen: openValue === "close" ? "" : (openValue || "09:00"),
+                    valueClose: closeValue === "close" ? "" : (closeValue || "17:00")
                 };
                 return acc;
-            }, {} as Record<string, { disabled: boolean; valueOpen: string; valueClose: string }>);
+            }, {} as Record<string, { valueOpen: string; valueClose: string }>);
 
             setDayStatus(loadedDayStatus);
+
+            // Convert từ dayStatus sang hourSchedules
+            const schedules: HourSchedule[] = [];
+            const processedDays = new Set<string>();
+
+            days.forEach(day => {
+                if (processedDays.has(day)) return;
+
+                const currentTime = loadedDayStatus[day];
+                if (!currentTime.valueOpen || !currentTime.valueClose) return;
+
+                // Check if all days have same time
+                const allSame = days.every(d =>
+                    loadedDayStatus[d].valueOpen === currentTime.valueOpen &&
+                    loadedDayStatus[d].valueClose === currentTime.valueClose
+                );
+
+                if (allSame) {
+                    schedules.push({
+                        day: "All days",
+                        openTime: currentTime.valueOpen,
+                        closeTime: currentTime.valueClose
+                    });
+                    days.forEach(d => processedDays.add(d));
+                    return;
+                }
+
+                // Check weekdays
+                const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                const weekdaysSame = weekdays.every(d =>
+                    loadedDayStatus[d].valueOpen === currentTime.valueOpen &&
+                    loadedDayStatus[d].valueClose === currentTime.valueClose
+                );
+
+                if (weekdaysSame && weekdays.includes(day)) {
+                    schedules.push({
+                        day: "Weekdays",
+                        openTime: currentTime.valueOpen,
+                        closeTime: currentTime.valueClose
+                    });
+                    weekdays.forEach(d => processedDays.add(d));
+                    return;
+                }
+
+                // Check weekends
+                const weekends = ['Saturday', 'Sunday'];
+                const weekendsSame = weekends.every(d =>
+                    loadedDayStatus[d].valueOpen === currentTime.valueOpen &&
+                    loadedDayStatus[d].valueClose === currentTime.valueClose
+                );
+
+                if (weekendsSame && weekends.includes(day)) {
+                    schedules.push({
+                        day: "Weekends",
+                        openTime: currentTime.valueOpen,
+                        closeTime: currentTime.valueClose
+                    });
+                    weekends.forEach(d => processedDays.add(d));
+                    return;
+                }
+
+                // Individual day
+                schedules.push({
+                    day: day,
+                    openTime: currentTime.valueOpen,
+                    closeTime: currentTime.valueClose
+                });
+                processedDays.add(day);
+            });
+
+            if (schedules.length === 0) {
+                schedules.push({ day: "All days", openTime: "09:00", closeTime: "17:00" });
+            }
+
+            setHourSchedules(schedules);
+            initialHourSchedulesRef.current = JSON.parse(JSON.stringify(schedules));
 
             // Load social media
             const existingSocials: SocialMedia[] = [];
@@ -297,9 +421,9 @@ export default function EditLocation() {
                 }
             }
 
-            // Check hours
-            if (!dirty && initialHoursRef.current) {
-                if (JSON.stringify(dayStatus) !== JSON.stringify(initialHoursRef.current)) {
+            // Check hour schedules
+            if (!dirty) {
+                if (JSON.stringify(hourSchedules) !== JSON.stringify(initialHourSchedulesRef.current)) {
                     dirty = true;
                 }
             }
@@ -313,7 +437,9 @@ export default function EditLocation() {
 
             // Check social
             if (!dirty) {
-                if (JSON.stringify(countSocial) !== JSON.stringify(initialSocialRef.current)) {
+                const currentSocial = countSocial.map(s => ({ platform: s.platform, url: s.url }));
+                const initialSocial = initialSocialRef.current.map(s => ({ platform: s.platform, url: s.url }));
+                if (JSON.stringify(currentSocial) !== JSON.stringify(initialSocial)) {
                     dirty = true;
                 }
             }
@@ -333,11 +459,10 @@ export default function EditLocation() {
         }, 150);
     };
 
-    // Gọi checkDirty khi state thay đổi
     useEffect(() => {
         if (!isInitialized) return;
         checkDirty();
-    }, [dayStatus, imageBase64, countSocial, visibility, isInitialized]);
+    }, [hourSchedules, imageBase64, countSocial, visibility, isInitialized]);
 
     // Save success
     useEffect(() => {
@@ -347,50 +472,29 @@ export default function EditLocation() {
             initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
             initialVisibilityRef.current = visibility;
             initialImageRef.current = imageBase64;
+            initialHourSchedulesRef.current = JSON.parse(JSON.stringify(hourSchedules));
 
             shopify.toast.show('Store updated successfully!')
             shopify.saveBar.hide("location-edit-bar");
         }
     }, [fetcher.data]);
 
-    const handleClickDay = (day: string) => {
-        setDayStatus(prev => {
-            return {
-                ...prev,
-                [day]: {
-                    ...prev[day],
-                    valueOpen: "",
-                    valueClose: "",
-                }
-            };
-        });
+    const handleAddHourSchedule = () => {
+        setHourSchedules([...hourSchedules, {
+            day: "Monday",
+            openTime: "09:00",
+            closeTime: "17:00"
+        }]);
     };
 
-    // Thêm 2 handler functions cho time input:
-    const handleTimeOpenChange = (day: string, value: string) => {
-        const formatted = formatTimeInput(value);
-
-        setDayStatus(prev => ({
-            ...prev,
-            [day]: { ...prev[day], valueOpen: formatted }
-        }));
-
-        if (validateTimeFormat(formatted)) {
-            clearTimeError(day, "open");
-        }
+    const handleRemoveHourSchedule = (index: number) => {
+        setHourSchedules(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleTimeCloseChange = (day: string, value: string) => {
-        const formatted = formatTimeInput(value);
-
-        setDayStatus(prev => ({
-            ...prev,
-            [day]: { ...prev[day], valueClose: formatted }
-        }));
-
-        if (validateTimeFormat(formatted)) {
-            clearTimeError(day, "close");
-        }
+    const handleUpdateHourSchedule = (index: number, field: keyof HourSchedule, value: string) => {
+        setHourSchedules(prev => prev.map((schedule, i) =>
+            i === index ? { ...schedule, [field]: value } : schedule
+        ));
     };
 
     const handleAdd = () => {
@@ -469,21 +573,6 @@ export default function EditLocation() {
         }
     };
 
-    const clearTimeError = (day: string, type: "open" | "close") => {
-        setTimeErrors(prev => {
-            if (!prev[day]?.[type]) return prev;
-
-            const next = { ...prev };
-            delete next[day][type];
-
-            if (Object.keys(next[day]).length === 0) {
-                delete next[day];
-            }
-
-            return next;
-        });
-    };
-
     const handleSubmit = () => {
         if (!formRef.current) return;
 
@@ -511,19 +600,14 @@ export default function EditLocation() {
             }
         }
 
-        // Validate all times
-        const allTimeErrors = validateAllTimes(dayStatus, days);
-        if (Object.keys(allTimeErrors).length > 0) {
-            setTimeErrors(allTimeErrors);
-            return;
-        }
-
-
+        // Validate social media
         const socialValidationErrors: Record<string, string> = {};
         countSocial.forEach(item => {
-            const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
-            if (!validation.isValid) {
-                socialValidationErrors[item.id] = validation.message || 'Invalid URL';
+            if (item.url.trim()) {
+                const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
+                if (!validation.isValid) {
+                    socialValidationErrors[item.id] = validation.message || 'Invalid URL';
+                }
             }
         });
 
@@ -531,15 +615,15 @@ export default function EditLocation() {
             setSocialErrors(socialValidationErrors);
             return;
         }
+
         // Normalize hours
         setDayStatus(prev => {
             const updated = { ...prev };
             days.forEach(day => {
                 const openValue = prev[day].valueOpen;
                 const closeValue = prev[day].valueClose;
-                if (!openValue || !closeValue || openValue === "close" || closeValue === "close") {
+                if (!openValue || !closeValue || openValue === "" || closeValue === "") {
                     updated[day] = {
-                        disabled: true,
                         valueOpen: "close",
                         valueClose: "close"
                     };
@@ -555,7 +639,6 @@ export default function EditLocation() {
         }, 0);
     };
 
-    // Cập nhật handleDiscard để reset timeErrors:
     const handleDiscard = () => {
         if (!formRef.current || !initialFormRef.current) return;
 
@@ -574,6 +657,7 @@ export default function EditLocation() {
         setVisibility(initialVisibilityRef.current);
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
+        setHourSchedules(JSON.parse(JSON.stringify(initialHourSchedulesRef.current)));
 
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
@@ -583,7 +667,7 @@ export default function EditLocation() {
             setPreviewData({ ...initialPreviewRef.current });
         }
 
-        setTimeErrors({}); // Reset time errors
+        setTimeErrors({});
         setSocialErrors({});
         setWebsiteError("");
 
@@ -693,6 +777,13 @@ export default function EditLocation() {
             </s-stack>
 
             <Form method="post" ref={formRef}>
+                {days.map(day => (
+                    <div key={day} style={{ display: 'none' }}>
+                        <input type="hidden" name={`${day}-open`} value={dayStatus[day].valueOpen} />
+                        <input type="hidden" name={`${day}-close`} value={dayStatus[day].valueClose} />
+                    </div>
+                ))}
+
                 <s-query-container>
                     <s-grid
                         gridTemplateColumns="@container (inline-size > 768px) 2fr 1fr, 1fr"
@@ -784,7 +875,7 @@ export default function EditLocation() {
                                                     />
                                                 </s-grid-item>
 
-                                                <s-grid-item >
+                                                <s-grid-item>
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
@@ -811,7 +902,7 @@ export default function EditLocation() {
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"
                                             >
-                                                <s-grid-item >
+                                                <s-grid-item>
                                                     <s-text-field
                                                         label="Phone Number"
                                                         name="phone"
@@ -826,7 +917,7 @@ export default function EditLocation() {
                                                     />
                                                 </s-grid-item>
 
-                                                <s-grid-item >
+                                                <s-grid-item>
                                                     <s-text-field
                                                         label="Website"
                                                         name="url"
@@ -834,10 +925,8 @@ export default function EditLocation() {
                                                         error={websiteError}
                                                         onInput={(e: any) => {
                                                             const value = e.target.value;
-
                                                             checkDirty();
 
-                                                            // 🔥 FIX: user sửa đúng → xoá error ngay
                                                             if (!value.trim()) {
                                                                 setWebsiteError("");
                                                                 return;
@@ -852,98 +941,75 @@ export default function EditLocation() {
                                                             validateWebsite(e.target.value);
                                                         }}
                                                     />
-
                                                 </s-grid-item>
                                             </s-grid>
-
-                                            {/* <s-text-area
-                                                label="Direction"
-                                                name="directions"
-                                                defaultValue={store.directions || ""}
-                                                onInput={checkDirty}
-                                            /> */}
                                         </s-stack>
                                     </s-section>
 
                                     <s-section>
-                                        <s-box>
+                                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-heading>Hours of Operation</s-heading>
-                                        </s-box>
-                                        <s-stack
-                                            direction="inline"
-                                            justifyContent="space-between"
-                                            paddingBlockStart="small-200"
-                                            alignItems="center"
-                                        >
-                                            {/* <table>
-                                                <tbody>
-                                                    <tr>
-                                                        <td></td>
-                                                        <td align="center">Open</td>
-                                                        <td align="center">Close</td>
-                                                        <td></td>
-                                                    </tr>
-                                                    {days.map((item) => (
-                                                        <tr key={item}>
-                                                            <td style={{ verticalAlign: "top" }}>{item}</td>
-                                                            <td style={{ verticalAlign: "top" }}>
-                                                                <s-text-field
-                                                                    name={`${item}-open`}
-                                                                    value={dayStatus[item].valueOpen}
-                                                                    error={timeErrors[item]?.open}
-                                                                    placeholder="HH:MM"
-                                                                    readOnly={dayStatus[item].valueOpen === "close"}
-                                                                    onInput={(e: any) => handleTimeOpenChange(item, e.target.value)}
-                                                                />
-                                                            </td>
-                                                            <td style={{ verticalAlign: "top" }}>
-                                                                <s-text-field
-                                                                    name={`${item}-close`}
-                                                                    value={dayStatus[item].valueClose}
-                                                                    error={timeErrors[item]?.close}
-                                                                    placeholder="HH:MM"
-                                                                    readOnly={dayStatus[item].valueClose === "close"}
-                                                                    onInput={(e: any) => handleTimeCloseChange(item, e.target.value)}
-                                                                />
-                                                            </td>
-                                                            <td style={{ verticalAlign: "top" }}>
-                                                                <s-button icon="edit" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table> */}
-                                            <div style={{ width: "31%" }}>
-                                                <s-select value="All days">
-                                                    {
-                                                        daysList.map((item) => (
-                                                            <s-option key={item} value={item}>{item}</s-option>
-                                                        ))
-                                                    }
-                                                </s-select>
-                                            </div>
-                                            <div style={{ width: "31%" }}>
-                                                <s-select value="08:00">
-                                                    {
-                                                        hourOpen.map((item) => (
-                                                            <s-option key={item} value={item}>{item}</s-option>
-                                                        ))
-                                                    }
-                                                </s-select>
-                                            </div>
-                                            to
-                                            <div style={{ width: "31%" }}>
-                                                <s-select value="17:00">
-                                                    {
-                                                        hourClose.map((item) => (
-                                                            <s-option key={item} value={item}>{item}</s-option>
-                                                        ))
-                                                    }
-                                                </s-select>
-                                            </div>
-
+                                            <s-button icon="plus-circle" onClick={handleAddHourSchedule}>
+                                                Add Hours
+                                            </s-button>
+                                        </s-stack>
+                                        <s-stack paddingBlockStart="small-200" gap="small-200">
+                                            {hourSchedules.map((schedule, index) => (
+                                                <s-stack
+                                                    key={index}
+                                                    direction="inline"
+                                                    justifyContent="space-between"
+                                                    alignItems="center"
+                                                    gap="small-200"
+                                                >
+                                                    <div style={{ width: "28%" }}>
+                                                        <s-select
+                                                            value={schedule.day}
+                                                            onChange={(e: any) => {
+                                                                handleUpdateHourSchedule(index, 'day', e.target.value);
+                                                            }}
+                                                        >
+                                                            {daysList.map((item) => (
+                                                                <s-option key={item} value={item}>{item}</s-option>
+                                                            ))}
+                                                        </s-select>
+                                                    </div>
+                                                    <div style={{ width: "28%" }}>
+                                                        <s-select
+                                                            value={schedule.openTime}
+                                                            onChange={(e: any) => {
+                                                                handleUpdateHourSchedule(index, 'openTime', e.target.value);
+                                                            }}
+                                                        >
+                                                            {hourOpen.map((item) => (
+                                                                <s-option key={item} value={item}>{item}</s-option>
+                                                            ))}
+                                                        </s-select>
+                                                    </div>
+                                                    <span>to</span>
+                                                    <div style={{ width: "28%" }}>
+                                                        <s-select
+                                                            value={schedule.closeTime}
+                                                            onChange={(e: any) => {
+                                                                handleUpdateHourSchedule(index, 'closeTime', e.target.value);
+                                                            }}
+                                                        >
+                                                            {hourClose.map((item) => (
+                                                                <s-option key={item} value={item}>{item}</s-option>
+                                                            ))}
+                                                        </s-select>
+                                                    </div>
+                                                    <div>
+                                                        <s-button
+                                                            icon="delete"
+                                                            onClick={() => handleRemoveHourSchedule(index)}
+                                                        />
+                                                    </div>
+                                                </s-stack>
+                                            ))}
                                         </s-stack>
                                     </s-section>
+
                                     <s-section>
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-stack>
@@ -973,7 +1039,7 @@ export default function EditLocation() {
                                                                         )
                                                                     );
                                                                     if (item.url.trim()) {
-                                                                        validateSocialMedia(item.id, item.url, item.platform as SocialPlatform);
+                                                                        validateSocialMedia(item.id, item.url, e.target.value as SocialPlatform);
                                                                     }
                                                                 }}
                                                             >
@@ -1002,7 +1068,6 @@ export default function EditLocation() {
                                                                     );
                                                                 }}
                                                                 onBlur={(e: any) => {
-                                                                    // Validate khi user rời khỏi input
                                                                     const url = e.target.value;
                                                                     if (url.trim()) {
                                                                         validateSocialMedia(item.id, url, item.platform as SocialPlatform);
@@ -1048,7 +1113,7 @@ export default function EditLocation() {
                                                 <s-heading>Add a logo for this location</s-heading>
                                                 <s-paragraph>Customize your location information</s-paragraph>
                                             </s-box>
-                                            <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center" >
+                                            <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center">
                                                 <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
                                                     {preview ? (
                                                         <s-stack justifyContent="center" alignItems="center">
@@ -1072,7 +1137,6 @@ export default function EditLocation() {
                                                                 </s-clickable>
                                                             </s-box>
                                                         </s-stack>
-
                                                     ) : (
                                                         <s-stack alignItems="center">
                                                             <s-button onClick={() => handleClick()}>Add file</s-button>
@@ -1103,11 +1167,11 @@ export default function EditLocation() {
                                         <div className={styles.storeInfo}>
                                             <h3 className={styles.storeName}>{previewData.storeName || ''}</h3>
                                             <div className={styles.contactRow}>
-                                                <i className="fa-solid fa-location-dot" ></i>
+                                                <i className="fa-solid fa-location-dot"></i>
                                                 <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''}, {previewData.code || ''}</span>
                                             </div>
                                             <div className={styles.contactRow}>
-                                                <i className="fa-solid fa-phone" ></i>
+                                                <i className="fa-solid fa-phone"></i>
                                                 <span>{previewData.phone || ''}</span>
                                             </div>
 

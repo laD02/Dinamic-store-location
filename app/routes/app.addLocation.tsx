@@ -6,7 +6,6 @@ import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
 import styles from "../css/addLocation.module.css"
-import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
 import { daysList, hourClose, hourOpen } from "app/utils/hourOfOperating";
@@ -105,6 +104,12 @@ type SocialMedia = {
     url: string;
 };
 
+type HourSchedule = {
+    day: string;
+    openTime: string;
+    closeTime: string;
+};
+
 export default function AddLocation() {
     const navigate = useNavigate();
     const fetcher = useFetcher()
@@ -125,7 +130,10 @@ export default function AddLocation() {
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
+    const [hourSchedules, setHourSchedules] = useState<HourSchedule[]>([
+        { day: "All days", openTime: "09:00", closeTime: "17:00" }
+    ]);
+    const [hourErrors, setHourErrors] = useState<Record<number, string>>({});
     const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
     const [websiteError, setWebsiteError] = useState<string>("");
     const [previewData, setPreviewData] = useState({
@@ -147,6 +155,8 @@ export default function AddLocation() {
         }, {} as Record<string, { valueOpen: string; valueClose: string }>)
     );
 
+    const initialHourSchedulesRef = useRef<HourSchedule[]>([]);
+
     const socialIcons: Record<string, string> = {
         facebook: 'fa-facebook',
         youtube: 'fa-youtube',
@@ -161,6 +171,54 @@ export default function AddLocation() {
     const formRef = useRef<HTMLFormElement>(null);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+    // NEW: Convert hour schedules to dayStatus format
+    useEffect(() => {
+        const newDayStatus = { ...dayStatus };
+
+        // Reset all days to empty
+        days.forEach(day => {
+            newDayStatus[day] = { valueOpen: "", valueClose: "" };
+        });
+
+        // Apply schedules
+        hourSchedules.forEach(schedule => {
+            if (schedule.day === "All days") {
+                days.forEach(day => {
+                    newDayStatus[day] = {
+                        valueOpen: schedule.openTime,
+                        valueClose: schedule.closeTime
+                    };
+                });
+            } else if (schedule.day === "Weekdays") {
+                // T2-T6
+                const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                weekdays.forEach(day => {
+                    newDayStatus[day] = {
+                        valueOpen: schedule.openTime,
+                        valueClose: schedule.closeTime
+                    };
+                });
+            } else if (schedule.day === "Weekends") {
+                // T7-CN
+                const weekends = ['Saturday', 'Sunday'];
+                weekends.forEach(day => {
+                    newDayStatus[day] = {
+                        valueOpen: schedule.openTime,
+                        valueClose: schedule.closeTime
+                    };
+                });
+            } else {
+                // Specific day
+                newDayStatus[schedule.day] = {
+                    valueOpen: schedule.openTime,
+                    valueClose: schedule.closeTime
+                };
+            }
+        });
+
+        setDayStatus(newDayStatus);
+    }, [hourSchedules]);
+
     // Initialize
     useEffect(() => {
         if (isInitialized || !formRef.current) return;
@@ -172,12 +230,13 @@ export default function AddLocation() {
                 initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
                 initialVisibilityRef.current = "hidden";
                 initialImageRef.current = null;
+                initialHourSchedulesRef.current = JSON.parse(JSON.stringify(hourSchedules));
                 setIsInitialized(true);
             }
         });
     }, [isInitialized]);
 
-    // Debounced dirty check - CHỈ 1 HÀM DUY NHẤT
+    // Debounced dirty check
     const checkDirty = () => {
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
@@ -199,9 +258,9 @@ export default function AddLocation() {
                 }
             }
 
-            // Check hours
-            if (!dirty && initialHoursRef.current) {
-                if (JSON.stringify(dayStatus) !== JSON.stringify(initialHoursRef.current)) {
+            // Check hour schedules
+            if (!dirty) {
+                if (JSON.stringify(hourSchedules) !== JSON.stringify(initialHourSchedulesRef.current)) {
                     dirty = true;
                 }
             }
@@ -214,7 +273,6 @@ export default function AddLocation() {
             }
 
             // Check social
-            // Check social - so sánh theo nội dung thực (platform, url), không so sánh id
             if (!dirty) {
                 const currentSocial = countSocial.map(s => ({ platform: s.platform, url: s.url }));
                 const initialSocial = initialSocialRef.current.map(s => ({ platform: s.platform, url: s.url }));
@@ -235,14 +293,13 @@ export default function AddLocation() {
             } else {
                 shopify.saveBar.hide("location-save-bar");
             }
-        }, 150); // 150ms debounce
+        }, 150);
     };
 
-    // GỌI checkDirty khi có thay đổi
     useEffect(() => {
         if (!isInitialized) return;
         checkDirty();
-    }, [dayStatus, imageBase64, countSocial, visibility, isInitialized]);
+    }, [hourSchedules, imageBase64, countSocial, visibility, isInitialized]);
 
     // Save success
     useEffect(() => {
@@ -252,50 +309,32 @@ export default function AddLocation() {
             initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
             initialVisibilityRef.current = visibility;
             initialImageRef.current = imageBase64;
+            initialHourSchedulesRef.current = JSON.parse(JSON.stringify(hourSchedules));
 
             shopify.toast.show('Store saved successfully!')
             shopify.saveBar.hide("location-save-bar");
         }
     }, [fetcher.data]);
 
-    const handleClickDay = (day: string) => {
-        setDayStatus(prev => {
-            // const isDisabled = prev[day].disabled;
-            return {
-                ...prev,
-                [day]: {
-                    ...prev[day],
-                    valueOpen: '',
-                    valueClose: '',
-                }
-            };
-        });
+    // NEW: Add hour schedule row
+    const handleAddHourSchedule = () => {
+        setHourSchedules([...hourSchedules, {
+            day: "All days",
+            openTime: "09:00",
+            closeTime: "17:00"
+        }]);
     };
 
-    const handleTimeOpenChange = (day: string, value: string) => {
-        const formatted = formatTimeInput(value);
-
-        setDayStatus(prev => ({
-            ...prev,
-            [day]: { ...prev[day], valueOpen: formatted }
-        }));
-
-        if (validateTimeFormat(formatted)) {
-            clearTimeError(day, "open");
-        }
+    // NEW: Remove hour schedule row
+    const handleRemoveHourSchedule = (index: number) => {
+        setHourSchedules(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleTimeCloseChange = (day: string, value: string) => {
-        const formatted = formatTimeInput(value);
-
-        setDayStatus(prev => ({
-            ...prev,
-            [day]: { ...prev[day], valueClose: formatted }
-        }));
-
-        if (validateTimeFormat(formatted)) {
-            clearTimeError(day, "close");
-        }
+    // NEW: Update hour schedule
+    const handleUpdateHourSchedule = (index: number, field: keyof HourSchedule, value: string) => {
+        setHourSchedules(prev => prev.map((schedule, i) =>
+            i === index ? { ...schedule, [field]: value } : schedule
+        ));
     };
 
     const handleAdd = () => {
@@ -374,21 +413,6 @@ export default function AddLocation() {
         }
     };
 
-    const clearTimeError = (day: string, type: "open" | "close") => {
-        setTimeErrors(prev => {
-            if (!prev[day]?.[type]) return prev;
-
-            const next = { ...prev };
-            delete next[day][type];
-
-            if (Object.keys(next[day]).length === 0) {
-                delete next[day];
-            }
-
-            return next;
-        });
-    };
-
     const handleSubmit = () => {
         if (!formRef.current) return;
 
@@ -416,19 +440,29 @@ export default function AddLocation() {
             }
         }
 
-        // Validate all times
-        const allTimeErrors = validateAllTimes(dayStatus, days);
-        if (Object.keys(allTimeErrors).length > 0) {
-            setTimeErrors(allTimeErrors);
+        const newHourErrors: Record<number, string> = {};
+        hourSchedules.forEach((schedule, index) => {
+            if (schedule.openTime && schedule.closeTime &&
+                schedule.openTime !== "close" && schedule.closeTime !== "close") {
+                if (schedule.openTime >= schedule.closeTime) {
+                    newHourErrors[index] = "Opening time must be before closing time";
+                }
+            }
+        });
+
+        if (Object.keys(newHourErrors).length > 0) {
+            setHourErrors(newHourErrors);
             return;
         }
 
-        // THÊM PHẦN NÀY - Validate social media
+        // Validate social media
         const socialValidationErrors: Record<string, string> = {};
         countSocial.forEach(item => {
-            const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
-            if (!validation.isValid) {
-                socialValidationErrors[item.id] = validation.message || 'Invalid URL';
+            if (item.url.trim()) {
+                const validation = validateSocialUrl(item.url, item.platform as SocialPlatform);
+                if (!validation.isValid) {
+                    socialValidationErrors[item.id] = validation.message || 'Invalid URL';
+                }
             }
         });
 
@@ -437,7 +471,7 @@ export default function AddLocation() {
             return;
         }
 
-        // Normalize hours
+        // Normalize hours - set to "close" if empty
         setDayStatus(prev => {
             const updated = { ...prev };
             days.forEach(day => {
@@ -478,6 +512,7 @@ export default function AddLocation() {
         setVisibility(initialVisibilityRef.current);
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
+        setHourSchedules(JSON.parse(JSON.stringify(initialHourSchedulesRef.current)));
 
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
@@ -492,9 +527,9 @@ export default function AddLocation() {
             code: "",
         });
 
-        setTimeErrors({});
-        setSocialErrors({}); // THÊM DÒNG NÀY
+        setSocialErrors({});
         setWebsiteError("");
+        setHourErrors({});
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-save-bar");
@@ -558,6 +593,14 @@ export default function AddLocation() {
             </s-stack>
 
             <Form method="post" ref={formRef}>
+                {/* Hidden inputs for hours */}
+                {days.map(day => (
+                    <div key={day}>
+                        <input type="hidden" name={`${day}-open`} value={dayStatus[day].valueOpen} />
+                        <input type="hidden" name={`${day}-close`} value={dayStatus[day].valueClose} />
+                    </div>
+                ))}
+
                 <s-query-container>
                     <s-grid
                         gridTemplateColumns="@container (inline-size > 768px) 2fr 1fr, 1fr"
@@ -618,6 +661,7 @@ export default function AddLocation() {
                                                                 return next;
                                                             });
                                                         }
+                                                        checkDirty()
                                                     }}
                                                 />
                                             </s-box>
@@ -643,6 +687,7 @@ export default function AddLocation() {
                                                                     return next;
                                                                 });
                                                             }
+                                                            checkDirty()
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -665,9 +710,9 @@ export default function AddLocation() {
                                                                     return next;
                                                                 });
                                                             }
+                                                            checkDirty()
                                                         }}
                                                     />
-
                                                 </s-grid-item>
                                             </s-grid>
                                             <s-grid
@@ -704,99 +749,98 @@ export default function AddLocation() {
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
-
-                                            {/* <s-text-area
-                                                label="Direction"
-                                                name="directions"
-                                                defaultValue=""
-                                                onInput={checkDirty}
-                                            /> */}
                                         </s-stack>
                                     </s-section>
 
                                     <s-section>
-                                        <s-box>
+                                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-heading>Hours of Operation</s-heading>
-                                        </s-box>
-                                        <s-stack
-                                            direction="inline"
-                                            justifyContent="space-between"
-                                            paddingBlockStart="small-200"
-                                            alignItems="center"
-                                        >
-                                            {/* <table>
-                                                <tbody>
-                                                    <tr>
-                                                        <td></td>
-                                                        <td align="center">Open</td>
-                                                        <td align="center">Close</td>
-                                                        <td></td>
-                                                    </tr>
-                                                    {days.map((item) => (
-                                                        <tr key={item}>
-                                                            <td style={{ verticalAlign: "top" }}><div style={{ height: "100%", display: "flex", alignItems: "center" }}>{item}</div></td>
-                                                            <td style={{ verticalAlign: "top" }}>
-                                                                <s-text-field
-                                                                    name={`${item}-open`}
-                                                                    value={dayStatus[item].valueOpen}
-                                                                    error={timeErrors[item]?.open}
-                                                                    placeholder="HH:MM"
-                                                                    readOnly={dayStatus[item].valueOpen === "close"}
-                                                                    onInput={(e: any) => handleTimeOpenChange(item, e.target.value)}
-                                                                />
-                                                            </td>
-                                                            <td style={{ verticalAlign: "top" }}>
-                                                                <s-text-field
-                                                                    name={`${item}-close`}
-                                                                    value={dayStatus[item].valueClose}
-                                                                    error={timeErrors[item]?.close}
-                                                                    placeholder="HH:MM"
-                                                                    readOnly={dayStatus[item].valueClose === "close"}
-                                                                    onInput={(e: any) => handleTimeCloseChange(item, e.target.value)}
-                                                                />
-                                                            </td>
-                                                            <td style={{ verticalAlign: "top" }}>
-                                                                <s-button icon="edit" variant="tertiary" onClick={() => handleClickDay(item)}></s-button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table> */}
-                                            <div style={{ width: "28%" }}>
-                                                <s-select value="All days">
-                                                    {
-                                                        daysList.map((item) => (
-                                                            <s-option key={item} value={item}>{item}</s-option>
-                                                        ))
-                                                    }
-                                                </s-select>
-                                            </div>
-                                            <div style={{ width: "28%" }}>
-                                                <s-select value="08:00">
-                                                    {
-                                                        hourOpen.map((item) => (
-                                                            <s-option key={item} value={item}>{item}</s-option>
-                                                        ))
-                                                    }
-                                                </s-select>
-                                            </div>
-                                            to
-                                            <div style={{ width: "28%" }}>
-                                                <s-select value="17:00">
-                                                    {
-                                                        hourClose.map((item) => (
-                                                            <s-option key={item} value={item}>{item}</s-option>
-                                                        ))
-                                                    }
-                                                </s-select>
-                                            </div>
-                                            <div>
-                                                <s-button
-                                                    icon="delete"
-                                                />
-                                            </div>
+                                            <s-button icon="plus-circle" onClick={handleAddHourSchedule}>
+                                                Add Hours
+                                            </s-button>
+                                        </s-stack>
+                                        <s-stack paddingBlockStart="small-200" gap="small-400">
+                                            {hourSchedules.map((schedule, index) => (
+                                                <s-stack key={index}>
+                                                    <s-stack
+                                                        direction="inline"
+                                                        justifyContent="space-between"
+                                                        alignItems="center"
+                                                        gap="small-200"
+                                                    >
+                                                        <div style={{ width: "28%" }}>
+                                                            <s-select
+                                                                value={schedule.day}
+                                                                onChange={(e: any) => {
+                                                                    handleUpdateHourSchedule(index, 'day', e.target.value);
+                                                                    // Clear error when user changes
+                                                                    setHourErrors(prev => {
+                                                                        const next = { ...prev };
+                                                                        delete next[index];
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {daysList.map((item) => (
+                                                                    <s-option key={item} value={item}>{item}</s-option>
+                                                                ))}
+                                                            </s-select>
+                                                        </div>
+                                                        <div style={{ width: "28%" }}>
+                                                            <s-select
+                                                                value={schedule.openTime}
+                                                                onChange={(e: any) => {
+                                                                    handleUpdateHourSchedule(index, 'openTime', e.target.value);
+                                                                    // Clear error when user changes
+                                                                    setHourErrors(prev => {
+                                                                        const next = { ...prev };
+                                                                        delete next[index];
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {hourOpen.map((item) => (
+                                                                    <s-option key={item} value={item}>{item}</s-option>
+                                                                ))}
+                                                            </s-select>
+                                                        </div>
+                                                        <span>to</span>
+                                                        <div style={{ width: "28%" }}>
+                                                            <s-select
+                                                                value={schedule.closeTime}
+                                                                onChange={(e: any) => {
+                                                                    handleUpdateHourSchedule(index, 'closeTime', e.target.value);
+                                                                    // Clear error when user changes
+                                                                    setHourErrors(prev => {
+                                                                        const next = { ...prev };
+                                                                        delete next[index];
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {hourClose.map((item) => (
+                                                                    <s-option key={item} value={item}>{item}</s-option>
+                                                                ))}
+                                                            </s-select>
+                                                        </div>
+                                                        <div>
+                                                            <s-button
+                                                                icon="delete"
+                                                                onClick={() => handleRemoveHourSchedule(index)}
+                                                            />
+                                                        </div>
+                                                    </s-stack>
+                                                    {/* Hiển thị lỗi nếu có */}
+                                                    <div>
+                                                        {hourErrors[index] && (
+                                                            <s-text tone="critical">{hourErrors[index]}</s-text>
+                                                        )}
+                                                    </div>
+                                                </s-stack>
+                                            ))}
                                         </s-stack>
                                     </s-section>
+
                                     <s-section >
                                         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                                             <s-stack >
