@@ -177,6 +177,7 @@ export default function EditLocation() {
         city: "",
         state: "",
         code: "",
+        url: "",
     });
     const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
 
@@ -269,6 +270,7 @@ export default function EditLocation() {
                 city: store.city || "",
                 state: store.state || "",
                 code: store.code || "",
+                url: store.url || "",
             };
 
             setPreviewData(initialData);
@@ -926,6 +928,10 @@ export default function EditLocation() {
                                                         onInput={(e: any) => {
                                                             const value = e.target.value;
                                                             checkDirty();
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                url: value
+                                                            }));
 
                                                             if (!value.trim()) {
                                                                 setWebsiteError("");
@@ -1174,6 +1180,18 @@ export default function EditLocation() {
                                                 <i className="fa-solid fa-phone"></i>
                                                 <span>{previewData.phone || ''}</span>
                                             </div>
+
+                                            {previewData.url ? (
+                                                <div className={styles.contactRow}>
+                                                    <i className="fa-solid fa-earth-americas"></i>
+                                                    <span className={styles.storeAddress}><s-link href={previewData.url}>{previewData.url}</s-link></span>
+                                                </div>
+                                            ) : (
+                                                <div className={styles.contactRow}>
+                                                    <i className="fa-solid fa-earth-americas"></i>
+                                                    <span className={styles.storeAddress}>http://example.com/</span>
+                                                </div>
+                                            )}
 
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-clock"></i>

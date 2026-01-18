@@ -181,6 +181,10 @@ export default function MapGoogle({
                   <i className="fa-solid fa-phone" style={{ color: popupStyle.iconColor }}></i>
                   <span>+1 408-996-1010</span>
                 </div>
+                <div className={styles.contactRow}>
+                  <i className="fa-solid fa-earth-americas" style={{ color: popupStyle.iconColor }}></i>
+                  <span className={styles.storeAddress}>http://example.com/</span>
+                </div>
 
                 <div className={styles.socialIcons}>
                   <a href="#" className={styles.linkedin}>

@@ -228,6 +228,13 @@ function showOverlay(store, marker) {
                         </div>
                     ` : ''}
 
+                    ${this.store.url ? `
+                        <div class="map-overlay-row">
+                            <i class="fa-solid fa-earth-americas" style="color: ${mapStyle.iconColor}"></i>
+                            <span>${this.store.url}</span>
+                        </div>
+                    ` : ''}
+
                     ${socialLinks ? `
                         <div class="map-overlay-socials">
                             ${socialLinks}

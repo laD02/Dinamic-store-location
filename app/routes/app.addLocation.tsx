@@ -143,6 +143,7 @@ export default function AddLocation() {
         city: "",
         state: "",
         code: "",
+        url: "",
     });
     const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
 
@@ -525,6 +526,7 @@ export default function AddLocation() {
             city: "",
             state: "",
             code: "",
+            url: "",
         });
 
         setSocialErrors({});
@@ -742,6 +744,10 @@ export default function AddLocation() {
                                                         error={websiteError}
                                                         onInput={(e: any) => {
                                                             checkDirty();
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                url: e.target.value
+                                                            }));
                                                         }}
                                                         onBlur={(e: any) => {
                                                             validateWebsite(e.target.value);
@@ -1007,6 +1013,18 @@ export default function AddLocation() {
                                                 <i className="fa-solid fa-phone" ></i>
                                                 <span>{previewData.phone || '+1 408-996-1010'}</span>
                                             </div>
+
+                                            {previewData.url ? (
+                                                <div className={styles.contactRow}>
+                                                    <i className="fa-solid fa-earth-americas"></i>
+                                                    <span className={styles.storeAddress}>{previewData.url}</span>
+                                                </div>
+                                            ) : (
+                                                <div className={styles.contactRow}>
+                                                    <i className="fa-solid fa-earth-americas"></i>
+                                                    <span className={styles.storeAddress}>http://example.com/</span>
+                                                </div>
+                                            )}
 
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-clock"></i>
