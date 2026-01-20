@@ -5,10 +5,10 @@ import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
 import styles from "../css/addLocation.module.css";
-import { formatTimeInput, TimeErrors, validateAllTimes, validateTimeFormat } from "app/utils/timeValidation";
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
 import { daysList, hourClose, hourOpen } from "app/utils/hourOfOperating";
+import { validatePhoneNumber } from "app/utils/phoneValidation";
 
 export async function loader({ params }: LoaderFunctionArgs) {
     const { id } = params;
@@ -165,8 +165,9 @@ export default function EditLocation() {
     const initialVisibilityRef = useRef<string>("visible");
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [phoneError, setPhoneError] = useState<string>("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [timeErrors, setTimeErrors] = useState<TimeErrors>({});
+    const [hourErrors, setHourErrors] = useState<Record<number, string>>({});
     const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
     const [websiteError, setWebsiteError] = useState<string>("");
     const [dataLoaded, setDataLoaded] = useState(false);
@@ -475,6 +476,8 @@ export default function EditLocation() {
             initialVisibilityRef.current = visibility;
             initialImageRef.current = imageBase64;
             initialHourSchedulesRef.current = JSON.parse(JSON.stringify(hourSchedules));
+            setHourErrors({});
+            setPhoneError("");
 
             shopify.toast.show('Store updated successfully!')
             shopify.saveBar.hide("location-edit-bar");
@@ -579,7 +582,7 @@ export default function EditLocation() {
         if (!formRef.current) return;
 
         const newErrors: Record<string, string> = {};
-        const requiredFields = ["storeName", "address", "city", "code"];
+        const requiredFields = ["storeName", "address", "city", "code", "phone"];
         requiredFields.forEach((name) => {
             const el = formRef.current!.elements.namedItem(name) as HTMLInputElement;
             if (!el?.value?.trim()) {
@@ -592,6 +595,15 @@ export default function EditLocation() {
             return;
         }
 
+        const phoneField = formRef.current.elements.namedItem('phone') as HTMLInputElement;
+        if (phoneField?.value?.trim()) {
+            const phoneValidation = validatePhoneNumber(phoneField.value);
+            if (!phoneValidation.isValid) {
+                setPhoneError(phoneValidation.message || 'Invalid phone number');
+                return;
+            }
+        }
+
         // Validate website
         const websiteField = formRef.current.elements.namedItem('url') as HTMLInputElement;
         if (websiteField?.value?.trim()) {
@@ -600,6 +612,21 @@ export default function EditLocation() {
                 setWebsiteError(websiteValidation.message || 'Invalid URL');
                 return;
             }
+        }
+
+        const newHourErrors: Record<number, string> = {};
+        hourSchedules.forEach((schedule, index) => {
+            if (schedule.openTime && schedule.closeTime &&
+                schedule.openTime !== "close" && schedule.closeTime !== "close") {
+                if (schedule.openTime >= schedule.closeTime) {
+                    newHourErrors[index] = "Opening time must be before closing time";
+                }
+            }
+        });
+
+        if (Object.keys(newHourErrors).length > 0) {
+            setHourErrors(newHourErrors);
+            return;
         }
 
         // Validate social media
@@ -669,9 +696,10 @@ export default function EditLocation() {
             setPreviewData({ ...initialPreviewRef.current });
         }
 
-        setTimeErrors({});
+        setPhoneError("");
         setSocialErrors({});
         setWebsiteError("");
+        setHourErrors({});
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-edit-bar");
@@ -711,15 +739,12 @@ export default function EditLocation() {
             <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
                 <s-stack direction="inline" gap="small-100" alignItems="center">
                     <s-box>
-                        <s-clickable
-                            background="strong"
-                            borderRadius="small-100"
-                            blockSize="50%"
+                        <s-button
+                            variant="tertiary"
                             onClick={() => navigate('/app/allLocation')}
-                            padding="small-300"
+                            icon="arrow-left"
                         >
-                            <s-icon type="arrow-left" />
-                        </s-clickable>
+                        </s-button>
                     </s-box>
                     <text style={{ fontSize: 16, fontWeight: 600 }}>{store.storeName}</text>
                     <s-box>
@@ -908,13 +933,44 @@ export default function EditLocation() {
                                                     <s-text-field
                                                         label="Phone Number"
                                                         name="phone"
+                                                        required
                                                         defaultValue={store.phone || ""}
+                                                        error={fieldErrors.phone || phoneError}
                                                         onInput={(e: any) => {
+                                                            const value = e.target.value;
                                                             setPreviewData(prev => ({
                                                                 ...prev,
-                                                                phone: e.target.value
+                                                                phone: value
                                                             }));
                                                             checkDirty();
+
+                                                            // Clear both required and format errors
+                                                            if (value.trim()) {
+                                                                setFieldErrors(prev => {
+                                                                    const next = { ...prev };
+                                                                    delete next.phone;
+                                                                    return next;
+                                                                });
+
+                                                                const validation = validatePhoneNumber(value);
+                                                                if (validation.isValid) {
+                                                                    setPhoneError("");
+                                                                }
+                                                            } else {
+                                                                setPhoneError("");
+                                                            }
+                                                        }}
+                                                        onBlur={(e: any) => {
+                                                            const value = e.target.value;
+                                                            if (!value.trim()) {
+                                                                setPhoneError("");
+                                                                return;
+                                                            }
+
+                                                            const validation = validatePhoneNumber(value);
+                                                            if (!validation.isValid) {
+                                                                setPhoneError(validation.message || "Invalid phone number");
+                                                            }
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -923,6 +979,7 @@ export default function EditLocation() {
                                                     <s-text-field
                                                         label="Website"
                                                         name="url"
+                                                        placeholder="http://example.com/"
                                                         defaultValue={store.url || ""}
                                                         error={websiteError}
                                                         onInput={(e: any) => {
@@ -933,6 +990,7 @@ export default function EditLocation() {
                                                                 url: value
                                                             }));
 
+                                                            // Clear error when user types
                                                             if (!value.trim()) {
                                                                 setWebsiteError("");
                                                                 return;
@@ -942,9 +1000,6 @@ export default function EditLocation() {
                                                             if (validation.isValid) {
                                                                 setWebsiteError("");
                                                             }
-                                                        }}
-                                                        onBlur={(e: any) => {
-                                                            validateWebsite(e.target.value);
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -959,57 +1014,91 @@ export default function EditLocation() {
                                                 Add Hours
                                             </s-button>
                                         </s-stack>
-                                        <s-stack paddingBlockStart="small-200" gap="small-200">
+                                        <s-stack paddingBlockStart="small-200" gap="small-400">
                                             {hourSchedules.map((schedule, index) => (
-                                                <s-stack
-                                                    key={index}
-                                                    direction="inline"
-                                                    justifyContent="space-between"
-                                                    alignItems="center"
-                                                    gap="small-200"
-                                                >
-                                                    <div style={{ width: "28%" }}>
-                                                        <s-select
-                                                            value={schedule.day}
-                                                            onChange={(e: any) => {
-                                                                handleUpdateHourSchedule(index, 'day', e.target.value);
-                                                            }}
-                                                        >
-                                                            {daysList.map((item) => (
-                                                                <s-option key={item} value={item}>{item}</s-option>
-                                                            ))}
-                                                        </s-select>
-                                                    </div>
-                                                    <div style={{ width: "28%" }}>
-                                                        <s-select
-                                                            value={schedule.openTime}
-                                                            onChange={(e: any) => {
-                                                                handleUpdateHourSchedule(index, 'openTime', e.target.value);
-                                                            }}
-                                                        >
-                                                            {hourOpen.map((item) => (
-                                                                <s-option key={item} value={item}>{item}</s-option>
-                                                            ))}
-                                                        </s-select>
-                                                    </div>
-                                                    <span>to</span>
-                                                    <div style={{ width: "28%" }}>
-                                                        <s-select
-                                                            value={schedule.closeTime}
-                                                            onChange={(e: any) => {
-                                                                handleUpdateHourSchedule(index, 'closeTime', e.target.value);
-                                                            }}
-                                                        >
-                                                            {hourClose.map((item) => (
-                                                                <s-option key={item} value={item}>{item}</s-option>
-                                                            ))}
-                                                        </s-select>
-                                                    </div>
+                                                <s-stack key={index}>
+                                                    <s-stack
+                                                        direction="inline"
+                                                        justifyContent="space-between"
+                                                        alignItems="center"
+                                                        gap="small-200"
+                                                    >
+                                                        <div style={{ width: "29%" }}>
+                                                            <s-select
+                                                                value={schedule.day}
+                                                                onChange={(e: any) => {
+                                                                    handleUpdateHourSchedule(index, 'day', e.target.value);
+                                                                }}
+                                                            >
+                                                                {daysList.map((item) => (
+                                                                    <s-option key={item} value={item}>{item}</s-option>
+                                                                ))}
+                                                            </s-select>
+                                                        </div>
+                                                        <div style={{ width: "29%" }}>
+                                                            <s-select
+                                                                value={schedule.openTime}
+                                                                onChange={(e: any) => {
+                                                                    const newValue = e.target.value;
+                                                                    handleUpdateHourSchedule(index, 'openTime', newValue);
+
+                                                                    // Clear error if fixed
+                                                                    const updatedSchedule = { ...schedule, openTime: newValue };
+                                                                    if (updatedSchedule.openTime && updatedSchedule.closeTime &&
+                                                                        updatedSchedule.openTime !== "close" && updatedSchedule.closeTime !== "close") {
+                                                                        if (updatedSchedule.openTime < updatedSchedule.closeTime) {
+                                                                            setHourErrors(prev => {
+                                                                                const next = { ...prev };
+                                                                                delete next[index];
+                                                                                return next;
+                                                                            });
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {hourOpen.map((item) => (
+                                                                    <s-option key={item} value={item}>{item}</s-option>
+                                                                ))}
+                                                            </s-select>
+                                                        </div>
+                                                        <span>to</span>
+                                                        <div style={{ width: "29%" }}>
+                                                            <s-select
+                                                                value={schedule.closeTime}
+                                                                onChange={(e: any) => {
+                                                                    const newValue = e.target.value;
+                                                                    handleUpdateHourSchedule(index, 'closeTime', newValue);
+
+                                                                    // THÊM LOGIC KIỂM TRA GIỐNG OPENTIME
+                                                                    const updatedSchedule = { ...schedule, closeTime: newValue };
+                                                                    if (updatedSchedule.openTime && updatedSchedule.closeTime &&
+                                                                        updatedSchedule.openTime !== "close" && updatedSchedule.closeTime !== "close") {
+                                                                        if (updatedSchedule.openTime < updatedSchedule.closeTime) {
+                                                                            setHourErrors(prev => {
+                                                                                const next = { ...prev };
+                                                                                delete next[index];
+                                                                                return next;
+                                                                            });
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {hourClose.map((item) => (
+                                                                    <s-option key={item} value={item}>{item}</s-option>
+                                                                ))}
+                                                            </s-select>
+                                                        </div>
+                                                        <div style={{ marginTop: 2 }}>
+                                                            <s-button
+                                                                icon="delete"
+                                                                onClick={() => handleRemoveHourSchedule(index)}
+                                                            />
+                                                        </div>
+                                                    </s-stack>
                                                     <div>
-                                                        <s-button
-                                                            icon="delete"
-                                                            onClick={() => handleRemoveHourSchedule(index)}
-                                                        />
+                                                        {hourErrors[index] && (
+                                                            <s-text tone="critical">{hourErrors[index]}</s-text>
+                                                        )}
                                                     </div>
                                                 </s-stack>
                                             ))}
@@ -1023,7 +1112,7 @@ export default function EditLocation() {
                                             </s-stack>
                                             <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
                                         </s-stack>
-                                        <s-stack paddingBlockStart="small-200" gap="small-400">
+                                        <s-stack paddingBlockStart="small" gap="small-200">
                                             {
                                                 countSocial.map((item) => (
                                                     <s-stack
@@ -1065,20 +1154,39 @@ export default function EditLocation() {
                                                                 placeholder={`https://www.${item.platform}.com/`}
                                                                 error={socialErrors[item.id]}
                                                                 onInput={(e: any) => {
+                                                                    const value = e.target.value;
                                                                     setCountSocial(prev =>
                                                                         prev.map(social =>
                                                                             social.id === item.id
-                                                                                ? { ...social, url: e.target.value }
+                                                                                ? { ...social, url: value }
                                                                                 : social
                                                                         )
                                                                     );
-                                                                }}
-                                                                onBlur={(e: any) => {
-                                                                    const url = e.target.value;
-                                                                    if (url.trim()) {
-                                                                        validateSocialMedia(item.id, url, item.platform as SocialPlatform);
+                                                                    if (value.trim()) {
+                                                                        const validation = validateSocialUrl(value, item.platform as SocialPlatform);
+                                                                        if (validation.isValid) {
+                                                                            // Nếu hợp lệ thì xóa lỗi ngay
+                                                                            setSocialErrors(prev => {
+                                                                                const next = { ...prev };
+                                                                                delete next[item.id];
+                                                                                return next;
+                                                                            });
+                                                                        }
+                                                                    } else {
+                                                                        // Nếu xóa trống thì cũng xóa lỗi
+                                                                        setSocialErrors(prev => {
+                                                                            const next = { ...prev };
+                                                                            delete next[item.id];
+                                                                            return next;
+                                                                        });
                                                                     }
                                                                 }}
+                                                            // onBlur={(e: any) => {
+                                                            //     const url = e.target.value;
+                                                            //     if (url.trim()) {
+                                                            //         validateSocialMedia(item.id, url, item.platform as SocialPlatform);
+                                                            //     }
+                                                            // }}
                                                             />
                                                         </div>
                                                         <div style={{ marginTop: 2 }}>
@@ -1117,10 +1225,9 @@ export default function EditLocation() {
                                         <s-section>
                                             <s-box>
                                                 <s-heading>Add a logo for this location</s-heading>
-                                                <s-paragraph>Customize your location information</s-paragraph>
                                             </s-box>
                                             <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center">
-                                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
+                                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
                                                     {preview ? (
                                                         <s-stack justifyContent="center" alignItems="center">
                                                             <s-box inlineSize="60px" blockSize="60px">
@@ -1181,17 +1288,10 @@ export default function EditLocation() {
                                                 <span>{previewData.phone || ''}</span>
                                             </div>
 
-                                            {previewData.url ? (
-                                                <div className={styles.contactRow}>
-                                                    <i className="fa-solid fa-earth-americas"></i>
-                                                    <span className={styles.storeAddress}><s-link href={previewData.url}>{previewData.url}</s-link></span>
-                                                </div>
-                                            ) : (
-                                                <div className={styles.contactRow}>
-                                                    <i className="fa-solid fa-earth-americas"></i>
-                                                    <span className={styles.storeAddress}>http://example.com/</span>
-                                                </div>
-                                            )}
+                                            <div className={styles.contactRow}>
+                                                <i className="fa-solid fa-earth-americas"></i>
+                                                <s-link href={previewData.url}><text style={{ color: '#303030' }}>{previewData.url || 'http://example.com/'}</text></s-link>
+                                            </div>
 
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-clock"></i>

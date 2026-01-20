@@ -9,6 +9,7 @@ import styles from "../css/addLocation.module.css"
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
 import { daysList, hourClose, hourOpen } from "app/utils/hourOfOperating";
+import { validatePhoneNumber } from "app/utils/phoneValidation";
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -129,6 +130,7 @@ export default function AddLocation() {
     const initialVisibilityRef = useRef<string>("hidden");
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [phoneError, setPhoneError] = useState<string>("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [hourSchedules, setHourSchedules] = useState<HourSchedule[]>([
         { day: "All days", openTime: "09:00", closeTime: "17:00" }
@@ -418,7 +420,7 @@ export default function AddLocation() {
         if (!formRef.current) return;
 
         const newErrors: Record<string, string> = {};
-        const requiredFields = ["storeName", "address", "city", "code"];
+        const requiredFields = ["storeName", "address", "city", "code", "phone"];
         requiredFields.forEach((name) => {
             const el = formRef.current!.elements.namedItem(name) as HTMLInputElement;
             if (!el?.value?.trim()) {
@@ -429,6 +431,15 @@ export default function AddLocation() {
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
+        }
+
+        const phoneField = formRef.current.elements.namedItem('phone') as HTMLInputElement;
+        if (phoneField?.value?.trim()) {
+            const phoneValidation = validatePhoneNumber(phoneField.value);
+            if (!phoneValidation.isValid) {
+                setPhoneError(phoneValidation.message || 'Invalid phone number');
+                return;
+            }
         }
 
         // Validate website
@@ -529,6 +540,7 @@ export default function AddLocation() {
             url: "",
         });
 
+        setPhoneError("");
         setSocialErrors({});
         setWebsiteError("");
         setHourErrors({});
@@ -562,15 +574,12 @@ export default function AddLocation() {
             <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
                 <s-stack direction="inline" gap="small-100" alignItems="center">
                     <s-box>
-                        <s-clickable
-                            background="strong"
-                            borderRadius="small-100"
-                            blockSize="50%"
+                        <s-button
+                            variant="tertiary"
                             onClick={() => navigate('/app/allLocation')}
-                            padding="small-300"
+                            icon="arrow-left"
                         >
-                            <s-icon type="arrow-left" />
-                        </s-clickable>
+                        </s-button>
                     </s-box>
                     <text style={{ fontSize: 16, fontWeight: 600 }}>Add Location</text>
                     <s-box>
@@ -725,13 +734,44 @@ export default function AddLocation() {
                                                     <s-text-field
                                                         label="Phone Number"
                                                         name="phone"
+                                                        required
                                                         defaultValue=""
+                                                        error={fieldErrors.phone || phoneError}
                                                         onInput={(e: any) => {
+                                                            const value = e.target.value;
                                                             setPreviewData(prev => ({
                                                                 ...prev,
-                                                                phone: e.target.value
+                                                                phone: value
                                                             }));
                                                             checkDirty();
+
+                                                            // Clear both required and format errors
+                                                            if (value.trim()) {
+                                                                setFieldErrors(prev => {
+                                                                    const next = { ...prev };
+                                                                    delete next.phone;
+                                                                    return next;
+                                                                });
+
+                                                                const validation = validatePhoneNumber(value);
+                                                                if (validation.isValid) {
+                                                                    setPhoneError("");
+                                                                }
+                                                            } else {
+                                                                setPhoneError("");
+                                                            }
+                                                        }}
+                                                        onBlur={(e: any) => {
+                                                            const value = e.target.value;
+                                                            if (!value.trim()) {
+                                                                setPhoneError("");
+                                                                return;
+                                                            }
+
+                                                            const validation = validatePhoneNumber(value);
+                                                            if (!validation.isValid) {
+                                                                setPhoneError(validation.message || "Invalid phone number");
+                                                            }
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -741,16 +781,26 @@ export default function AddLocation() {
                                                         label="Website"
                                                         name="url"
                                                         defaultValue=""
+                                                        placeholder="http://example.com/"
                                                         error={websiteError}
                                                         onInput={(e: any) => {
+                                                            const value = e.target.value;
                                                             checkDirty();
                                                             setPreviewData(prev => ({
                                                                 ...prev,
-                                                                url: e.target.value
+                                                                url: value
                                                             }));
-                                                        }}
-                                                        onBlur={(e: any) => {
-                                                            validateWebsite(e.target.value);
+
+                                                            // Clear error when user types
+                                                            if (!value.trim()) {
+                                                                setWebsiteError("");
+                                                                return;
+                                                            }
+
+                                                            const validation = validateWebsiteUrl(value);
+                                                            if (validation.isValid) {
+                                                                setWebsiteError("");
+                                                            }
                                                         }}
                                                     />
                                                 </s-grid-item>
@@ -774,7 +824,7 @@ export default function AddLocation() {
                                                         alignItems="center"
                                                         gap="small-200"
                                                     >
-                                                        <div style={{ width: "28%" }}>
+                                                        <div style={{ width: "29%" }}>
                                                             <s-select
                                                                 value={schedule.day}
                                                                 onChange={(e: any) => {
@@ -792,17 +842,25 @@ export default function AddLocation() {
                                                                 ))}
                                                             </s-select>
                                                         </div>
-                                                        <div style={{ width: "28%" }}>
+                                                        <div style={{ width: "29%" }}>
                                                             <s-select
                                                                 value={schedule.openTime}
                                                                 onChange={(e: any) => {
-                                                                    handleUpdateHourSchedule(index, 'openTime', e.target.value);
-                                                                    // Clear error when user changes
-                                                                    setHourErrors(prev => {
-                                                                        const next = { ...prev };
-                                                                        delete next[index];
-                                                                        return next;
-                                                                    });
+                                                                    const newValue = e.target.value;
+                                                                    handleUpdateHourSchedule(index, 'openTime', newValue);
+
+                                                                    // Clear error if fixed
+                                                                    const updatedSchedule = { ...schedule, openTime: newValue };
+                                                                    if (updatedSchedule.openTime && updatedSchedule.closeTime &&
+                                                                        updatedSchedule.openTime !== "close" && updatedSchedule.closeTime !== "close") {
+                                                                        if (updatedSchedule.openTime < updatedSchedule.closeTime) {
+                                                                            setHourErrors(prev => {
+                                                                                const next = { ...prev };
+                                                                                delete next[index];
+                                                                                return next;
+                                                                            });
+                                                                        }
+                                                                    }
                                                                 }}
                                                             >
                                                                 {hourOpen.map((item) => (
@@ -811,17 +869,25 @@ export default function AddLocation() {
                                                             </s-select>
                                                         </div>
                                                         <span>to</span>
-                                                        <div style={{ width: "28%" }}>
+                                                        <div style={{ width: "29%" }}>
                                                             <s-select
                                                                 value={schedule.closeTime}
                                                                 onChange={(e: any) => {
-                                                                    handleUpdateHourSchedule(index, 'closeTime', e.target.value);
-                                                                    // Clear error when user changes
-                                                                    setHourErrors(prev => {
-                                                                        const next = { ...prev };
-                                                                        delete next[index];
-                                                                        return next;
-                                                                    });
+                                                                    const newValue = e.target.value;
+                                                                    handleUpdateHourSchedule(index, 'closeTime', newValue);
+
+                                                                    // THÊM LOGIC KIỂM TRA GIỐNG OPENTIME
+                                                                    const updatedSchedule = { ...schedule, closeTime: newValue };
+                                                                    if (updatedSchedule.openTime && updatedSchedule.closeTime &&
+                                                                        updatedSchedule.openTime !== "close" && updatedSchedule.closeTime !== "close") {
+                                                                        if (updatedSchedule.openTime < updatedSchedule.closeTime) {
+                                                                            setHourErrors(prev => {
+                                                                                const next = { ...prev };
+                                                                                delete next[index];
+                                                                                return next;
+                                                                            });
+                                                                        }
+                                                                    }
                                                                 }}
                                                             >
                                                                 {hourClose.map((item) => (
@@ -829,7 +895,7 @@ export default function AddLocation() {
                                                                 ))}
                                                             </s-select>
                                                         </div>
-                                                        <div>
+                                                        <div style={{ marginTop: 2 }}>
                                                             <s-button
                                                                 icon="delete"
                                                                 onClick={() => handleRemoveHourSchedule(index)}
@@ -854,7 +920,7 @@ export default function AddLocation() {
                                             </s-stack>
                                             <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
                                         </s-stack>
-                                        <s-stack paddingBlockStart="small-200" gap="small-400">
+                                        <s-stack paddingBlockStart="small" gap="small-200">
                                             {
                                                 countSocial.map((item) => (
                                                     <s-stack
@@ -896,20 +962,39 @@ export default function AddLocation() {
                                                                 error={socialErrors[item.id]}
                                                                 value={item.url}
                                                                 onInput={(e: any) => {
+                                                                    const value = e.target.value;
                                                                     setCountSocial(prev =>
                                                                         prev.map(social =>
                                                                             social.id === item.id
-                                                                                ? { ...social, url: e.target.value }
+                                                                                ? { ...social, url: value }
                                                                                 : social
                                                                         )
                                                                     );
-                                                                }}
-                                                                onBlur={(e: any) => {
-                                                                    const url = e.target.value;
-                                                                    if (url.trim()) {
-                                                                        validateSocialMedia(item.id, url, item.platform as SocialPlatform);
+                                                                    if (value.trim()) {
+                                                                        const validation = validateSocialUrl(value, item.platform as SocialPlatform);
+                                                                        if (validation.isValid) {
+                                                                            // Nếu hợp lệ thì xóa lỗi ngay
+                                                                            setSocialErrors(prev => {
+                                                                                const next = { ...prev };
+                                                                                delete next[item.id];
+                                                                                return next;
+                                                                            });
+                                                                        }
+                                                                    } else {
+                                                                        // Nếu xóa trống thì cũng xóa lỗi
+                                                                        setSocialErrors(prev => {
+                                                                            const next = { ...prev };
+                                                                            delete next[item.id];
+                                                                            return next;
+                                                                        });
                                                                     }
                                                                 }}
+                                                            // onBlur={(e: any) => {
+                                                            //     const url = e.target.value;
+                                                            //     if (url.trim()) {
+                                                            //         validateSocialMedia(item.id, url, item.platform as SocialPlatform);
+                                                            //     }
+                                                            // }}
                                                             />
                                                         </div>
                                                         <div style={{ marginTop: 2 }}>
@@ -949,10 +1034,9 @@ export default function AddLocation() {
                                         <s-section>
                                             <s-box>
                                                 <s-heading>Add a logo for this location</s-heading>
-                                                <s-paragraph>Customize your location information</s-paragraph>
                                             </s-box>
                                             <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center">
-                                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large-200" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
+                                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
                                                     {preview ? (
                                                         <s-stack justifyContent="center" alignItems="center">
                                                             <s-box inlineSize="60px" blockSize="60px">
@@ -1013,18 +1097,10 @@ export default function AddLocation() {
                                                 <i className="fa-solid fa-phone" ></i>
                                                 <span>{previewData.phone || '+1 408-996-1010'}</span>
                                             </div>
-
-                                            {previewData.url ? (
-                                                <div className={styles.contactRow}>
-                                                    <i className="fa-solid fa-earth-americas"></i>
-                                                    <span className={styles.storeAddress}>{previewData.url}</span>
-                                                </div>
-                                            ) : (
-                                                <div className={styles.contactRow}>
-                                                    <i className="fa-solid fa-earth-americas"></i>
-                                                    <span className={styles.storeAddress}>http://example.com/</span>
-                                                </div>
-                                            )}
+                                            <div className={styles.contactRow}>
+                                                <i className="fa-solid fa-earth-americas"></i>
+                                                <s-link href={previewData.url || ''}><text style={{ color: '#303030' }}>{previewData.url || 'http://example.com/'}</text></s-link>
+                                            </div>
 
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-clock"></i>

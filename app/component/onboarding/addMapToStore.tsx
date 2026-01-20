@@ -62,7 +62,7 @@ export default function AddMapToStore({
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-text type="strong">Install the Map Using App Blocks</s-text>
+                    <s-heading>Install the Map Using App Blocks</s-heading>
                     {
                         index === 4 &&
                         <>

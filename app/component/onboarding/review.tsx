@@ -1,6 +1,6 @@
 import { useFetcher } from "react-router"
 
-export default function Review ({
+export default function Review({
     storeHandle,
     check,
     handleCheck,
@@ -22,9 +22,9 @@ export default function Review ({
         const formData = new FormData()
         formData.append("actionType", 'saveReview')
         formData.append('remove', String(!newCheck))
-        fetcher.submit(formData, {method: 'post'})
+        fetcher.submit(formData, { method: 'post' })
     }
-  
+
     return (
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
@@ -32,14 +32,14 @@ export default function Review ({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                            <s-icon type="check-circle-filled"/>
-                            :
-                            <s-icon type="circle-dashed"/>
-                        }               
+                                <s-icon type="check-circle-filled" />
+                                :
+                                <s-icon type="circle-dashed" />
+                        }
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-text type="strong">Review Synced Locations</s-text>
+                    <s-heading>Review Synced Locations</s-heading>
                     {
                         index === 2 &&
                         <>

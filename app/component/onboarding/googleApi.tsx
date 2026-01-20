@@ -1,16 +1,16 @@
 import { useFetcher } from "react-router"
 
-export default function GoogleApi ({
+export default function GoogleApi({
     storeHandle,
     check,
     handleCheck,
     index,
-}:{
+}: {
     storeHandle: string
     check: boolean,
     handleCheck: (value: boolean) => void
     index: number
-    
+
 }) {
     const fetcher = useFetcher()
 
@@ -19,31 +19,31 @@ export default function GoogleApi ({
 
         const newCheck = !check
         handleCheck(newCheck)
-        
+
         const formData = new FormData()
         formData.append('actionType', 'saveGoogleMap')
         formData.append('remove', String(!newCheck)) // nếu newCheck = false thì remove = true
-        
+
         fetcher.submit(formData, { method: 'post' })
     }
 
     return (
-       <s-stack padding="small" gap="base">
+        <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
                 <s-stack>
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                            <s-icon type="check-circle-filled"/>
-                            :
-                            <s-icon type="circle-dashed"/>
-                        }               
+                                <s-icon type="check-circle-filled" />
+                                :
+                                <s-icon type="circle-dashed" />
+                        }
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-text type="strong">Google Maps</s-text>
+                    <s-heading>Google Maps</s-heading>
                     {
-                        index === 0 && 
+                        index === 0 &&
                         <>
                             <s-paragraph>This app requires a Google Maps API key to function properly. Once you have your API key, please enter it in the Google Maps section under the Integrations tab. For help setting up an API key, refer to the help article below.</s-paragraph>
                             <s-stack direction="inline">
@@ -78,6 +78,6 @@ export default function GoogleApi ({
                     </s-stack>
                 </s-stack>
             </s-stack> */}
-       </s-stack>
+        </s-stack>
     )
 }

@@ -109,8 +109,14 @@ function panToStore(store, marker) {
         const projection = map.getProjection();
         if (!projection) return;
 
-        const overlayHeight = 260; // chiều cao overlay (ước lượng)
-        const offsetY = overlayHeight / 2 + 20; // 40px khoảng hở
+        const hasImage = !!store.image;
+
+        // Ước lượng chiều cao overlay theo content
+        const overlayHeight = hasImage ? 260 : 170;
+
+        // Offset để overlay nằm giữa màn hình
+        const offsetY = overlayHeight / 2 + 20;
+
 
         const latLng = new google.maps.LatLng(store.lat, store.lng);
 
@@ -231,7 +237,7 @@ function showOverlay(store, marker) {
                     ${this.store.url ? `
                         <div class="map-overlay-row">
                             <i class="fa-solid fa-earth-americas" style="color: ${mapStyle.iconColor}"></i>
-                            <span>${this.store.url}</span>
+                            <a href="${this.store.url}" target="_blank" style="color: ${mapStyle.color}"><span>${this.store.url}</span></a>
                         </div>
                     ` : ''}
 

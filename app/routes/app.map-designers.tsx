@@ -380,7 +380,8 @@ export default function MapDesigners() {
                     1 Apple Park Way, Cupertino, CA 95014, USA<br />
                   </p>
                   <p style={{
-                    color: theme.secondaryColor
+                    color: theme.secondaryColor,
+                    fontFamily: theme.secondaryFont
                   }}>
                     +1 408-996-1010
                   </p>

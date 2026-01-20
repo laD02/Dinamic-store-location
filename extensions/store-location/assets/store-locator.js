@@ -33,7 +33,7 @@ async function loadStores() {
               ${s.address}, ${s.city}, ${s.code}
             </p>
 
-            <p style="color: ${style.secondaryColor}; margin: 0; font-size: 11px;">
+            <p style="color: ${style.secondaryColor};font-family: ${style.secondaryFont}; margin: 0; font-size: 11px;">
               ${s.phone}
             </p>
           </div>
@@ -69,7 +69,7 @@ async function loadStores() {
         // Lọc stores theo tên, địa chỉ, thành phố, state, zip code
         const filteredStores = stores.filter(store => {
           return (
-            // store.storeName?.toLowerCase().includes(searchTerm) ||
+            store.storeName?.toLowerCase().includes(searchTerm) ||
             store.address?.toLowerCase().includes(searchTerm) ||
             // store.city?.toLowerCase().includes(searchTerm) ||
             // store.state?.toLowerCase().includes(searchTerm) ||

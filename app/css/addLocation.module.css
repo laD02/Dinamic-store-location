@@ -448,7 +448,6 @@ table {
 .socialIcons {
     display: flex;
     gap: 12px;
-    margin-top: 12px;
     padding-top: 8px;
     justify-content: flex-start;
 }

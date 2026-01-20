@@ -268,7 +268,12 @@ export default function AllLocation() {
   const handleExport = () => {
     const selectedStoreList = stores.filter(s => selectedIds.has(s.id));
     const selectedIdList = Array.from(selectedIds);
-    exportStoresToCSV(selectedStoreList, selectedIdList);
+
+    const success = exportStoresToCSV(selectedStoreList, selectedIdList);
+
+    if (success) {
+      shopify.toast.show('Stores exported successfully!');
+    }
   };
 
   return (
@@ -482,10 +487,12 @@ export default function AllLocation() {
                         <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
                         <s-table-cell>
                           <s-stack direction="inline" alignItems="center" gap="small">
+                            <s-tooltip id="deleteId">Delete</s-tooltip>
                             <s-button
                               variant="tertiary"
                               icon="delete"
                               commandFor={`deleteId-modal-${store.id}`}
+                              interestFor="deleteId"
                             >
                             </s-button>
                             <s-modal id={`deleteId-modal-${store.id}`} heading="Delete Location">
@@ -516,7 +523,10 @@ export default function AllLocation() {
                                 Delete
                               </s-button>
                             </s-modal>
-                            <s-link href={`/app/editLocation/${store.id}`}>Edit</s-link>
+                            <s-link href={`/app/editLocation/${store.id}`}>
+                              <s-tooltip id="editId">Edit</s-tooltip>
+                              <s-button variant="tertiary" icon="edit" interestFor="editId"></s-button>
+                            </s-link>
                           </s-stack>
                         </s-table-cell>
                       </s-table-row>

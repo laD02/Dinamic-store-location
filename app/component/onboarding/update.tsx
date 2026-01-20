@@ -1,6 +1,6 @@
 import { useFetcher } from "react-router"
 
-export default function Update ({
+export default function Update({
     storeHandle,
     check,
     handleCheck,
@@ -22,9 +22,9 @@ export default function Update ({
         const formData = new FormData()
         formData.append('actionType', 'saveUpdate')
         formData.append('remove', String(!newCheck))
-        fetcher.submit(formData, {method: 'post'})
+        fetcher.submit(formData, { method: 'post' })
     }
-  
+
     return (
         <s-stack padding="small" gap="base">
             <s-stack direction="inline" justifyContent="start" alignItems="start" gap="small">
@@ -32,14 +32,14 @@ export default function Update ({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                            <s-icon type="check-circle-filled"/>
-                            :
-                            <s-icon type="circle-dashed"/>
-                        }               
+                                <s-icon type="check-circle-filled" />
+                                :
+                                <s-icon type="circle-dashed" />
+                        }
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-text type="strong">Update Individual Locations</s-text>
+                    <s-heading>Update Individual Locations</s-heading>
                     {
                         index === 3 &&
                         <>

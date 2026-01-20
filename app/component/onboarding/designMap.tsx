@@ -1,6 +1,6 @@
 import { useFetcher } from "react-router"
 
-export default function DesignMap ({
+export default function DesignMap({
     storeHandle,
     check,
     handleCheck,
@@ -8,7 +8,7 @@ export default function DesignMap ({
 }: {
     storeHandle: string
     check: boolean
-    handleCheck: ( value: boolean) => void
+    handleCheck: (value: boolean) => void
     index: number
 }) {
     const fetcher = useFetcher()
@@ -22,7 +22,7 @@ export default function DesignMap ({
         const formData = new FormData()
         formData.append("actionType", "saveDesignMap")
         formData.append("remove", String(!newCheck))
-        fetcher.submit(formData, {method: 'post'})
+        fetcher.submit(formData, { method: 'post' })
     }
 
     return (
@@ -32,25 +32,25 @@ export default function DesignMap ({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                            <s-icon type="check-circle-filled"/>
-                            :
-                            <s-icon type="circle-dashed"/>
-                        }               
+                                <s-icon type="check-circle-filled" />
+                                :
+                                <s-icon type="circle-dashed" />
+                        }
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-text type="strong">Select Map Design Options</s-text>
+                    <s-heading>Select Map Design Options</s-heading>
                     {
-                        index === 1 && 
+                        index === 1 &&
                         <>
-                             <s-paragraph>In the Map Designer tab, you can customize your primary map colors and fonts, as well as set the map size and default load location. You can also define a universal map marker and style the location popups, making it easy to create a cohesive and consistent map design across all locations.</s-paragraph>
+                            <s-paragraph>In the Map Designer tab, you can customize your primary map colors and fonts, as well as set the map size and default load location. You can also define a universal map marker and style the location popups, making it easy to create a cohesive and consistent map design across all locations.</s-paragraph>
                             <s-stack direction="inline">
                                 <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/map-designers`}>
                                     <s-button variant="primary">Go to Map Designer</s-button>
                                 </s-link>
                             </s-stack>
                         </>
-                    } 
+                    }
                 </s-stack>
             </s-stack>
         </s-stack>

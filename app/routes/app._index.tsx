@@ -43,7 +43,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         where: { shop }
     })
 
-    return { storeHandle, themeId, onBoard }
+    const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
+
+    return { storeHandle, themeId, onBoard, embedStore }
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -147,7 +149,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Onboarding() {
     const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
-    const { storeHandle, themeId, onBoard } = useLoaderData()
+    const { storeHandle, themeId, onBoard, embedStore } = useLoaderData()
     const [googleMap, setGoogleMap] = useState(false)
     const [design, setDesign] = useState(false)
     const [review, setReview] = useState(false)
@@ -185,7 +187,15 @@ export default function Onboarding() {
             <s-query-container>
                 <s-stack paddingInline="small">
                     <h2>Welcome to Store Locator</h2>
-
+                    <s-stack paddingBlockEnd='base'>
+                        {
+                            embedStore && (
+                                <s-banner heading="Theme store app embeds are enabled." tone="info" dismissible>
+                                    Embeds is enabled and ready to use.
+                                </s-banner>
+                            )
+                        }
+                    </s-stack>
                     <s-section>
                         <s-stack gap="base">
                             <s-stack direction="inline" justifyContent="start" gap="base">

@@ -3,7 +3,7 @@ import { Store } from "@prisma/client";
 
 export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   const selectedStores = stores.filter(store => selectedIds.includes(store.id));
-  
+
   if (selectedStores.length === 0) {
     alert("No stores selected");
     return;
@@ -12,9 +12,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   const headers = [
     "No",
     "Store Name",
-    "Source",
-    "Map Marker",
-    "Tags",
     "Visibility",
     "Address",
     "City",
@@ -27,9 +24,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   const rows = selectedStores.map((store, index) => [
     index + 1,
     store.storeName,
-    store.source,
-    "Map Marker",
-    "",
     store.visibility,
     store.address,
     store.city,
@@ -51,4 +45,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  return true;
 };
