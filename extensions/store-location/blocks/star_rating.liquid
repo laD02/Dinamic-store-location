@@ -106,13 +106,13 @@
         {% if block.settings.enable_location_search %}
           <div class="sl-search-wrapper">
             <input 
-              id="sl-address" 
+              class="sl-address" 
               placeholder="{{ block.settings.search_placeholder_text }}"
               style="border-color: {{ block.settings.primary_accent_color }};"
             />
           </div>
         {% endif %}
-        <div id="store-list-loading" style="
+        <div class="store-list-loading" style="
           padding: 40px 20px;
           text-align: center;
           color: #999;
@@ -120,7 +120,7 @@
         ">
           Loading locations...
         </div>
-        <div id="store-list" style="font-size: 12px"></div>
+        <div class="store-list" style="font-size: 12px"></div>
       </div>
     {% endif %}
 
@@ -128,11 +128,10 @@
       <!-- Nếu có API key thì hiện map -->
       
       <div
-        id="sl-map"
         class="sl-map"
         data-gmap-key="{{ block.settings.google_api_key }}"
       >
-        <div id="map-loading" style="
+        <div class="map-loading" style="
           position: absolute;
           top: 0;
           left: 0;
@@ -166,5 +165,4 @@
 
 <script src="{{ 'store-locator.js' | asset_url }}" defer></script>
 <link rel="stylesheet" href="{{ 'store-locator.css' | asset_url }}">
-<!-- Thêm vào <head> của HTML -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">

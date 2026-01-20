@@ -1,111 +1,129 @@
-async function loadStores() {
+async function loadStores(wrapper, onSelectStore) {
   try {
     const res = await fetch("/apps/store-locator");
     const { stores, style } = await res.json();
-    const storeListLoading = document.getElementById("store-list-loading");
-    const storeListContainer = document.getElementById("store-list");
 
-    const container = document.getElementById("store-list");
-    const searchInput = document.getElementById("sl-address");
+    const storeListLoading = wrapper.querySelector(".store-list-loading");
+    const container = wrapper.querySelector(".store-list");
+    const searchInput = wrapper.querySelector(".sl-address");
 
-    // ✅ Hàm render stores
+    if (!container) return;
+
+    /************************************************
+     * Render stores
+     ************************************************/
     function renderStores(storesToRender) {
+      container.innerHTML = "";
+
+      if (storesToRender.length === 0) {
+        container.innerHTML = `
+          <p style="padding:20px;text-align:center;color:#999;">
+            No stores found${searchInput?.value ? ` for "${searchInput.value}"` : ""}
+          </p>
+        `;
+        return;
+      }
+
       container.innerHTML = storesToRender
-        .map((s, index) => `
-          <div 
-            class="store-item" 
-            data-id="${index}"
+        .map(s => `
+          <div
+            class="store-item"
             data-original-index="${stores.indexOf(s)}"
             style="
-              border: 2px solid rgb(210, 207, 207);
-              padding: 12px;
-              margin-bottom: 8px;
-              cursor: pointer;
-              transition: border-color 0.3s;
-              background-color: white
+              border:2px solid rgb(210,207,207);
+              padding:12px;
+              margin-bottom:8px;
+              cursor:pointer;
+              background:white;
+              transition:border-color .2s;
             "
           >
-            <p style="color: ${style.primaryColor}; font-family: ${style.primaryFont}; margin: 0 0 8px 0; font-weight: 600;">
+            <p style="
+              color:${style.primaryColor};
+              font-family:${style.primaryFont};
+              margin:0 0 6px;
+              font-weight:600;
+            ">
               ${s.storeName}
             </p>
 
-            <p style="color: ${style.primaryColor}; font-family: ${style.secondaryFont}; margin: 0 0 8px 0; font-size: 11px;">
+            <p style="
+              color:${style.primaryColor};
+              font-family:${style.secondaryFont};
+              margin:0 0 6px;
+              font-size:11px;
+            ">
               ${s.address}, ${s.city}, ${s.code}
             </p>
 
-            <p style="color: ${style.secondaryColor};font-family: ${style.secondaryFont}; margin: 0; font-size: 11px;">
-              ${s.phone}
-            </p>
+            ${s.phone ? `
+              <p style="
+                color:${style.secondaryColor};
+                font-family:${style.secondaryFont};
+                margin:0;
+                font-size:11px;
+              ">
+                ${s.phone}
+              </p>
+            ` : ""}
           </div>
         `)
         .join("");
-
-      // Nếu không có kết quả
-      if (storesToRender.length === 0) {
-        container.innerHTML = `
-          <p style="padding: 20px; text-align: center; color: #999;">
-            No stores found matching "${searchInput.value}"
-          </p>
-        `;
-      }
     }
-    if (storeListLoading) storeListLoading.style.display = "none";
-    if (storeListContainer) storeListContainer.style.display = "block";
 
-    // ✅ Render tất cả stores ban đầu
+    /************************************************
+     * Init
+     ************************************************/
+    if (storeListLoading) storeListLoading.style.display = "none";
+    container.style.display = "block";
+
     renderStores(stores);
 
-    // ✅ Xử lý tìm kiếm
+    /************************************************
+     * Search
+     ************************************************/
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
-        const searchTerm = e.target.value.toLowerCase().trim();
+      searchInput.addEventListener("input", e => {
+        const term = e.target.value.toLowerCase().trim();
 
-        // Nếu input rỗng, hiện tất cả
-        if (searchTerm === "") {
+        if (!term) {
           renderStores(stores);
           return;
         }
 
-        // Lọc stores theo tên, địa chỉ, thành phố, state, zip code
-        const filteredStores = stores.filter(store => {
-          return (
-            store.storeName?.toLowerCase().includes(searchTerm) ||
-            store.address?.toLowerCase().includes(searchTerm) ||
-            // store.city?.toLowerCase().includes(searchTerm) ||
-            // store.state?.toLowerCase().includes(searchTerm) ||
-            store.code?.toLowerCase().includes(searchTerm)
-          );
-        });
+        const filtered = stores.filter(store =>
+          store.storeName?.toLowerCase().includes(term) ||
+          store.address?.toLowerCase().includes(term) ||
+          store.code?.toLowerCase().includes(term)
+        );
 
-        renderStores(filteredStores);
+        renderStores(filtered);
       });
     }
 
-    // ✅ Event delegation: click vào item
-    container.addEventListener("click", (e) => {
+    /************************************************
+     * Click store item (delegation – scoped)
+     ************************************************/
+    container.addEventListener("click", e => {
       const item = e.target.closest(".store-item");
       if (!item) return;
 
-      // Lấy index gốc từ mảng stores ban đầu
-      const originalIndex = parseInt(item.dataset.originalIndex);
+      const originalIndex = Number(item.dataset.originalIndex);
 
-      // Reset border toàn bộ
-      document.querySelectorAll(".store-item").forEach(el => {
-        el.style.borderColor = "rgb(210, 207, 207)";
+      // reset border CHỈ trong block này
+      container.querySelectorAll(".store-item").forEach(el => {
+        el.style.borderColor = "rgb(210,207,207)";
       });
 
-      // Set border color cho item được chọn
       item.style.borderColor = style.secondaryColor;
 
-      // Pan tới map
-      if (window.selectStoreByIndex) {
-        window.selectStoreByIndex(originalIndex);
+      // callback cho map
+      if (typeof onSelectStore === "function") {
+        onSelectStore(originalIndex);
       }
     });
 
   } catch (err) {
-    console.error("Proxy fetch error:", err);
+    console.error("Load stores error:", err);
   }
 }
-
-loadStores();

@@ -153,7 +153,7 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
                                     background: `linear-gradient(to right, #333 0%, #333 ${(cornerRadius / 20) * 100}%, #ddd ${(cornerRadius / 20) * 100}%, #ddd 100%)`
                                 }}
                             />
-                            <span>{cornerRadius}pt</span>
+                            <span>{cornerRadius}px</span>
                         </div>
                     </div>
                     {/* <s-divider /> */}

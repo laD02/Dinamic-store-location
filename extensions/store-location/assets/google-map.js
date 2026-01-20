@@ -1,8 +1,6 @@
-let map;
-let markers = [];
-let currentOverlay = null;
-let mapStyle = null;
-
+/************************************************
+ * Utils
+ ************************************************/
 const hexToRgba = (hex, alpha) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -10,8 +8,15 @@ const hexToRgba = (hex, alpha) => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+/************************************************
+ * Google Maps Loader (singleton)
+ ************************************************/
+let googleMapsPromise = null;
+
 function loadGoogleMaps(apiKey) {
-    return new Promise((resolve, reject) => {
+    if (googleMapsPromise) return googleMapsPromise;
+
+    googleMapsPromise = new Promise((resolve, reject) => {
         if (window.google && window.google.maps) {
             resolve();
             return;
@@ -21,35 +26,51 @@ function loadGoogleMaps(apiKey) {
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
-
         script.onload = resolve;
         script.onerror = reject;
-
         document.head.appendChild(script);
     });
+
+    return googleMapsPromise;
 }
 
+/************************************************
+ * Init all blocks
+ ************************************************/
 document.addEventListener("DOMContentLoaded", async () => {
-    const mapEl = document.getElementById("sl-map");
-    if (!mapEl) return;
+    const wrappers = document.querySelectorAll(".sl-wrapper");
+    if (!wrappers.length) return;
 
-    const apiKey = mapEl.dataset.gmapKey;
-    if (!apiKey) {
-        return;
-    }
+    const firstMap = wrappers[0].querySelector(".sl-map");
+    const apiKey = firstMap?.dataset.gmapKey;
+    if (!apiKey) return;
 
     await loadGoogleMaps(apiKey);
-    googleMap(); // hàm bạn đã viết sẵn
+
+    wrappers.forEach(wrapper => {
+        initStoreLocator(wrapper);
+    });
 });
 
-async function googleMap() {
+/************************************************
+ * Init single Store Locator instance
+ ************************************************/
+async function initStoreLocator(wrapper) {
+    const mapEl = wrapper.querySelector(".sl-map");
+    const mapLoading = wrapper.querySelector(".map-loading");
+    if (!mapEl) return;
+
+    let map;
+    let markers = [];
+    let currentOverlay = null;
+    let mapStyle = null;
+
     try {
-        const mapLoading = document.getElementById("map-loading");
         const res = await fetch("/apps/store-locator");
         const { stores, style } = await res.json();
-        mapStyle = style;
+        mapStyle = style || {};
 
-        map = new google.maps.Map(document.getElementById("sl-map"), {
+        map = new google.maps.Map(mapEl, {
             center: { lat: 0, lng: 0 },
             zoom: 10,
             styles: Array.isArray(style) ? style : []
@@ -57,12 +78,11 @@ async function googleMap() {
 
         const bounds = new google.maps.LatLngBounds();
 
-        // --- 1. RENDER TẤT CẢ STORE LÊN MAP ---
         stores.forEach((store, index) => {
             const marker = new google.maps.Marker({
                 position: { lat: store.lat, lng: store.lng },
                 map,
-                title: store.name
+                title: store.storeName || store.name
             });
 
             marker.addListener("click", () => {
@@ -70,242 +90,143 @@ async function googleMap() {
             });
 
             markers.push({ marker, store, index });
-
-            // Thêm point vào bounds để fit toàn bộ store
-            bounds.extend({ lat: store.lat, lng: store.lng });
+            bounds.extend(marker.getPosition());
         });
 
-        // --- Fit the map to contain all stores ---
         if (!bounds.isEmpty()) {
             map.fitBounds(bounds);
         }
 
-        // --- 2. LẮNG NGHE CLICK VÀO STORE ITEM TRONG LIST ---
-        document.querySelectorAll(".store-item").forEach(item => {
-            item.addEventListener("click", () => {
-                const storeId = item.dataset.id; // ví dụ data-id="store_1"
-                const storeData = markers.find(m => m.store.id == storeId);
-
-                if (storeData) {
-                    panToStore(storeData.store, storeData.marker);
-                }
-            });
+        google.maps.event.addListenerOnce(map, "idle", () => {
+            if (mapLoading) mapLoading.style.display = "none";
         });
-        google.maps.event.addListenerOnce(map, 'idle', () => {
-            if (mapLoading) {
-                mapLoading.style.display = "none";
+
+        loadStores(wrapper, (storeIndex) => {
+            const storeData = markers.find(m => m.index === storeIndex);
+            if (storeData) {
+                panToStore(storeData.store, storeData.marker);
             }
         });
 
-    } catch (error) {
-        console.error("Proxy fetch error:", error);
-    }
-}
-
-function panToStore(store, marker) {
-    map.setZoom(16);
-
-    google.maps.event.addListenerOnce(map, "idle", () => {
-        const projection = map.getProjection();
-        if (!projection) return;
-
-        const hasImage = !!store.image;
-
-        // Ước lượng chiều cao overlay theo content
-        const overlayHeight = hasImage ? 260 : 170;
-
-        // Offset để overlay nằm giữa màn hình
-        const offsetY = overlayHeight / 2 + 20;
-
-
-        const latLng = new google.maps.LatLng(store.lat, store.lng);
-
-        // LatLng -> world point
-        const point = projection.fromLatLngToPoint(latLng);
-
-        // scale theo zoom
-        const scale = Math.pow(2, map.getZoom());
-
-        // Tạo point mới lệch xuống dưới
-        const newPoint = new google.maps.Point(
-            point.x,
-            point.y - offsetY / scale
-        );
-
-        // World point -> LatLng
-        const newCenter = projection.fromPointToLatLng(newPoint);
-
-        map.panTo(newCenter);
-
-        showOverlay(store, marker);
-    });
-}
-
-function showOverlay(store, marker) {
-    // Xóa overlay cũ nếu có
-    if (currentOverlay) {
-        currentOverlay.setMap(null);
+    } catch (err) {
+        console.error("Store locator error:", err);
     }
 
-    // Tạo Custom OverlayView class
-    class StoreOverlay extends google.maps.OverlayView {
-        constructor(position, store) {
-            super();
-            this.position = position;
-            this.store = store;
-            this.div = null;
+    /************************************************
+     * Pan + Overlay
+     ************************************************/
+    function panToStore(store, marker) {
+        map.setZoom(16);
+
+        google.maps.event.addListenerOnce(map, "idle", () => {
+            const projection = map.getProjection();
+            if (!projection) return;
+
+            const hasImage = !!store.image;
+            const overlayHeight = hasImage ? 260 : 170;
+            const offsetY = overlayHeight / 2 + 140;
+
+            const latLng = new google.maps.LatLng(store.lat, store.lng);
+            const point = projection.fromLatLngToPoint(latLng);
+            const scale = Math.pow(2, map.getZoom());
+
+            const newPoint = new google.maps.Point(
+                point.x,
+                point.y - offsetY / scale
+            );
+
+            const newCenter = projection.fromPointToLatLng(newPoint);
+            map.panTo(newCenter);
+
+            showOverlay(store, marker);
+        });
+    }
+
+    function showOverlay(store, marker) {
+        if (currentOverlay) {
+            currentOverlay.setMap(null);
+            currentOverlay = null;
         }
 
-
-
-        onAdd() {
-            const icons = {
-                facebook: 'fa-facebook',
-                youtube: 'fa-youtube',
-                linkedin: 'fa-linkedin',
-                instagram: 'fa-square-instagram',
-                x: 'fa-square-x-twitter',
-                pinterest: 'fa-pinterest',
-                tiktok: 'fa-tiktok'
-            }
-            // Tạo div container
-            this.div = document.createElement('div');
-            this.div.className = 'map-overlay-card';
-            this.div.style.zIndex = '1000';
-            this.div.style.borderRadius = `${mapStyle.cornerRadius}px`;
-
-            // Thêm shadow từ mapStyle
-            if (mapStyle.shadowColor) {
-                const shadowRgba = hexToRgba(
-                    mapStyle.shadowColor,
-                    mapStyle.transparency / 100 // convert 0-100 thành 0-1
-                );
-                const offsetX = mapStyle.anchorx;
-                const offsetY = mapStyle.anchory;
-                const blur = mapStyle.blur;
-
-                this.div.style.boxShadow = `${offsetX}px ${offsetY}px ${blur}px 0px ${shadowRgba}`;
-            }
-
-            // Dynamic styles that must be inline because they come from backend config
-            // We apply color/font settings to a wrapper or specific elements
-
-            const contentStyle = `
-                color: ${mapStyle.color};
-                background: ${mapStyle.backgroundColor || '#fff'};
-            `;
-
-            // Prepare Social Icons
-            const socialLinks = Object.entries(this.store.contract || {})
-                .map(([platform, items]) =>
-                    items.map((href) => `
-                        <a href="${href}" target="_blank" class="${platform}">
-                            <i class="fa-brands ${icons[platform]}"></i>
-                        </a>
-                    `).join('')
-                ).join('');
-
-            // Tạo nội dung HTML
-            this.div.innerHTML = `
-                <button class="map-overlay-close" onclick="closeOverlay()">×</button>
-                
-                ${this.store.image ? `
-                    <div class="map-overlay-hero">
-                        <img src="${this.store.image}" alt="${this.store.name}" />
-                    </div>
-                ` : ''}
-                
-                <div class="map-overlay-content" style="${contentStyle}">
-                    <div class="map-overlay-header">
-                        <h3 class="map-overlay-title" style="color: ${mapStyle.color}">
-                            ${this.store.storeName}
-                        </h3>
-                    </div>
-
-                    <div class="map-overlay-row">
-                        <i class="fa-solid fa-location-dot" style="color: ${mapStyle.iconColor}"></i>
-                        <span>${this.store.address || ''}, ${this.store.city}, ${this.store.code}</span>
-                    </div>
-
-                    ${this.store.phone ? `
-                        <div class="map-overlay-row">
-                            <i class="fa-solid fa-phone" style="color: ${mapStyle.iconColor}"></i>
-                            <span>${this.store.phone}</span>
-                        </div>
-                    ` : ''}
-
-                    ${this.store.url ? `
-                        <div class="map-overlay-row">
-                            <i class="fa-solid fa-earth-americas" style="color: ${mapStyle.iconColor}"></i>
-                            <a href="${this.store.url}" target="_blank" style="color: ${mapStyle.color}"><span>${this.store.url}</span></a>
-                        </div>
-                    ` : ''}
-
-                    ${socialLinks ? `
-                        <div class="map-overlay-socials">
-                            ${socialLinks}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-
-            // Apply border radius and shadow dynamically if needed, 
-            // but for now we used CSS classes. If existing config has specific radius/shadow,
-            // we can override via inline style on the card.
-            // mapStyle.cornerRadius, mapStyle.shadowColor etc.
-
-            this.div.style.borderRadius = `${mapStyle.cornerRadius}px`;
-            // For shadow, it's complex to map exactly, but we can try basic or skip if CSS is enough.
-            // Let's rely on CSS for shadow for better look, or use the custom one if really needed.
-
-            // Thêm vào pane
-            const panes = this.getPanes();
-            panes.floatPane.appendChild(this.div);
-        }
-
-        draw() {
-            // Tính toán vị trí pixel
-            const overlayProjection = this.getProjection();
-            const position = overlayProjection.fromLatLngToDivPixel(this.position);
-
-            if (this.div) {
-                // Căn giữa overlay và đặt phía trên marker
-                // Offset horizontal by half width, vertical by height + arrow/space
-                this.div.style.left = (position.x - this.div.offsetWidth / 2) + 'px';
-                this.div.style.top = (position.y - this.div.offsetHeight - 20) + 'px';
-            }
-        }
-
-        onRemove() {
-            if (this.div && this.div.parentNode) {
-                this.div.parentNode.removeChild(this.div);
+        class StoreOverlay extends google.maps.OverlayView {
+            constructor(position, store) {
+                super();
+                this.position = position;
+                this.store = store;
                 this.div = null;
             }
+
+            onAdd() {
+                this.div = document.createElement("div");
+                this.div.className = "map-overlay-card";
+                this.div.style.borderRadius = `${mapStyle.cornerRadius || 12}px`;
+
+                if (mapStyle.shadowColor) {
+                    const shadow = hexToRgba(
+                        mapStyle.shadowColor,
+                        (mapStyle.transparency || 30) / 100
+                    );
+                    this.div.style.boxShadow = `
+            ${mapStyle.anchorx || 0}px
+            ${mapStyle.anchory || 4}px
+            ${mapStyle.blur || 12}px
+            ${shadow}
+          `;
+                }
+
+                this.div.innerHTML = `
+          <button class="map-overlay-close">×</button>
+
+          ${store.image ? `
+            <div class="map-overlay-hero">
+              <img src="${store.image}" />
+            </div>
+          ` : ""}
+
+          <div class="map-overlay-content" style="
+            background:${mapStyle.backgroundColor || "#fff"};
+            color:${mapStyle.color || "#000"};
+          ">
+            <h3>${store.storeName || store.name}</h3>
+            <p>${store.address || ""}</p>
+            ${store.phone ? `<p>${store.phone}</p>` : ""}
+            ${store.url ? `<a href="${store.url}" target="_blank">${store.url}</a>` : ""}
+          </div>
+        `;
+
+                this.div
+                    .querySelector(".map-overlay-close")
+                    .addEventListener("click", () => {
+                        this.setMap(null);
+                        currentOverlay = null;
+                    });
+
+                this.getPanes().floatPane.appendChild(this.div);
+            }
+
+            draw() {
+                const projection = this.getProjection();
+                const pos = projection.fromLatLngToDivPixel(this.position);
+
+                if (this.div) {
+                    this.div.style.left = pos.x - this.div.offsetWidth / 2 + "px";
+                    this.div.style.top = pos.y - this.div.offsetHeight - 20 + "px";
+                }
+            }
+
+            onRemove() {
+                if (this.div) {
+                    this.div.remove();
+                    this.div = null;
+                }
+            }
         }
-    }
 
-    // Tạo overlay mới
-    const position = new google.maps.LatLng(store.lat, store.lng);
-    currentOverlay = new StoreOverlay(position, store);
-    currentOverlay.setMap(map);
-}
+        currentOverlay = new StoreOverlay(
+            new google.maps.LatLng(store.lat, store.lng),
+            store
+        );
 
-// Hàm đóng overlay (global function để button có thể gọi)
-function closeOverlay() {
-    if (currentOverlay) {
-        currentOverlay.setMap(null);
-        currentOverlay = null;
+        currentOverlay.setMap(map);
     }
 }
-
-window.selectStoreByIndex = function (storeIndex) {
-    const storeData = markers.find(m => m.index === storeIndex);
-    if (storeData) {
-        panToStore(storeData.store, storeData.marker);
-    }
-};
-
-// Export để có thể gọi từ HTML
-window.closeOverlay = closeOverlay;
-
-// googleMap();

@@ -36,6 +36,8 @@ interface PopupStyle {
   cornerRadius: number
 }
 
+const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 export default function MapGoogle({
   stores,
   selectedIndex,
@@ -165,6 +167,7 @@ export default function MapGoogle({
                 borderRadius: popupStyle.cornerRadius,
                 boxShadow: `${popupStyle.anchorx}px ${popupStyle.anchory}px ${popupStyle.blur}px ${hexToRgba(popupStyle.shadowColor, popupStyle.transparency / 100)}`,
                 transform: 'translate(-50%, -50%)'
+
               }}
             >
               <div className={styles.overlayImageContainer}>
@@ -184,6 +187,39 @@ export default function MapGoogle({
                 <div className={styles.contactRow}>
                   <i className="fa-solid fa-earth-americas" style={{ color: popupStyle.iconColor }}></i>
                   <span className={styles.storeAddress}>http://example.com/</span>
+                </div>
+                <div className={styles.contactRow}>
+                  <i className="fa-solid fa-clock" style={{ color: popupStyle.iconColor }}></i>
+                  <table>
+                    <tbody>
+                      {days.map(day => {
+                        const time = selected.time || {};
+                        const lowerDay = day.toLowerCase();
+                        const valueOpen = time[`${lowerDay}Open`];
+                        const valueClose = time[`${lowerDay}Close`];
+
+                        if (
+                          !valueOpen ||
+                          !valueClose ||
+                          valueOpen === "close" ||
+                          valueClose === "close") {
+                          return (
+                            <tr key={day}>
+                              <td>{day}</td>
+                              <td>Close</td>
+                            </tr>
+                          );
+                        }
+
+                        return (
+                          <tr key={day}>
+                            <td>{day}</td>
+                            <td>{valueOpen} - {valueClose}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
 
                 <div className={styles.socialIcons}>
