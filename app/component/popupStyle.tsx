@@ -141,7 +141,7 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
                     <div className={styles.corner}>
                         <s-text type="strong">Corner radius</s-text>
                         <div className={styles.inputRange}>
-                            <span>0</span>
+                            <span>0px</span>
                             <input
                                 type="range"
                                 min="0"
@@ -279,7 +279,7 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
                     <div className={styles.corner}>
                         <strong>Blur radius</strong>
                         <div className={styles.inputRange}>
-                            <span>0</span>
+                            <span>0px</span>
                             <input
                                 type="range"
                                 min="0"
@@ -291,13 +291,13 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
                                     background: `linear-gradient(to right, #333 0%, #333 ${(blur / 20) * 100}%, #ddd ${(blur / 20) * 100}%, #ddd 100%)`
                                 }}
                             />
-                            <span>{blur}</span>
+                            <span>{blur}px</span>
                         </div>
                     </div>
                     <div className={styles.corner}>
                         <strong>Anchor x coordinate</strong>
                         <div className={styles.inputRange}>
-                            <span>-10</span>
+                            <span>-10px</span>
                             <input
                                 type="range"
                                 min="-10"
@@ -309,13 +309,13 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
                                     background: `linear-gradient(to right, #333 0%, #333 ${((anchorx - (-10)) / 20) * 100}%, #ddd ${((anchorx - (-10)) / 20) * 100}%, #ddd 100%)`
                                 }}
                             />
-                            <span>{anchorx}</span>
+                            <span>{anchorx}px</span>
                         </div>
                     </div>
                     <div className={styles.corner}>
                         <strong>Anchor y coordinate</strong>
                         <div className={styles.inputRange}>
-                            <span>-10</span>
+                            <span>-10px</span>
                             <input
                                 type="range"
                                 min="-10"
@@ -327,7 +327,7 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
                                     background: `linear-gradient(to right, #333 0%, #333 ${((anchory - (-10)) / 20) * 100}%, #ddd ${((anchory - (-10)) / 20) * 100}%, #ddd 100%)`
                                 }}
                             />
-                            <span>{anchory}</span>
+                            <span>{anchory}px</span>
                         </div>
                     </div>
                 </div>

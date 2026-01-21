@@ -78,7 +78,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px
+  gap: 8px;
+}
+
+.inputRange span {
+  width: 12%;
 }
 
 input[type="range"] {

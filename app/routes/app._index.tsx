@@ -43,9 +43,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
         where: { shop }
     })
 
+    const visibleCount = await prisma.store.count({
+        where: { shop, visibility: "visible" }
+    })
+
+    const hiddenCount = await prisma.store.count({
+        where: { shop, visibility: "hidden" }
+    })
+
     const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
 
-    return { storeHandle, themeId, onBoard, embedStore }
+    return { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount }
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -149,7 +157,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Onboarding() {
     const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
-    const { storeHandle, themeId, onBoard, embedStore } = useLoaderData()
+    const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount } = useLoaderData()
     const [googleMap, setGoogleMap] = useState(false)
     const [design, setDesign] = useState(false)
     const [review, setReview] = useState(false)
@@ -185,17 +193,39 @@ export default function Onboarding() {
     return (
         <s-page heading='Store Locator'>
             <s-query-container>
-                <s-stack paddingInline="small">
+                <s-stack paddingInline="small" gap='base'>
                     <h2>Welcome to Store Locator</h2>
-                    <s-stack paddingBlockEnd='base'>
+                    <s-stack>
                         {
-                            embedStore && (
+                            embedStore ? (
                                 <s-banner heading="Theme store app embeds are enabled." tone="info" dismissible>
                                     Embeds is enabled and ready to use.
+                                </s-banner>
+                            ) : (
+                                <s-banner heading="Theme store app embeds are disabled." tone="warning" dismissible>
+                                    <s-paragraph>Embedding is not enabled for your store yet. This feature must be activated before it can be used.</s-paragraph>
+                                    <span style={{ color: "#0066CC" }}><s-link href={`https://admin.shopify.com/store/${storeHandle}/themes/${themeId}/editor?context=apps&activateAppId=20d7d45fc96ed3baec84f8232a6cf110/store_locator`}>Go to embedding settings</s-link></span>
                                 </s-banner>
                             )
                         }
                     </s-stack>
+
+                    <s-stack>
+                        <s-grid
+                            gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr, 1fr'
+                            gap='base'
+                        >
+                            <s-section heading='Stores Visible'>
+                                {/* <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Stores Visible</h3> */}
+                                <h1 style={{ marginBlock: 0 }}>{visibleCount}</h1>
+                            </s-section>
+                            <s-section heading='Stores Hidden'>
+                                {/* <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Stores Hidden</h3> */}
+                                <h1 style={{ marginBlock: 0 }}>{hiddenCount}</h1>
+                            </s-section>
+                        </s-grid>
+                    </s-stack>
+
                     <s-section>
                         <s-stack gap="base">
                             <s-stack direction="inline" justifyContent="start" gap="base">

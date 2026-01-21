@@ -43,10 +43,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const firstMap = wrappers[0].querySelector(".sl-map");
     const apiKey = firstMap?.dataset.gmapKey;
-    if (!apiKey) return;
 
-    await loadGoogleMaps(apiKey);
+    // Nếu có API key, load Google Maps
+    if (apiKey) {
+        try {
+            await loadGoogleMaps(apiKey);
+        } catch (err) {
+            console.error("Failed to load Google Maps:", err);
+        }
+    }
 
+    // Init tất cả store locators (có hoặc không có Maps)
     wrappers.forEach(wrapper => {
         initStoreLocator(wrapper);
     });
@@ -60,62 +67,78 @@ async function initStoreLocator(wrapper) {
     const mapLoading = wrapper.querySelector(".map-loading");
     if (!mapEl) return;
 
+    const apiKey = mapEl.dataset.gmapKey;
+    const hasGoogleMaps = apiKey && window.google && window.google.maps;
+
     let map;
     let markers = [];
     let currentOverlay = null;
     let mapStyle = null;
 
     try {
+        // Luôn fetch stores data
         const res = await fetch("/apps/store-locator");
         const { stores, style } = await res.json();
         mapStyle = style || {};
 
-        map = new google.maps.Map(mapEl, {
-            center: { lat: 0, lng: 0 },
-            zoom: 10,
-            styles: Array.isArray(style) ? style : []
-        });
-
-        const bounds = new google.maps.LatLngBounds();
-
-        stores.forEach((store, index) => {
-            const marker = new google.maps.Marker({
-                position: { lat: store.lat, lng: store.lng },
-                map,
-                title: store.storeName || store.name
+        // Nếu có Google Maps, khởi tạo map và markers
+        if (hasGoogleMaps) {
+            map = new google.maps.Map(mapEl, {
+                center: { lat: 0, lng: 0 },
+                zoom: 10,
+                styles: Array.isArray(style) ? style : []
             });
 
-            marker.addListener("click", () => {
-                panToStore(store, marker);
+            const bounds = new google.maps.LatLngBounds();
+
+            stores.forEach((store, index) => {
+                const marker = new google.maps.Marker({
+                    position: { lat: store.lat, lng: store.lng },
+                    map,
+                    title: store.storeName || store.name
+                });
+
+                marker.addListener("click", () => {
+                    panToStore(store, marker);
+                });
+
+                markers.push({ marker, store, index });
+                bounds.extend(marker.getPosition());
             });
 
-            markers.push({ marker, store, index });
-            bounds.extend(marker.getPosition());
-        });
+            if (!bounds.isEmpty()) {
+                map.fitBounds(bounds);
+            }
 
-        if (!bounds.isEmpty()) {
-            map.fitBounds(bounds);
+            google.maps.event.addListenerOnce(map, "idle", () => {
+                if (mapLoading) mapLoading.style.display = "none";
+            });
+        } else {
+            // Không có Google Maps - ẩn loading và hiển thị thông báo
+            if (mapLoading) mapLoading.style.display = "none";
         }
 
-        google.maps.event.addListenerOnce(map, "idle", () => {
-            if (mapLoading) mapLoading.style.display = "none";
-        });
-
+        // Load stores list (luôn chạy, dù có hay không có Maps)
         loadStores(wrapper, (storeIndex) => {
-            const storeData = markers.find(m => m.index === storeIndex);
-            if (storeData) {
-                panToStore(storeData.store, storeData.marker);
+            if (hasGoogleMaps) {
+                const storeData = markers.find(m => m.index === storeIndex);
+                if (storeData) {
+                    panToStore(storeData.store, storeData.marker);
+                }
             }
         });
 
     } catch (err) {
         console.error("Store locator error:", err);
+        if (mapLoading) mapLoading.style.display = "none";
     }
 
     /************************************************
-     * Pan + Overlay
+     * Pan + Overlay (chỉ khi có Google Maps)
      ************************************************/
     function panToStore(store, marker) {
+        if (!map) return;
+
         map.setZoom(16);
 
         google.maps.event.addListenerOnce(map, "idle", () => {
@@ -143,6 +166,8 @@ async function initStoreLocator(wrapper) {
     }
 
     function showOverlay(store, marker) {
+        if (!map) return;
+
         if (currentOverlay) {
             currentOverlay.setMap(null);
             currentOverlay = null;
@@ -159,40 +184,21 @@ async function initStoreLocator(wrapper) {
             onAdd() {
                 this.div = document.createElement("div");
                 this.div.className = "map-overlay-card";
-                this.div.style.borderRadius = `${mapStyle.cornerRadius || 12}px`;
+                this.div.style.borderRadius = `${mapStyle.cornerRadius || 3}px`;
 
                 if (mapStyle.shadowColor) {
                     const shadow = hexToRgba(
                         mapStyle.shadowColor,
-                        (mapStyle.transparency || 30) / 100
+                        (mapStyle.transparency !== undefined ? mapStyle.transparency : 60) / 100
                     );
-                    this.div.style.boxShadow = `
-            ${mapStyle.anchorx || 0}px
-            ${mapStyle.anchory || 4}px
-            ${mapStyle.blur || 12}px
-            ${shadow}
-          `;
+                    const anchorX = mapStyle.anchorx !== undefined ? mapStyle.anchorx : -2;
+                    const anchorY = mapStyle.anchory !== undefined ? mapStyle.anchory : -2;
+                    const blur = mapStyle.blur !== undefined ? mapStyle.blur : 4;
+
+                    this.div.style.boxShadow = `${anchorX}px ${anchorY}px ${blur}px ${shadow}`;
                 }
 
-                this.div.innerHTML = `
-          <button class="map-overlay-close">×</button>
-
-          ${store.image ? `
-            <div class="map-overlay-hero">
-              <img src="${store.image}" />
-            </div>
-          ` : ""}
-
-          <div class="map-overlay-content" style="
-            background:${mapStyle.backgroundColor || "#fff"};
-            color:${mapStyle.color || "#000"};
-          ">
-            <h3>${store.storeName || store.name}</h3>
-            <p>${store.address || ""}</p>
-            ${store.phone ? `<p>${store.phone}</p>` : ""}
-            ${store.url ? `<a href="${store.url}" target="_blank">${store.url}</a>` : ""}
-          </div>
-        `;
+                this.div.innerHTML = this.getHTML();
 
                 this.div
                     .querySelector(".map-overlay-close")
@@ -202,6 +208,115 @@ async function initStoreLocator(wrapper) {
                     });
 
                 this.getPanes().floatPane.appendChild(this.div);
+            }
+
+            getHTML() {
+                const s = this.store;
+                const time = s.time || {};
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+                let hoursHtml = '';
+                days.forEach(day => {
+                    const lowerDay = day.toLowerCase();
+                    const openKey = `${lowerDay}Open`;
+                    const closeKey = `${lowerDay}Close`;
+
+                    const openVal = time[openKey];
+                    const closeVal = time[closeKey];
+
+                    if (!openVal || !closeVal || openVal === 'close' || closeVal === 'close') {
+                        hoursHtml += `
+                            <tr>
+                                <td>${day}</td>
+                                <td>Close</td>
+                            </tr>
+                        `;
+                    } else {
+                        hoursHtml += `
+                            <tr>
+                                <td>${day}</td>
+                                <td>${openVal} - ${closeVal}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                const socialIconsMap = {
+                    facebook: 'fa-facebook',
+                    youtube: 'fa-youtube',
+                    linkedin: 'fa-linkedin',
+                    instagram: 'fa-square-instagram',
+                    x: 'fa-square-x-twitter',
+                    pinterest: 'fa-pinterest',
+                    tiktok: 'fa-tiktok'
+                };
+
+                let socialHtml = '';
+                if (s.contract) {
+                    Object.keys(s.contract).forEach(platform => {
+                        const urls = s.contract[platform];
+                        if (Array.isArray(urls) && urls.length > 0) {
+                            const url = urls[0];
+                            const iconClass = socialIconsMap[platform] || 'fa-link';
+                            socialHtml += `
+                                <a href="${url}" target="_blank" class="${platform}">
+                                    <i class="fa-brands ${iconClass}"></i>
+                                </a>
+                            `;
+                        }
+                    });
+                }
+
+                return `
+                    <button class="map-overlay-close">×</button>
+
+                    ${s.image ? `
+                    <div class="map-overlay-hero">
+                        <img src="${s.image}" alt="${s.storeName || 'Store'}" />
+                    </div>
+                    ` : ''}
+
+                    <div class="map-overlay-content" style="
+                        background:${mapStyle.backgroundColor || "#fff"};
+                    ">
+                        <h3 class="map-overlay-title" style="color:${mapStyle.color};">${s.storeName}</h3>
+                        
+                        <div class="map-overlay-row">
+                            <i class="fa-solid fa-location-dot" style="color:${mapStyle.iconColor};"></i>
+                            <span style="color:${mapStyle.color};">${[s.address, s.city, s.code].filter(Boolean).join(', ')}</span>
+                        </div>
+
+                        ${s.phone ? `
+                        <div class="map-overlay-row">
+                            <i class="fa-solid fa-phone" style="color:${mapStyle.iconColor};"></i>
+                            <span style="color:${mapStyle.color};">${s.phone}</span>
+                        </div>
+                        ` : ''}
+
+                         ${s.url ? `
+                        <div class="map-overlay-row">
+                            <i class="fa-solid fa-earth-americas" style="color:${mapStyle.iconColor};"></i>
+                            <a href="${s.url}" target="_blank" style="color:${mapStyle.color};">${s.url}</a>
+                        </div>
+                        ` : ''}
+
+                        <div class="map-overlay-row">
+                            <i class="fa-solid fa-clock" style="color:${mapStyle.iconColor};"></i>
+                            <table class="map-overlay-table" style="color:${mapStyle.color};">
+                                <tbody>
+                                    ${hoursHtml}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        ${socialHtml ? `
+                        <div class="map-overlay-socials">
+                            ${socialHtml}
+                        </div>
+                        ` : ''}
+
+                    </div>
+                `;
             }
 
             draw() {

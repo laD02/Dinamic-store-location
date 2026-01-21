@@ -91,7 +91,9 @@
 }
 {% endschema %}
 
-<div class="sl-wrapper"
+<div 
+  id="store-locator-section-{{ section.id }}"
+  class="sl-wrapper"
   style="margin-top: {{ block.settings.top_margin }}px;
          margin-bottom: {{ block.settings.bottom_margin }}px;
          height: {{ block.settings.height }};
@@ -122,6 +124,7 @@
         </div>
         <div class="store-list" style="font-size: 12px"></div>
       </div>
+      
     {% endif %}
 
     {% if block.settings.google_api_key != blank %}
@@ -148,9 +151,6 @@
           Loading map...
         </div>
       </div>
-
-      <script src="{{ 'google-map.js' | asset_url }}" defer></script>
-      {% comment %} {% render 'google-map-loader', api_key: block.settings.google_api_key, callback: 'initStoreLocatorMap' %} {% endcomment %}
     {% else %}
       <!-- Nếu không có API key -->
       <div class="sl-map sl-no-key" style="display:flex; justify-content:center; align-items:center; text-align:center;">
@@ -163,6 +163,40 @@
   </div>
 </div>
 
+<script>
+(function() {
+  // Kiểm tra app embed có được enable không
+  function checkAppEmbed() {
+    const appEmbed = document.getElementById('store-locator-app-embed');
+    const section = document.getElementById('store-locator-section-{{ section.id }}');
+    
+    if (!section) return;
+    
+    if (!appEmbed) {
+      // App embed bị tắt → ẩn section
+      section.style.display = 'none';
+    } else {
+      // App embed đang bật → hiện section
+      section.style.display = 'block';
+    }
+  }
+
+  // Chạy sau khi DOM load xong
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkAppEmbed);
+  } else {
+    checkAppEmbed();
+  }
+
+  // Lắng nghe thay đổi (cho trường hợp Theme Editor)
+  if (window.Shopify && Shopify.designMode) {
+    document.addEventListener('shopify:section:load', checkAppEmbed);
+    document.addEventListener('shopify:section:reorder', checkAppEmbed);
+  }
+})();
+</script>
+
+<script src="{{ 'google-map.js' | asset_url }}" defer></script>
 <script src="{{ 'store-locator.js' | asset_url }}" defer></script>
 <link rel="stylesheet" href="{{ 'store-locator.css' | asset_url }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
