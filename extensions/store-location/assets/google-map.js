@@ -86,7 +86,10 @@ async function initStoreLocator(wrapper) {
             map = new google.maps.Map(mapEl, {
                 center: { lat: 0, lng: 0 },
                 zoom: 10,
-                styles: Array.isArray(style) ? style : []
+                styles: Array.isArray(style) ? style : [],
+                // TẮT TẤT CẢ ANIMATION
+                gestureHandling: 'greedy',
+                disableDefaultUI: false
             });
 
             const bounds = new google.maps.LatLngBounds();
@@ -95,7 +98,8 @@ async function initStoreLocator(wrapper) {
                 const marker = new google.maps.Marker({
                     position: { lat: store.lat, lng: store.lng },
                     map,
-                    title: store.storeName || store.name
+                    title: store.storeName || store.name,
+                    animation: null // Tắt animation marker
                 });
 
                 marker.addListener("click", () => {
@@ -134,24 +138,49 @@ async function initStoreLocator(wrapper) {
     }
 
     /************************************************
-     * Pan + Overlay (chỉ khi có Google Maps)
+     * Pan + Overlay - KHÔNG ANIMATION
      ************************************************/
     function panToStore(store, marker) {
         if (!map) return;
 
-        map.setZoom(16);
+        // Xóa overlay cũ
+        if (currentOverlay) {
+            currentOverlay.setMap(null);
+            currentOverlay = null;
+        }
 
-        google.maps.event.addListenerOnce(map, "idle", () => {
+        // Tạo overlay ẨN để đo kích thước
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.visibility = 'hidden';
+        tempDiv.style.pointerEvents = 'none';
+        tempDiv.className = 'map-overlay-card';
+        tempDiv.style.borderRadius = `${mapStyle.cornerRadius || 3}px`;
+        tempDiv.innerHTML = generateOverlayHTML(store);
+        document.body.appendChild(tempDiv);
+
+        // Đợi render để lấy chiều cao
+        requestAnimationFrame(() => {
+            const overlayHeight = tempDiv.offsetHeight;
+            document.body.removeChild(tempDiv);
+
+            // Tính toán vị trí cuối cùng
             const projection = map.getProjection();
-            if (!projection) return;
+            if (!projection) {
+                // Nếu chưa có projection, set zoom rồi thử lại
+                map.setZoom(16);
+                map.setCenter(new google.maps.LatLng(store.lat, store.lng));
 
-            const hasImage = !!store.image;
-            const overlayHeight = hasImage ? 260 : 170;
-            const offsetY = overlayHeight / 2 + 140;
+                google.maps.event.addListenerOnce(map, 'idle', () => {
+                    panToStore(store, marker);
+                });
+                return;
+            }
 
+            const offsetY = overlayHeight / 2 + 20;
             const latLng = new google.maps.LatLng(store.lat, store.lng);
             const point = projection.fromLatLngToPoint(latLng);
-            const scale = Math.pow(2, map.getZoom());
+            const scale = Math.pow(2, 16);
 
             const newPoint = new google.maps.Point(
                 point.x,
@@ -159,10 +188,184 @@ async function initStoreLocator(wrapper) {
             );
 
             const newCenter = projection.fromPointToLatLng(newPoint);
-            map.panTo(newCenter);
 
+            // SET TẤT CẢ CÙNG LÚC - KHÔNG ANIMATION
+            map.setOptions({
+                center: newCenter,
+                zoom: 16
+            });
+
+            // Hiển thị overlay thật
             showOverlay(store, marker);
         });
+    }
+
+    function generateOverlayHTML(store) {
+        const s = store;
+        const time = s.time || {};
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+        const schedule = {};
+        days.forEach(day => {
+            const lowerDay = day.toLowerCase();
+            const openVal = time[`${lowerDay}Open`];
+            const closeVal = time[`${lowerDay}Close`];
+
+            if (!openVal || !closeVal || openVal === 'close' || closeVal === 'close') {
+                schedule[day] = 'Close';
+            } else {
+                schedule[day] = `${openVal} - ${closeVal}`;
+            }
+        });
+
+        const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const weekends = ['Saturday', 'Sunday'];
+
+        const weekdayHours = weekdays.map(d => schedule[d]);
+        const weekendHours = weekends.map(d => schedule[d]);
+        const allHours = days.map(d => schedule[d]);
+
+        const weekdaysMatch = weekdayHours.every(h => h === weekdayHours[0]);
+        const weekendsMatch = weekendHours.every(h => h === weekendHours[0]);
+        const allDaysMatch = allHours.every(h => h === allHours[0]);
+
+        let hoursHtml = '';
+
+        if (allDaysMatch) {
+            hoursHtml = `
+                <tr>
+                    <td>All days</td>
+                    <td>${schedule['Monday']}</td>
+                </tr>
+            `;
+        } else if (weekdaysMatch && weekendsMatch) {
+            hoursHtml = `
+                <tr>
+                    <td>Weekdays</td>
+                    <td>${schedule['Monday']}</td>
+                </tr>
+                <tr>
+                    <td>Weekends</td>
+                    <td>${schedule['Saturday']}</td>
+                </tr>
+            `;
+        } else if (weekdaysMatch) {
+            hoursHtml = `
+                <tr>
+                    <td>Weekdays</td>
+                    <td>${schedule['Monday']}</td>
+                </tr>
+            `;
+            weekends.forEach(day => {
+                hoursHtml += `
+                    <tr>
+                        <td>${day}</td>
+                        <td>${schedule[day]}</td>
+                    </tr>
+                `;
+            });
+        } else if (weekendsMatch) {
+            weekdays.forEach(day => {
+                hoursHtml += `
+                    <tr>
+                        <td>${day}</td>
+                        <td>${schedule[day]}</td>
+                    </tr>
+                `;
+            });
+            hoursHtml += `
+                <tr>
+                    <td>Weekends</td>
+                    <td>${schedule['Saturday']}</td>
+                </tr>
+            `;
+        } else {
+            days.forEach(day => {
+                hoursHtml += `
+                    <tr>
+                        <td>${day}</td>
+                        <td>${schedule[day]}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        const socialIconsMap = {
+            facebook: 'fa-facebook',
+            youtube: 'fa-youtube',
+            linkedin: 'fa-linkedin',
+            instagram: 'fa-square-instagram',
+            x: 'fa-square-x-twitter',
+            pinterest: 'fa-pinterest',
+            tiktok: 'fa-tiktok'
+        };
+
+        let socialHtml = '';
+        if (s.contract) {
+            Object.keys(s.contract).forEach(platform => {
+                const urls = s.contract[platform];
+                if (Array.isArray(urls) && urls.length > 0) {
+                    const url = urls[0];
+                    const iconClass = socialIconsMap[platform] || 'fa-link';
+                    socialHtml += `
+                        <a href="${url}" target="_blank" class="${platform}">
+                            <i class="fa-brands ${iconClass}"></i>
+                        </a>
+                    `;
+                }
+            });
+        }
+
+        return `
+            <button class="map-overlay-close">×</button>
+
+            ${s.image ? `
+            <div class="map-overlay-hero">
+                <img src="${s.image}" alt="${s.storeName || 'Store'}" />
+            </div>
+            ` : ''}
+
+            <div class="map-overlay-content" style="
+                background:${mapStyle.backgroundColor || "#fff"};
+            ">
+                <h3 class="map-overlay-title" style="color:${mapStyle.color};">${s.storeName}</h3>
+                
+                <div class="map-overlay-row">
+                    <i class="fa-solid fa-location-dot" style="color:${mapStyle.iconColor};"></i>
+                    <span style="color:${mapStyle.color};">${[s.address, s.city, s.code].filter(Boolean).join(', ')}</span>
+                </div>
+
+                ${s.phone ? `
+                <div class="map-overlay-row">
+                    <i class="fa-solid fa-phone" style="color:${mapStyle.iconColor};"></i>
+                    <span style="color:${mapStyle.color};">${s.phone}</span>
+                </div>
+                ` : ''}
+
+                 ${s.url ? `
+                <div class="map-overlay-row">
+                    <i class="fa-solid fa-earth-americas" style="color:${mapStyle.iconColor};"></i>
+                    <a href="${s.url}" target="_blank" style="color:${mapStyle.color};">${s.url}</a>
+                </div>
+                ` : ''}
+
+                <div class="map-overlay-row">
+                    <i class="fa-solid fa-clock" style="color:${mapStyle.iconColor};"></i>
+                    <table class="map-overlay-table" style="color:${mapStyle.color};">
+                        <tbody>
+                            ${hoursHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                ${socialHtml ? `
+                <div class="map-overlay-socials">
+                    ${socialHtml}
+                </div>
+                ` : ''}
+
+            </div>
+        `;
     }
 
     function showOverlay(store, marker) {
@@ -198,7 +401,7 @@ async function initStoreLocator(wrapper) {
                     this.div.style.boxShadow = `${anchorX}px ${anchorY}px ${blur}px ${shadow}`;
                 }
 
-                this.div.innerHTML = this.getHTML();
+                this.div.innerHTML = generateOverlayHTML(this.store);
 
                 this.div
                     .querySelector(".map-overlay-close")
@@ -208,115 +411,6 @@ async function initStoreLocator(wrapper) {
                     });
 
                 this.getPanes().floatPane.appendChild(this.div);
-            }
-
-            getHTML() {
-                const s = this.store;
-                const time = s.time || {};
-                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-                let hoursHtml = '';
-                days.forEach(day => {
-                    const lowerDay = day.toLowerCase();
-                    const openKey = `${lowerDay}Open`;
-                    const closeKey = `${lowerDay}Close`;
-
-                    const openVal = time[openKey];
-                    const closeVal = time[closeKey];
-
-                    if (!openVal || !closeVal || openVal === 'close' || closeVal === 'close') {
-                        hoursHtml += `
-                            <tr>
-                                <td>${day}</td>
-                                <td>Close</td>
-                            </tr>
-                        `;
-                    } else {
-                        hoursHtml += `
-                            <tr>
-                                <td>${day}</td>
-                                <td>${openVal} - ${closeVal}</td>
-                            </tr>
-                        `;
-                    }
-                });
-
-                const socialIconsMap = {
-                    facebook: 'fa-facebook',
-                    youtube: 'fa-youtube',
-                    linkedin: 'fa-linkedin',
-                    instagram: 'fa-square-instagram',
-                    x: 'fa-square-x-twitter',
-                    pinterest: 'fa-pinterest',
-                    tiktok: 'fa-tiktok'
-                };
-
-                let socialHtml = '';
-                if (s.contract) {
-                    Object.keys(s.contract).forEach(platform => {
-                        const urls = s.contract[platform];
-                        if (Array.isArray(urls) && urls.length > 0) {
-                            const url = urls[0];
-                            const iconClass = socialIconsMap[platform] || 'fa-link';
-                            socialHtml += `
-                                <a href="${url}" target="_blank" class="${platform}">
-                                    <i class="fa-brands ${iconClass}"></i>
-                                </a>
-                            `;
-                        }
-                    });
-                }
-
-                return `
-                    <button class="map-overlay-close">×</button>
-
-                    ${s.image ? `
-                    <div class="map-overlay-hero">
-                        <img src="${s.image}" alt="${s.storeName || 'Store'}" />
-                    </div>
-                    ` : ''}
-
-                    <div class="map-overlay-content" style="
-                        background:${mapStyle.backgroundColor || "#fff"};
-                    ">
-                        <h3 class="map-overlay-title" style="color:${mapStyle.color};">${s.storeName}</h3>
-                        
-                        <div class="map-overlay-row">
-                            <i class="fa-solid fa-location-dot" style="color:${mapStyle.iconColor};"></i>
-                            <span style="color:${mapStyle.color};">${[s.address, s.city, s.code].filter(Boolean).join(', ')}</span>
-                        </div>
-
-                        ${s.phone ? `
-                        <div class="map-overlay-row">
-                            <i class="fa-solid fa-phone" style="color:${mapStyle.iconColor};"></i>
-                            <span style="color:${mapStyle.color};">${s.phone}</span>
-                        </div>
-                        ` : ''}
-
-                         ${s.url ? `
-                        <div class="map-overlay-row">
-                            <i class="fa-solid fa-earth-americas" style="color:${mapStyle.iconColor};"></i>
-                            <a href="${s.url}" target="_blank" style="color:${mapStyle.color};">${s.url}</a>
-                        </div>
-                        ` : ''}
-
-                        <div class="map-overlay-row">
-                            <i class="fa-solid fa-clock" style="color:${mapStyle.iconColor};"></i>
-                            <table class="map-overlay-table" style="color:${mapStyle.color};">
-                                <tbody>
-                                    ${hoursHtml}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        ${socialHtml ? `
-                        <div class="map-overlay-socials">
-                            ${socialHtml}
-                        </div>
-                        ` : ''}
-
-                    </div>
-                `;
             }
 
             draw() {
