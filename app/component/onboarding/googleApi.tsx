@@ -34,7 +34,10 @@ export default function GoogleApi({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                                <s-icon type="check-circle-filled" />
+                                <>
+                                    <s-tooltip id="googleMap" >Done</s-tooltip>
+                                    <s-icon type="check-circle-filled" interestFor="googleMap" />
+                                </>
                                 :
                                 <s-icon type="circle-dashed" />
                         }

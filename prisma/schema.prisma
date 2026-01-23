@@ -29,6 +29,7 @@ model Store {
   id         String   @id @default(cuid())
   shop       String   
   storeName  String
+  region     String?
   address    String
   city       String
   state      String

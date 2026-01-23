@@ -2,7 +2,6 @@ import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useNavigate }
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
-import { getLatLngFromAddress } from "app/utils/geocode.server";
 import { authenticate } from "../shopify.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
 import styles from "../css/addLocation.module.css"
@@ -10,6 +9,7 @@ import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
 import { daysList, hourClose, hourOpen } from "app/utils/hourOfOperating";
 import { validatePhoneNumber } from "app/utils/phoneValidation";
+import { AddressAutocomplete } from "app/component/addressAutocomplete";
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
@@ -21,12 +21,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const contract: Record<string, string[]> = {};
     const urls = formData.getAll("contract") as string[];
     const imageBase64 = formData.get("image")?.toString() ?? "";
-    const address = formData.get("address")?.toString() ?? "";
-    const location = await getLatLngFromAddress(address);
     const tagsString = formData.get("tags")?.toString() ?? "";
     const tags = tagsString ? JSON.parse(tagsString) : [];
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
+
+    const region = formData.get("region")?.toString() ?? "";
+    const lat = formData.get("lat")?.toString() ?? "";
+    const lon = formData.get("lon")?.toString() ?? "";
 
     let imageUrl = "";
     if (imageBase64) {
@@ -67,6 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
             address: formData.get("address")?.toString() ?? "",
             city: formData.get("city")?.toString() ?? "",
             state: formData.get("state")?.toString() ?? "",
+            region: region,
             code: formData.get("code")?.toString() ?? "",
             phone: formData.get("phone")?.toString() ?? "",
             image: imageUrl,
@@ -92,8 +95,8 @@ export async function action({ request }: ActionFunctionArgs) {
                 sundayClose: formData.get('Sunday-close')?.toString() ?? "",
             },
             tags,
-            lat: location?.lat ?? null,
-            lng: location?.lng ?? null,
+            lat: lat ? parseFloat(lat) : null,  // Convert string to number
+            lng: lon ? parseFloat(lon) : null,  // Convert string to number,
         },
     });
     return { ok: true }
@@ -143,6 +146,7 @@ export default function AddLocation() {
         address: "",
         phone: "",
         city: "",
+        region: "",
         state: "",
         code: "",
         url: "",
@@ -158,7 +162,7 @@ export default function AddLocation() {
         }, {} as Record<string, { valueOpen: string; valueClose: string }>)
     );
 
-    const initialHourSchedulesRef = useRef<HourSchedule[]>([]);
+    const initialHourSchedulesRef = useRef<HourSchedule[]>([]); ``
 
     const socialIcons: Record<string, string> = {
         facebook: 'fa-facebook',
@@ -383,21 +387,6 @@ export default function AddLocation() {
         }
     };
 
-    const validateWebsite = (url: string) => {
-        if (!url.trim()) {
-            setWebsiteError("");
-            return;
-        }
-
-        const validation = validateWebsiteUrl(url);
-
-        if (!validation.isValid) {
-            setWebsiteError(validation.message || "Invalid URL");
-        } else {
-            setWebsiteError("");
-        }
-    };
-
     const handleClick = () => {
         fileInputRef.current?.click();
     }
@@ -420,7 +409,7 @@ export default function AddLocation() {
         if (!formRef.current) return;
 
         const newErrors: Record<string, string> = {};
-        const requiredFields = ["storeName", "address", "city", "code", "phone"];
+        const requiredFields = ["storeName", "address", "city", "region", "phone"];
         requiredFields.forEach((name) => {
             const el = formRef.current!.elements.namedItem(name) as HTMLInputElement;
             if (!el?.value?.trim()) {
@@ -534,6 +523,7 @@ export default function AddLocation() {
             storeName: "",
             address: "",
             phone: "",
+            region: "",
             city: "",
             state: "",
             code: "",
@@ -544,6 +534,7 @@ export default function AddLocation() {
         setSocialErrors({});
         setWebsiteError("");
         setHourErrors({});
+        setFieldErrors({});
 
         requestAnimationFrame(() => {
             shopify.saveBar.hide("location-save-bar");
@@ -611,6 +602,8 @@ export default function AddLocation() {
                         <input type="hidden" name={`${day}-close`} value={dayStatus[day].valueClose} />
                     </div>
                 ))}
+                <input type="hidden" name="lat" />
+                <input type="hidden" name="lon" />
 
                 <s-query-container>
                     <s-grid
@@ -655,14 +648,11 @@ export default function AddLocation() {
                                                 />
                                             </s-box>
                                             <s-box>
-                                                <s-text-field
-                                                    label="Address"
-                                                    name="address"
-                                                    error={fieldErrors.address}
-                                                    required
+                                                <AddressAutocomplete
                                                     defaultValue=""
-                                                    onInput={(e: any) => {
-                                                        const value = e.target.value;
+                                                    error={fieldErrors.address}
+                                                    checkDirty={checkDirty}
+                                                    onAddressChange={(value) => {
                                                         setPreviewData(prev => ({ ...prev, address: value }));
 
                                                         if (value.trim()) {
@@ -673,6 +663,44 @@ export default function AddLocation() {
                                                             });
                                                         }
                                                         checkDirty()
+                                                    }}
+                                                    onSelect={(data) => {
+                                                        // Update form fields
+                                                        if (formRef.current) {
+                                                            // KHÔNG CẬP NHẬT addressField nữa, để AddressAutocomplete tự quản lý
+                                                            // const addressField = formRef.current.elements.namedItem('address') as HTMLInputElement;
+                                                            const cityField = formRef.current.elements.namedItem('city') as HTMLInputElement;
+                                                            const codeField = formRef.current.elements.namedItem('code') as HTMLInputElement;
+                                                            const regionField = formRef.current.elements.namedItem('region') as HTMLInputElement;
+                                                            const latField = formRef.current.elements.namedItem('lat') as HTMLInputElement;
+                                                            const lonField = formRef.current.elements.namedItem('lon') as HTMLInputElement;
+
+                                                            // if (addressField) addressField.value = data.address; // BỎ DÒNG NÀY
+                                                            if (cityField) cityField.value = data.city;
+                                                            if (codeField) codeField.value = data.code;
+                                                            if (regionField) regionField.value = data.region;
+                                                            if (latField) latField.value = data.lat;
+                                                            if (lonField) lonField.value = data.lon;
+
+                                                            // Update preview với address từ input hiện tại
+                                                            setPreviewData(prev => ({
+                                                                ...prev,
+                                                                // address sẽ được cập nhật qua onAddressChange
+                                                                address: data.address,
+                                                                city: data.city,
+                                                                code: data.code,
+                                                                region: data.region
+                                                            }));
+
+                                                            // Clear errors
+                                                            setFieldErrors(prev => {
+                                                                const next = { ...prev };
+                                                                delete next.address;
+                                                                delete next.city;
+                                                                delete next.region;
+                                                                return next;
+                                                            });
+                                                        }
                                                     }}
                                                 />
                                             </s-box>
@@ -707,25 +735,38 @@ export default function AddLocation() {
                                                     <s-text-field
                                                         label="Zip Code"
                                                         name="code"
-                                                        error={fieldErrors.code}
-                                                        required
                                                         defaultValue=""
                                                         onInput={(e: any) => {
                                                             const value = e.target.value;
                                                             setPreviewData(prev => ({ ...prev, code: value }));
-
-                                                            if (value.trim()) {
-                                                                setFieldErrors(prev => {
-                                                                    const next = { ...prev };
-                                                                    delete next.code;
-                                                                    return next;
-                                                                });
-                                                            }
                                                             checkDirty()
                                                         }}
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
+                                            <s-box>
+                                                <s-text-field
+                                                    label="Country"
+                                                    name="region"
+                                                    error={fieldErrors.region}
+                                                    required
+                                                    defaultValue=""
+                                                    onInput={(e: any) => {
+                                                        const value = e.target.value;
+                                                        console.log('Region changed:', value);
+                                                        setPreviewData(prev => ({ ...prev, region: value }));
+
+                                                        if (value.trim()) {
+                                                            setFieldErrors(prev => {
+                                                                const next = { ...prev };
+                                                                delete next.region;
+                                                                return next;
+                                                            });
+                                                        }
+                                                        checkDirty()
+                                                    }}
+                                                />
+                                            </s-box>
                                             <s-grid
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"
@@ -759,18 +800,6 @@ export default function AddLocation() {
                                                                 }
                                                             } else {
                                                                 setPhoneError("");
-                                                            }
-                                                        }}
-                                                        onBlur={(e: any) => {
-                                                            const value = e.target.value;
-                                                            if (!value.trim()) {
-                                                                setPhoneError("");
-                                                                return;
-                                                            }
-
-                                                            const validation = validatePhoneNumber(value);
-                                                            if (!validation.isValid) {
-                                                                setPhoneError(validation.message || "Invalid phone number");
                                                             }
                                                         }}
                                                     />
@@ -989,12 +1018,6 @@ export default function AddLocation() {
                                                                         });
                                                                     }
                                                                 }}
-                                                            // onBlur={(e: any) => {
-                                                            //     const url = e.target.value;
-                                                            //     if (url.trim()) {
-                                                            //         validateSocialMedia(item.id, url, item.platform as SocialPlatform);
-                                                            //     }
-                                                            // }}
                                                             />
                                                         </div>
                                                         <div style={{ marginTop: 2 }}>
@@ -1091,7 +1114,7 @@ export default function AddLocation() {
                                             <h3 className={styles.storeName}>{previewData.storeName || 'Apple Park'}</h3>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-location-dot" ></i>
-                                                <span className={styles.storeAddress}> {previewData.address || 'Apple Park Way'}, {previewData.city || 'Cupertino'}, {previewData.code || '95014'}</span>
+                                                <span className={styles.storeAddress}> {previewData.address || 'Apple Park Way'}, {previewData.city || 'Cupertino'}, {previewData.region || 'United States'}{previewData.code !== '' ? ', ' + previewData.code : ''}</span>
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone" ></i>

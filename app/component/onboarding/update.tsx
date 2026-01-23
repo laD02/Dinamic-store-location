@@ -32,7 +32,10 @@ export default function Update({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                                <s-icon type="check-circle-filled" />
+                                <>
+                                    <s-icon type="check-circle-filled" interestFor="update" />
+                                    <s-tooltip id="update" >Done</s-tooltip>
+                                </>
                                 :
                                 <s-icon type="circle-dashed" />
                         }

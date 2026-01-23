@@ -38,7 +38,7 @@ interface PopupStyle {
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export default function MapGoogle({
+export default function xMapGoogle({
   stores,
   selectedIndex,
   searchAddress,

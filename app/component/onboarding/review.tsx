@@ -32,7 +32,10 @@ export default function Review({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                                <s-icon type="check-circle-filled" />
+                                <>
+                                    <s-icon type="check-circle-filled" interestFor="review" />
+                                    <s-tooltip id="review" >Done</s-tooltip>
+                                </>
                                 :
                                 <s-icon type="circle-dashed" />
                         }

@@ -55,7 +55,10 @@ export default function AddMapToStore({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                                <s-icon type="check-circle-filled" />
+                                <>
+                                    <s-icon type="check-circle-filled" interestFor="addMapToStore" />
+                                    <s-tooltip id="addMapToStore" >Done</s-tooltip>
+                                </>
                                 :
                                 <s-icon type="circle-dashed" />
                         }

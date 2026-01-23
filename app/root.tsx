@@ -20,7 +20,11 @@ export default function App() {
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         />
-        <script src={`https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`}></script>
+        <script
+          src={`https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`}
+          defer
+          async
+        />
         <Meta />
         <Links />
       </head>

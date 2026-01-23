@@ -32,7 +32,10 @@ export default function DesignMap({
                     <s-clickable onClick={handleToggle}>
                         {
                             check ?
-                                <s-icon type="check-circle-filled" />
+                                <>
+                                    <s-icon type="check-circle-filled" interestFor="designMap" />
+                                    <s-tooltip id="designMap" >Done</s-tooltip>
+                                </>
                                 :
                                 <s-icon type="circle-dashed" />
                         }
