@@ -133,6 +133,7 @@ export default function AddLocation() {
     const initialVisibilityRef = useRef<string>("hidden");
     const initialImageRef = useRef<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isAddressValid, setIsAddressValid] = useState(false);
     const [phoneError, setPhoneError] = useState<string>("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [hourSchedules, setHourSchedules] = useState<HourSchedule[]>([
@@ -417,6 +418,10 @@ export default function AddLocation() {
             }
         });
 
+        if (!isAddressValid) {
+            newErrors.address = "Please select a valid address from suggestions";
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
@@ -652,6 +657,18 @@ export default function AddLocation() {
                                                     defaultValue=""
                                                     error={fieldErrors.address}
                                                     checkDirty={checkDirty}
+                                                    onValidationChange={(isValid) => {
+                                                        setIsAddressValid(isValid); // CẬP NHẬT TRẠNG THÁI
+
+                                                        // XÓA LỖI NẾU HỢP LỆ
+                                                        if (isValid) {
+                                                            setFieldErrors(prev => {
+                                                                const next = { ...prev };
+                                                                delete next.address;
+                                                                return next;
+                                                            });
+                                                        }
+                                                    }}
                                                     onAddressChange={(value) => {
                                                         setPreviewData(prev => ({ ...prev, address: value }));
 
@@ -705,7 +722,7 @@ export default function AddLocation() {
                                                 />
                                             </s-box>
                                             <s-grid
-                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
+                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr 1fr, 1fr"
                                                 gap="base"
                                             >
                                                 <s-grid-item>
@@ -733,6 +750,30 @@ export default function AddLocation() {
 
                                                 <s-grid-item>
                                                     <s-text-field
+                                                        label="Country"
+                                                        name="region"
+                                                        error={fieldErrors.region}
+                                                        required
+                                                        defaultValue=""
+                                                        onInput={(e: any) => {
+                                                            const value = e.target.value;
+                                                            console.log('Region changed:', value);
+                                                            setPreviewData(prev => ({ ...prev, region: value }));
+
+                                                            if (value.trim()) {
+                                                                setFieldErrors(prev => {
+                                                                    const next = { ...prev };
+                                                                    delete next.region;
+                                                                    return next;
+                                                                });
+                                                            }
+                                                            checkDirty()
+                                                        }}
+                                                    />
+                                                </s-grid-item>
+
+                                                <s-grid-item>
+                                                    <s-text-field
                                                         label="Zip Code"
                                                         name="code"
                                                         defaultValue=""
@@ -744,29 +785,7 @@ export default function AddLocation() {
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
-                                            <s-box>
-                                                <s-text-field
-                                                    label="Country"
-                                                    name="region"
-                                                    error={fieldErrors.region}
-                                                    required
-                                                    defaultValue=""
-                                                    onInput={(e: any) => {
-                                                        const value = e.target.value;
-                                                        console.log('Region changed:', value);
-                                                        setPreviewData(prev => ({ ...prev, region: value }));
 
-                                                        if (value.trim()) {
-                                                            setFieldErrors(prev => {
-                                                                const next = { ...prev };
-                                                                delete next.region;
-                                                                return next;
-                                                            });
-                                                        }
-                                                        checkDirty()
-                                                    }}
-                                                />
-                                            </s-box>
                                             <s-grid
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"

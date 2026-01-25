@@ -1,5 +1,6 @@
 // app/components/AddressAutocomplete.tsx
 import { useEffect, useRef, useState } from "react";
+import styles from "../css/addressAutocomplete.module.css";
 
 interface AddressSuggestion {
     display_name: string
@@ -30,6 +31,7 @@ interface AddressAutocompleteProps {
     error?: string;
     onAddressChange?: (value: string) => void;
     checkDirty?: () => void;
+    onValidationChange?: (isValid: boolean) => void; // THÊM PROP MỚI
 }
 
 export function AddressAutocomplete({
@@ -37,7 +39,8 @@ export function AddressAutocomplete({
     defaultValue = "",
     error,
     onAddressChange,
-    checkDirty
+    checkDirty,
+    onValidationChange // THÊM PROP MỚI
 }: AddressAutocompleteProps) {
     const [inputValue, setInputValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -45,20 +48,25 @@ export function AddressAutocomplete({
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
     const [hasSearched, setHasSearched] = useState(false);
+    const [isAddressSelected, setIsAddressSelected] = useState(false); // THÊM STATE MỚI
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
-    // Close suggestions when clicking outside
+    // Đóng suggestions khi click ra ngoài
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
+        const handleClickOutside = (event: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 setShowSuggestions(false);
             }
-        }
+        };
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
+
+    // ... các useEffect khác ...
 
     // Fetch suggestions from Nominatim
     const fetchSuggestions = async (query: string) => {
@@ -66,20 +74,23 @@ export function AddressAutocomplete({
             setSuggestions([]);
             setHasSearched(false);
             setShowSuggestions(false);
+            setIsAddressSelected(false); // RESET KHI XÓA INPUT
+            onValidationChange?.(false); // BÁO KHÔNG HỢP LỆ
             return;
         }
 
         setIsLoading(true);
         setHasSearched(false);
+        setIsAddressSelected(false); // RESET KHI TÌM KIẾM MỚI
+        onValidationChange?.(false); // BÁO KHÔNG HỢP LỆ KHI ĐANG TÌM
 
         try {
             const encodedQuery = encodeURIComponent(query);
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&addressdetails=1&limit=5&countrycodes=vn`;
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&addressdetails=1&limit=5`;
 
             const response = await fetch(url, {
                 headers: {
                     'User-Agent': 'StoreLocator/1.0',
-                    'Accept-Language': 'vi,en'
                 }
             });
 
@@ -89,10 +100,16 @@ export function AddressAutocomplete({
                 setSuggestions(data);
                 setHasSearched(true);
                 setShowSuggestions(true);
+
+                // NẾU KHÔNG TÌM THẤY KẾT QUẢ
+                if (data.length === 0) {
+                    onValidationChange?.(false);
+                }
             }
         } catch (error) {
             console.error('❌ Error fetching suggestions:', error);
             setHasSearched(true);
+            onValidationChange?.(false);
         } finally {
             setIsLoading(false);
         }
@@ -102,6 +119,8 @@ export function AddressAutocomplete({
     const handleInputChange = (value: string) => {
         setInputValue(value);
         setActiveSuggestionIndex(-1);
+        setIsAddressSelected(false); // RESET KHI USER THAY ĐỔI INPUT
+        onValidationChange?.(false); // BÁO KHÔNG HỢP LỆ
 
         if (value.trim().length === 0) {
             setShowSuggestions(false);
@@ -142,6 +161,8 @@ export function AddressAutocomplete({
         setInputValue(suggestion.name);
         setShowSuggestions(false);
         setSuggestions([]);
+        setIsAddressSelected(true); // ĐÁNH DẤU ĐÃ CHỌN ĐỊA CHỈ
+        onValidationChange?.(true); // BÁO HỢP LỆ
         onSelect(selectedData);
 
         if (checkDirty) {
@@ -177,7 +198,7 @@ export function AddressAutocomplete({
     };
 
     return (
-        <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
+        <div ref={wrapperRef} className={styles.wrapper}>
             <div onKeyDown={handleKeyDown}>
                 <s-text-field
                     label="Address"
@@ -191,92 +212,35 @@ export function AddressAutocomplete({
             </div>
 
             {showSuggestions && (suggestions.length > 0 || (hasSearched && !isLoading)) && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        zIndex: 1000,
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        marginTop: '8px',
-                        maxHeight: '320px',
-                        overflowY: 'auto',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                        padding: '6px'
-                    }}
-                >
+                <div className={styles.suggestionsContainer}>
                     {suggestions.length > 0 ? (
                         suggestions.map((suggestion, index) => (
                             <div
                                 key={index}
                                 onClick={() => handleSelectSuggestion(suggestion)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    padding: '12px',
-                                    cursor: 'pointer',
-                                    backgroundColor: index === activeSuggestionIndex ? '#f3f4f6' : 'transparent',
-                                    borderRadius: '8px',
-                                    transition: 'background-color 0.15s ease',
-                                    border: index === activeSuggestionIndex ? '1px solid #e5e7eb' : '1px solid transparent'
-                                }}
+                                className={`${styles.suggestionItem} ${index === activeSuggestionIndex ? styles.active : ''}`}
                                 onMouseEnter={() => setActiveSuggestionIndex(index)}
                             >
-                                <div style={{
-                                    color: index === activeSuggestionIndex ? '#111827' : '#9ca3af',
-                                    transition: 'color 0.15s'
-                                }}>
-                                    <i className="fa-solid fa-location-dot" style={{ fontSize: '16px' }}></i>
+                                <div className={styles.iconWrapper}>
+                                    <i className="fa-solid fa-location-dot"></i>
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{
-                                        fontSize: '14px',
-                                        color: '#374151',
-                                        fontWeight: 500,
-                                        marginBottom: '2px',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}>
+                                <div className={styles.textContent}>
+                                    <div className={styles.mainText}>
                                         {suggestion.display_name.split(',')[0]}
                                     </div>
-                                    <div style={{
-                                        fontSize: '12px',
-                                        color: '#6b7280',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}>
+                                    <div className={styles.subText}>
                                         {suggestion.display_name}
                                     </div>
                                 </div>
                             </div>
                         ))
                     ) : hasSearched && !isLoading ? (
-                        <div
-                            style={{
-                                padding: '32px 16px',
-                                textAlign: 'center',
-                                color: '#6b7280'
-                            }}
-                        >
-                            <i
-                                className="fa-solid fa-magnifying-glass"
-                                style={{
-                                    fontSize: '20px',
-                                    marginBottom: '12px',
-                                    color: '#9ca3af',
-                                    opacity: 0.8
-                                }}
-                            ></i>
-                            <div style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>
+                        <div className={styles.emptyState}>
+                            <i className={`fa-solid fa-magnifying-glass ${styles.emptyIcon}`}></i>
+                            <div className={styles.emptyTitle}>
                                 No results found
                             </div>
-                            <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>
+                            <div className={styles.emptyDescription}>
                                 We couldn't find anything for "{inputValue}"
                             </div>
                         </div>

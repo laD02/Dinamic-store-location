@@ -903,7 +903,7 @@ export default function EditLocation() {
                                                 />
                                             </s-box>
                                             <s-grid
-                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
+                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr 1fr, 1fr"
                                                 gap="base"
                                             >
                                                 <s-grid-item>
@@ -931,6 +931,29 @@ export default function EditLocation() {
 
                                                 <s-grid-item>
                                                     <s-text-field
+                                                        label="Country"
+                                                        name="region"
+                                                        error={fieldErrors.region}
+                                                        required
+                                                        defaultValue={store.region || ""}
+                                                        onInput={(e: any) => {
+                                                            const value = e.target.value;
+                                                            setPreviewData(prev => ({ ...prev, region: value }));
+
+                                                            if (value.trim()) {
+                                                                setFieldErrors(prev => {
+                                                                    const next = { ...prev };
+                                                                    delete next.region;
+                                                                    return next;
+                                                                });
+                                                            }
+                                                            checkDirty()
+                                                        }}
+                                                    />
+                                                </s-grid-item>
+
+                                                <s-grid-item>
+                                                    <s-text-field
                                                         label="Zip Code"
                                                         name="code"
                                                         defaultValue={store.code || ""}
@@ -942,28 +965,7 @@ export default function EditLocation() {
                                                     />
                                                 </s-grid-item>
                                             </s-grid>
-                                            <s-box>
-                                                <s-text-field
-                                                    label="Country"
-                                                    name="region"
-                                                    error={fieldErrors.region}
-                                                    required
-                                                    defaultValue={store.region || ""}
-                                                    onInput={(e: any) => {
-                                                        const value = e.target.value;
-                                                        setPreviewData(prev => ({ ...prev, region: value }));
 
-                                                        if (value.trim()) {
-                                                            setFieldErrors(prev => {
-                                                                const next = { ...prev };
-                                                                delete next.region;
-                                                                return next;
-                                                            });
-                                                        }
-                                                        checkDirty()
-                                                    }}
-                                                />
-                                            </s-box>
                                             <s-grid
                                                 gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
                                                 gap="base"
@@ -1308,7 +1310,7 @@ export default function EditLocation() {
                                             <h3 className={styles.storeName}>{previewData.storeName || ''}</h3>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-location-dot"></i>
-                                                <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''},{previewData.region || ''}{previewData.code !== '' ? ', ' + previewData.code : ''}</span>
+                                                <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''}, {previewData.region || ''}{previewData.code !== '' ? ', ' + previewData.code : ''}</span>
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone"></i>
