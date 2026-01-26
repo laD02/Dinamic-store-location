@@ -419,7 +419,7 @@ export default function AddLocation() {
         });
 
         if (!isAddressValid) {
-            newErrors.address = "Please select a valid address from suggestions";
+            newErrors.address = "Please select an address from the suggestions to get valid coordinates";
         }
 
         if (Object.keys(newErrors).length > 0) {

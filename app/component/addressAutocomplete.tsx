@@ -1,5 +1,6 @@
 // app/components/AddressAutocomplete.tsx
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "../css/addressAutocomplete.module.css";
 
 interface AddressSuggestion {
@@ -197,6 +198,34 @@ export function AddressAutocomplete({
         }
     };
 
+    // Calculate position for portal
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    useEffect(() => {
+        if (showSuggestions && wrapperRef.current) {
+            const updatePosition = () => {
+                const rect = wrapperRef.current?.getBoundingClientRect();
+                if (rect) {
+                    setCoords({
+                        top: rect.bottom + window.scrollY + 8,
+                        left: rect.left + window.scrollX,
+                        width: rect.width
+                    });
+                }
+            };
+
+            updatePosition();
+            // Update on scroll and resize
+            window.addEventListener('resize', updatePosition);
+            window.addEventListener('scroll', updatePosition, true);
+
+            return () => {
+                window.removeEventListener('resize', updatePosition);
+                window.removeEventListener('scroll', updatePosition, true);
+            };
+        }
+    }, [showSuggestions]);
+
     return (
         <div ref={wrapperRef} className={styles.wrapper}>
             <div onKeyDown={handleKeyDown}>
@@ -211,8 +240,16 @@ export function AddressAutocomplete({
                 />
             </div>
 
-            {showSuggestions && (suggestions.length > 0 || (hasSearched && !isLoading)) && (
-                <div className={styles.suggestionsContainer}>
+            {showSuggestions && (suggestions.length > 0 || (hasSearched && !isLoading)) && createPortal(
+                <div
+                    className={styles.suggestionsContainer}
+                    style={{
+                        top: `${coords.top}px`,
+                        left: `${coords.left}px`,
+                        width: `${coords.width}px`,
+                        position: 'absolute'
+                    }}
+                >
                     {suggestions.length > 0 ? (
                         suggestions.map((suggestion, index) => (
                             <div
@@ -245,7 +282,8 @@ export function AddressAutocomplete({
                             </div>
                         </div>
                     ) : null}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
