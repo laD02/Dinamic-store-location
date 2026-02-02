@@ -67,8 +67,6 @@ export function AddressAutocomplete({
         };
     }, []);
 
-    // ... các useEffect khác ...
-
     // Fetch suggestions from Nominatim
     const fetchSuggestions = async (query: string) => {
         if (!query || query.trim().length < 3) {
@@ -237,6 +235,7 @@ export function AddressAutocomplete({
                     value={inputValue}
                     suffix={isLoading ? "Searching..." : undefined}
                     onInput={(e: any) => handleInputChange(e.target.value)}
+                    onBlur={() => setShowSuggestions(false)}
                 />
             </div>
 
@@ -254,7 +253,10 @@ export function AddressAutocomplete({
                         suggestions.map((suggestion, index) => (
                             <div
                                 key={index}
-                                onClick={() => handleSelectSuggestion(suggestion)}
+                                onMouseDown={(e) => {  // ✅ THAY ĐỔI: onClick → onMouseDown
+                                    e.preventDefault(); // ✅ THÊM: Ngăn input blur
+                                    handleSelectSuggestion(suggestion);
+                                }}
                                 className={`${styles.suggestionItem} ${index === activeSuggestionIndex ? styles.active : ''}`}
                                 onMouseEnter={() => setActiveSuggestionIndex(index)}
                             >

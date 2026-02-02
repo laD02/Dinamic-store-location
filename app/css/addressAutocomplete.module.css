@@ -68,6 +68,15 @@
     color: #6b7280;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    font-size: 14px;
+    /* Explicit font size for the icon */
+    line-height: 1;
+}
+
+.iconWrapper i {
+    display: block;
+    /* Removes inline spacing issues */
+    margin: 0;
 }
 
 .suggestionItem:hover .iconWrapper,

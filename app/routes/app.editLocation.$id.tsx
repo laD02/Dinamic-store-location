@@ -173,6 +173,8 @@ export default function EditLocation() {
     const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
     const [websiteError, setWebsiteError] = useState<string>("");
     const [dataLoaded, setDataLoaded] = useState(false);
+    const [isAddressValid, setIsAddressValid] = useState(false);
+    const [isAddressChanged, setIsAddressChanged] = useState(false);
     const [previewData, setPreviewData] = useState({
         storeName: "",
         address: "",
@@ -578,6 +580,10 @@ export default function EditLocation() {
             }
         });
 
+        if (isAddressChanged && !isAddressValid) {
+            newErrors.address = "We couldn’t find this address on the map.Please check the address or select a valid location from suggestions.";
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
@@ -683,6 +689,9 @@ export default function EditLocation() {
         if (initialPreviewRef.current) {
             setPreviewData({ ...initialPreviewRef.current });
         }
+
+        setIsAddressValid(true);
+        setIsAddressChanged(false);
 
         setPhoneError("");
         setSocialErrors({});
@@ -850,8 +859,22 @@ export default function EditLocation() {
                                                     defaultValue={store.address || ""}
                                                     error={fieldErrors.address}
                                                     checkDirty={checkDirty}
+                                                    onValidationChange={(isValid) => {
+                                                        setIsAddressValid(isValid); // CẬP NHẬT TRẠNG THÁI
+                                                        setIsAddressChanged(true);
+
+                                                        // XÓA LỖI NẾU HỢP LỆ
+                                                        if (isValid) {
+                                                            setFieldErrors(prev => {
+                                                                const next = { ...prev };
+                                                                delete next.address;
+                                                                return next;
+                                                            });
+                                                        }
+                                                    }}
                                                     onAddressChange={(value) => {
                                                         setPreviewData(prev => ({ ...prev, address: value }));
+                                                        setIsAddressChanged(true);
 
                                                         if (value.trim()) {
                                                             setFieldErrors(prev => {
@@ -863,6 +886,7 @@ export default function EditLocation() {
                                                         checkDirty();
                                                     }}
                                                     onSelect={(data) => {
+                                                        setIsAddressChanged(true);
                                                         // Update form fields
                                                         if (formRef.current) {
                                                             // KHÔNG CẬP NHẬT addressField nữa, để AddressAutocomplete tự quản lý

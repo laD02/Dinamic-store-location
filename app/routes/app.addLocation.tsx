@@ -419,7 +419,7 @@ export default function AddLocation() {
         });
 
         if (!isAddressValid) {
-            newErrors.address = "Please select an address from the suggestions to get valid coordinates";
+            newErrors.address = "We couldn’t find this address on the map. Please check the address or select a valid location from suggestions.";
         }
 
         if (Object.keys(newErrors).length > 0) {

@@ -332,7 +332,7 @@ async function initStoreLocator(wrapper) {
                 
                 <div class="map-overlay-row">
                     <i class="fa-solid fa-location-dot" style="color:${mapStyle.iconColor};"></i>
-                    <span style="color:${mapStyle.color};">${[s.address, s.city, s.code].filter(Boolean).join(', ')}</span>
+                    <span style="color:${mapStyle.color};">${[s.address, s.city, s.region, s.code].filter(Boolean).join(', ')}</span>
                 </div>
 
                 ${s.phone ? `
