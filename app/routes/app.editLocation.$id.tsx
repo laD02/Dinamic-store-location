@@ -175,6 +175,7 @@ export default function EditLocation() {
     const [dataLoaded, setDataLoaded] = useState(false);
     const [isAddressValid, setIsAddressValid] = useState(false);
     const [isAddressChanged, setIsAddressChanged] = useState(false);
+    const [coordinates, setCoordinates] = useState({ lat: "", lon: "" });
     const [previewData, setPreviewData] = useState({
         storeName: "",
         address: "",
@@ -389,6 +390,10 @@ export default function EditLocation() {
             initialSocialRef.current = JSON.parse(JSON.stringify(existingSocials));
             initialVisibilityRef.current = store.visibility || "visible";
             initialImageRef.current = store.image || null;
+            setCoordinates({
+                lat: store.lat?.toString() || "",
+                lon: store.lng?.toString() || ""
+            });
 
             setDataLoaded(true);
         }
@@ -675,6 +680,11 @@ export default function EditLocation() {
             }
         }
 
+        setCoordinates({
+            lat: store.lat?.toString() || "",
+            lon: store.lng?.toString() || ""
+        });
+
         setPreview(initialImageRef.current);
         setImageBase64(initialImageRef.current);
         setVisibility(initialVisibilityRef.current);
@@ -809,8 +819,8 @@ export default function EditLocation() {
                     </div>
                 ))}
 
-                <input type="hidden" name="lat" />
-                <input type="hidden" name="lon" />
+                <input type="hidden" name="lat" value={coordinates.lat} />
+                <input type="hidden" name="lon" value={coordinates.lon} />
 
                 <s-query-container>
                     <s-grid
@@ -888,6 +898,10 @@ export default function EditLocation() {
                                                     onSelect={(data) => {
                                                         setIsAddressChanged(true);
                                                         // Update form fields
+                                                        setCoordinates({
+                                                            lat: data.lat,
+                                                            lon: data.lon
+                                                        });
                                                         if (formRef.current) {
                                                             // KHÔNG CẬP NHẬT addressField nữa, để AddressAutocomplete tự quản lý
                                                             // const addressField = formRef.current.elements.namedItem('address') as HTMLInputElement;
