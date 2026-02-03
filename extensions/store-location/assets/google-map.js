@@ -338,7 +338,7 @@ async function initStoreLocator(wrapper) {
                 ${s.phone ? `
                 <div class="map-overlay-row">
                     <i class="fa-solid fa-phone" style="color:${mapStyle.iconColor};"></i>
-                    <span style="color:${mapStyle.color};">${s.phone}</span>
+                    <a href="tel:${s.phone}" style="color:${mapStyle.color};">${s.phone}</a>
                 </div>
                 ` : ''}
 

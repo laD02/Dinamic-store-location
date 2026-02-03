@@ -158,14 +158,14 @@ export default function Onboarding() {
     const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
     const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount } = useLoaderData()
-    const [googleMap, setGoogleMap] = useState(false)
+    // const [googleMap, setGoogleMap] = useState(false)
     const [design, setDesign] = useState(false)
     const [review, setReview] = useState(false)
     const [update, setUpdate] = useState(false)
     const [addMap, setAddMap] = useState(false)
 
     const STEP_STATE_MAP: Record<string, React.Dispatch<React.SetStateAction<boolean>>> = {
-        googleMap: setGoogleMap,
+        // googleMap: setGoogleMap,
         designMap: setDesign,
         review: setReview,
         update: setUpdate,
@@ -182,9 +182,9 @@ export default function Onboarding() {
 
     useEffect(() => {
         setCount(
-            [googleMap, design, review, update, addMap].filter(Boolean).length
+            [design, review, update, addMap].filter(Boolean).length
         )
-    }, [googleMap, design, review, update, addMap])
+    }, [design, review, update, addMap])
 
     const hasAddMapStep =
         Array.isArray(onBoard?.onBoarding) &&
@@ -239,12 +239,12 @@ export default function Onboarding() {
                             </s-stack>
                             <s-stack gap='small'>
                                 <s-box>
-                                    <s-text>{count} of 5 tasks completed </s-text>
+                                    <s-text>{count} of 4 tasks completed </s-text>
                                 </s-box>
                                 <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                     <div
                                         style={{
-                                            width: `${(count / 5) * 100}%`,
+                                            width: `${(count / 4) * 100}%`,
                                             height: 8,
                                             background: "rgb(145, 208, 255)",
                                             borderRadius: 4,
@@ -255,14 +255,14 @@ export default function Onboarding() {
                             </s-stack>
 
                             <s-stack gap='small'>
-                                <s-clickable onClick={() => setIndex(0)} background={index === 0 ? 'subdued' : 'base'} borderRadius='large'>
+                                {/* <s-clickable onClick={() => setIndex(0)} background={index === 0 ? 'subdued' : 'base'} borderRadius='large'>
                                     <GoogleApi
                                         storeHandle={storeHandle}
                                         check={googleMap}
                                         handleCheck={setGoogleMap}
                                         index={index}
                                     />
-                                </s-clickable>
+                                </s-clickable> */}
 
                                 <s-clickable onClick={() => setIndex(1)} background={index === 1 ? 'subdued' : 'base'} borderRadius='large'>
                                     <DesignMap

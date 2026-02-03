@@ -165,6 +165,7 @@ export function AddressAutocomplete({
     // Get place details using New Places API
     // Get place details using New Places API
     // Get place details using New Places API
+    // Get place details using New Places API
     const getPlaceDetails = async (placeId: string, description: string) => {
         try {
             const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
@@ -220,9 +221,12 @@ export function AddressAutocomplete({
                 // Xây dựng địa chỉ theo thứ tự ưu tiên
                 let fullAddress = "";
 
-                // 1. Ưu tiên displayName nếu có (tên địa điểm)
-                if (data.displayName?.text) {
-                    fullAddress = data.displayName.text;
+                // 1. Ưu tiên displayName nếu có VÀ không phải Plus Code
+                const displayName = data.displayName?.text || "";
+                const isPlusCode = /^[A-Z0-9]{4}\+[A-Z0-9]{2,3}/.test(displayName);
+
+                if (displayName && !isPlusCode) {
+                    fullAddress = displayName;
                 }
                 // 2. Nếu có premise (tên tòa nhà/khu phức hợp)
                 else if (premise) {
@@ -231,11 +235,25 @@ export function AddressAutocomplete({
                         fullAddress = `${subpremise}, ${fullAddress}`;
                     }
                 }
-                // 3. Nếu không có premise, dùng street_number + route
-                else if (streetNumber || route) {
+                // 3. Nếu có street_number + route
+                else if (streetNumber && route) {
                     fullAddress = `${streetNumber} ${route}`.trim();
                 }
-                // 4. Nếu không có gì, lấy phần đầu tiên của description
+                // 4. Nếu chỉ có route (tên đường)
+                else if (route) {
+                    fullAddress = route;
+                }
+                // 5. Lấy từ description (phần đầu tiên trước dấu phẩy)
+                else if (description && !description.includes('+')) {
+                    fullAddress = description.split(',')[0].trim();
+                }
+                // 6. Fallback cuối: lấy từ formattedAddress (bỏ Plus Code nếu có)
+                else if (data.formattedAddress) {
+                    // Lấy phần đầu của formattedAddress, bỏ Plus Code
+                    const parts = data.formattedAddress.split(',');
+                    fullAddress = parts.find((part: any) => !part.trim().match(/^[A-Z0-9]{4}\+[A-Z0-9]{2,3}/))?.trim() || parts[0].trim();
+                }
+                // 7. Cuối cùng mới dùng description gốc
                 else {
                     fullAddress = description.split(',')[0].trim();
                 }
