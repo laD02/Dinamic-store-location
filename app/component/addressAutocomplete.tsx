@@ -75,10 +75,8 @@ export function AddressAutocomplete({
 
     // Fetch suggestions using New Places API
     const fetchSuggestions = async (query: string) => {
-        console.log('🔍 fetchSuggestions called with query:', query);
 
         if (!query || query.trim().length < 3) {
-            console.log('⚠️ Query too short or empty');
             setSuggestions([]);
             setHasSearched(false);
             setShowSuggestions(false);
@@ -87,14 +85,12 @@ export function AddressAutocomplete({
             return;
         }
 
-        console.log('✅ Starting search...');
         setIsLoading(true);
         setHasSearched(false);
         setIsAddressSelected(false);
         onValidationChange?.(false);
 
         try {
-            console.log('📡 Calling New Places API - Autocomplete...');
 
             const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
                 method: 'POST',
@@ -110,13 +106,11 @@ export function AddressAutocomplete({
             });
 
             const data = await response.json();
-            console.log('📥 Response received:', data);
 
             setIsLoading(false);
             setHasSearched(true);
 
             if (data.suggestions && data.suggestions.length > 0) {
-                console.log('✅ Found suggestions:', data.suggestions.length);
 
                 const formattedSuggestions: AddressSuggestion[] = data.suggestions.map((suggestion: any) => {
                     const placePrediction = suggestion.placePrediction;
@@ -128,18 +122,15 @@ export function AddressAutocomplete({
                     };
                 });
 
-                console.log('📝 Formatted suggestions:', formattedSuggestions);
                 setSuggestions(formattedSuggestions);
                 setShowSuggestions(true);
                 onValidationChange?.(false);
             } else {
-                console.log('❌ No suggestions found');
                 setSuggestions([]);
                 setShowSuggestions(true);
                 onValidationChange?.(false);
             }
         } catch (error) {
-            console.error('❌ Error fetching suggestions:', error);
             setIsLoading(false);
             setHasSearched(true);
             setSuggestions([]);
@@ -172,21 +163,20 @@ export function AddressAutocomplete({
     };
 
     // Get place details using New Places API
+    // Get place details using New Places API
+    // Get place details using New Places API
     const getPlaceDetails = async (placeId: string, description: string) => {
         try {
-            console.log('📍 Fetching place details for:', placeId);
-
             const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': googleMapsApiKey,
-                    'X-Goog-FieldMask': 'id,displayName,formattedAddress,addressComponents,location'
+                    'X-Goog-FieldMask': 'id,displayName,formattedAddress,addressComponents,location',
                 }
             });
 
             const data = await response.json();
-            console.log('📥 Place details received:', data);
 
             if (data && data.addressComponents) {
                 let streetNumber = "";
@@ -195,6 +185,8 @@ export function AddressAutocomplete({
                 let state = "";
                 let country = "";
                 let postalCode = "";
+                let premise = "";
+                let subpremise = "";
 
                 data.addressComponents.forEach((component: any) => {
                     const types = component.types;
@@ -204,6 +196,12 @@ export function AddressAutocomplete({
                     }
                     if (types.includes("route")) {
                         route = component.longText;
+                    }
+                    if (types.includes("premise")) {
+                        premise = component.longText;
+                    }
+                    if (types.includes("subpremise")) {
+                        subpremise = component.longText;
                     }
                     if (types.includes("locality")) {
                         city = component.longText;
@@ -219,8 +217,28 @@ export function AddressAutocomplete({
                     }
                 });
 
-                // Create full address
-                const fullAddress = `${streetNumber} ${route}`.trim() || description.split(',')[0];
+                // Xây dựng địa chỉ theo thứ tự ưu tiên
+                let fullAddress = "";
+
+                // 1. Ưu tiên displayName nếu có (tên địa điểm)
+                if (data.displayName?.text) {
+                    fullAddress = data.displayName.text;
+                }
+                // 2. Nếu có premise (tên tòa nhà/khu phức hợp)
+                else if (premise) {
+                    fullAddress = premise;
+                    if (subpremise) {
+                        fullAddress = `${subpremise}, ${fullAddress}`;
+                    }
+                }
+                // 3. Nếu không có premise, dùng street_number + route
+                else if (streetNumber || route) {
+                    fullAddress = `${streetNumber} ${route}`.trim();
+                }
+                // 4. Nếu không có gì, lấy phần đầu tiên của description
+                else {
+                    fullAddress = description.split(',')[0].trim();
+                }
 
                 // For Vietnam, city is usually the province/state
                 const isVietnam = country === "Vietnam" || country === "Việt Nam";
@@ -234,8 +252,6 @@ export function AddressAutocomplete({
                     lat: data.location.latitude.toString(),
                     lon: data.location.longitude.toString()
                 };
-
-                console.log('✅ Selected data:', selectedData);
 
                 setInputValue(fullAddress);
                 setShowSuggestions(false);

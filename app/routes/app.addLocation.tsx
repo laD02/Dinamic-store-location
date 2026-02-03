@@ -761,7 +761,6 @@ export default function AddLocation() {
                                                         defaultValue=""
                                                         onInput={(e: any) => {
                                                             const value = e.target.value;
-                                                            console.log('Region changed:', value);
                                                             setPreviewData(prev => ({ ...prev, region: value }));
 
                                                             if (value.trim()) {

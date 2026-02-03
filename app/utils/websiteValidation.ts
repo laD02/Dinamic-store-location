@@ -229,10 +229,8 @@ export function testValidation() {
         { url: 'https://example.com:8080', expected: true }, // With port
     ];
 
-    console.log('Kết quả test:');
     testCases.forEach(({ url, expected }) => {
         const result = validateWebsiteUrl(url);
         const status = result.isValid === expected ? '✓' : '✗';
-        console.log(`${status} "${url}" => ${result.isValid ? 'VALID' : 'INVALID'} ${result.message || ''}`);
     });
 }
