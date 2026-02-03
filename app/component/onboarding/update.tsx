@@ -1,4 +1,3 @@
-import { useFetcher } from "react-router"
 
 export default function Update({
     storeHandle,
@@ -11,18 +10,12 @@ export default function Update({
     handleCheck: (value: boolean) => void
     index: number
 }) {
-    const fetcher = useFetcher()
+    // const fetcher = useFetcher()
 
     const handleToggle = (e: any) => {
         e.stopPropagation()
 
-        const newCheck = !check
-        handleCheck(newCheck)
-
-        const formData = new FormData()
-        formData.append('actionType', 'saveUpdate')
-        formData.append('remove', String(!newCheck))
-        fetcher.submit(formData, { method: 'post' })
+        handleCheck(!check)
     }
 
     return (

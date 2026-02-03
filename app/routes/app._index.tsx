@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import GoogleApi from 'app/component/onboarding/googleApi'
 import DesignMap from 'app/component/onboarding/designMap'
 import AddMapToStore from 'app/component/onboarding/addMapToStore'
-import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from 'react-router'
+import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData, useFetcher } from 'react-router'
 import { authenticate } from 'app/shopify.server'
 import prisma from 'app/db.server'
 import Review from 'app/component/onboarding/review'
@@ -158,27 +157,47 @@ export default function Onboarding() {
     const [index, setIndex] = useState<number>(0)
     const [count, setCount] = useState(0)
     const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount } = useLoaderData()
-    // const [googleMap, setGoogleMap] = useState(false)
-    const [design, setDesign] = useState(false)
-    const [review, setReview] = useState(false)
-    const [update, setUpdate] = useState(false)
-    const [addMap, setAddMap] = useState(false)
 
-    const STEP_STATE_MAP: Record<string, React.Dispatch<React.SetStateAction<boolean>>> = {
-        // googleMap: setGoogleMap,
-        designMap: setDesign,
-        review: setReview,
-        update: setUpdate,
-        addMap: setAddMap,
+    const designFetcher = useFetcher()
+    const reviewFetcher = useFetcher()
+    const updateFetcher = useFetcher()
+    const addMapFetcher = useFetcher()
+
+    function getOptimisticState(
+        step: string,
+        fetcher: ReturnType<typeof useFetcher>,
+        initialState: boolean
+    ) {
+        if (fetcher.formData) {
+            const actionType = fetcher.formData.get("actionType")
+            const remove = fetcher.formData.get("remove") === "true"
+            if (actionType === `save${step.charAt(0).toUpperCase() + step.slice(1)}`) {
+                return !remove
+            }
+        }
+        return onBoard?.onBoarding?.includes(step) || initialState
     }
 
-    useEffect(() => {
-        if (!Array.isArray(onBoard?.onBoarding)) return
+    const design = getOptimisticState("designMap", designFetcher, false)
+    const review = getOptimisticState("review", reviewFetcher, false)
+    const update = getOptimisticState("update", updateFetcher, false)
+    const addMap = getOptimisticState("addMap", addMapFetcher, false)
 
-        onBoard.onBoarding.forEach((step: string) => {
-            STEP_STATE_MAP[step]?.(true)
-        })
-    }, [onBoard])
+    const handleCheck = (step: string, check: boolean) => {
+        const fetcherMap: Record<string, any> = {
+            designMap: designFetcher,
+            review: reviewFetcher,
+            update: updateFetcher,
+            addMap: addMapFetcher
+        }
+        const fetcher = fetcherMap[step]
+        if (fetcher) {
+            const formData = new FormData()
+            formData.append("actionType", `save${step.charAt(0).toUpperCase() + step.slice(1)}`)
+            formData.append("remove", String(!check))
+            fetcher.submit(formData, { method: "post" })
+        }
+    }
 
     useEffect(() => {
         setCount(
@@ -268,7 +287,7 @@ export default function Onboarding() {
                                     <DesignMap
                                         storeHandle={storeHandle}
                                         check={design}
-                                        handleCheck={setDesign}
+                                        handleCheck={(val) => handleCheck("designMap", val)}
                                         index={index}
                                     />
                                 </s-clickable>
@@ -277,7 +296,7 @@ export default function Onboarding() {
                                     <Review
                                         storeHandle={storeHandle}
                                         check={review}
-                                        handleCheck={setReview}
+                                        handleCheck={(val) => handleCheck("review", val)}
                                         index={index}
                                     />
                                 </s-clickable>
@@ -286,7 +305,7 @@ export default function Onboarding() {
                                     <Update
                                         storeHandle={storeHandle}
                                         check={update}
-                                        handleCheck={setUpdate}
+                                        handleCheck={(val) => handleCheck("update", val)}
                                         index={index}
                                     />
                                 </s-clickable>
@@ -296,7 +315,7 @@ export default function Onboarding() {
                                         storeHandle={storeHandle}
                                         themeId={themeId}
                                         check={addMap}
-                                        handleCheck={setAddMap}
+                                        handleCheck={(val) => handleCheck("addMap", val)}
                                         index={index}
                                         hasAddMapStep={hasAddMapStep}
                                     />

@@ -575,7 +575,12 @@ export default function AddLocation() {
                     <s-box>
                         <s-button
                             variant="tertiary"
-                            onClick={() => navigate('/app/allLocation')}
+                            onClick={() => {
+                                handleDiscard();
+                                requestAnimationFrame(() => {
+                                    navigate('/app/allLocation');
+                                });
+                            }}
                             icon="arrow-left"
                         >
                         </s-button>

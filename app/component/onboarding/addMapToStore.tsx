@@ -18,7 +18,7 @@ export default function AddMapToStore({
     hasAddMapStep: boolean
 }) {
     const fetcher = useFetcher()
-    const toggleFetcher = useFetcher()
+    // const toggleFetcher = useFetcher()
     const shopify = useAppBridge()
 
     const handleOnBoard = () => {
@@ -30,13 +30,7 @@ export default function AddMapToStore({
     const handleToggle = (e: any) => {
         e.stopPropagation()
 
-        const newCheck = !check
-        handleCheck(newCheck)
-
-        const formData = new FormData()
-        formData.append('actionType', 'saveAddMap')
-        formData.append('remove', String(!newCheck))
-        toggleFetcher.submit(formData, { method: 'post' })
+        handleCheck(!check)
     }
 
     useEffect(() => {
