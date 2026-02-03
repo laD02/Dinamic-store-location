@@ -4,19 +4,10 @@ import { createPortal } from "react-dom";
 import styles from "../css/addressAutocomplete.module.css";
 
 interface AddressSuggestion {
-    display_name: string
-    name: string
-    lat: string
-    lon: string
-    address: {
-        house_number: string;
-        road?: string
-        city?: string;
-        state?: string;
-        country?: string;
-        country_code?: string;
-        postcode?: string;
-    };
+    placeId: string;
+    description: string;
+    mainText: string;
+    secondaryText: string;
 }
 
 interface AddressAutocompleteProps {
@@ -32,7 +23,8 @@ interface AddressAutocompleteProps {
     error?: string;
     onAddressChange?: (value: string) => void;
     checkDirty?: () => void;
-    onValidationChange?: (isValid: boolean) => void; // THÊM PROP MỚI
+    onValidationChange?: (isValid: boolean) => void;
+    googleMapsApiKey: string;
 }
 
 export function AddressAutocomplete({
@@ -41,7 +33,8 @@ export function AddressAutocomplete({
     error,
     onAddressChange,
     checkDirty,
-    onValidationChange // THÊM PROP MỚI
+    onValidationChange,
+    googleMapsApiKey
 }: AddressAutocompleteProps) {
     const [inputValue, setInputValue] = useState(defaultValue);
     const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -49,11 +42,24 @@ export function AddressAutocomplete({
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
     const [hasSearched, setHasSearched] = useState(false);
-    const [isAddressSelected, setIsAddressSelected] = useState(false); // THÊM STATE MỚI
+    const [isAddressSelected, setIsAddressSelected] = useState(false);
+    const [sessionToken, setSessionToken] = useState<string>("");
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
-    // Đóng suggestions khi click ra ngoài
+    // Generate session token
+    useEffect(() => {
+        const generateToken = () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        };
+        setSessionToken(generateToken());
+    }, []);
+
+    // Close suggestions when click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -67,50 +73,77 @@ export function AddressAutocomplete({
         };
     }, []);
 
-    // Fetch suggestions from Nominatim
+    // Fetch suggestions using New Places API
     const fetchSuggestions = async (query: string) => {
+        console.log('🔍 fetchSuggestions called with query:', query);
+
         if (!query || query.trim().length < 3) {
+            console.log('⚠️ Query too short or empty');
             setSuggestions([]);
             setHasSearched(false);
             setShowSuggestions(false);
-            setIsAddressSelected(false); // RESET KHI XÓA INPUT
-            onValidationChange?.(false); // BÁO KHÔNG HỢP LỆ
+            setIsAddressSelected(false);
+            onValidationChange?.(false);
             return;
         }
 
+        console.log('✅ Starting search...');
         setIsLoading(true);
         setHasSearched(false);
-        setIsAddressSelected(false); // RESET KHI TÌM KIẾM MỚI
-        onValidationChange?.(false); // BÁO KHÔNG HỢP LỆ KHI ĐANG TÌM
+        setIsAddressSelected(false);
+        onValidationChange?.(false);
 
         try {
-            const encodedQuery = encodeURIComponent(query);
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&addressdetails=1&limit=5`;
+            console.log('📡 Calling New Places API - Autocomplete...');
 
-            const response = await fetch(url, {
+            const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+                method: 'POST',
                 headers: {
-                    'User-Agent': 'StoreLocator/1.0',
-                }
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': googleMapsApiKey
+                },
+                body: JSON.stringify({
+                    input: query,
+                    includedPrimaryTypes: ['street_address', 'premise', 'subpremise'],
+                    sessionToken: sessionToken,
+                })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log(data)
-                setSuggestions(data);
-                setHasSearched(true);
-                setShowSuggestions(true);
+            const data = await response.json();
+            console.log('📥 Response received:', data);
 
-                // NẾU KHÔNG TÌM THẤY KẾT QUẢ
-                if (data.length === 0) {
-                    onValidationChange?.(false);
-                }
+            setIsLoading(false);
+            setHasSearched(true);
+
+            if (data.suggestions && data.suggestions.length > 0) {
+                console.log('✅ Found suggestions:', data.suggestions.length);
+
+                const formattedSuggestions: AddressSuggestion[] = data.suggestions.map((suggestion: any) => {
+                    const placePrediction = suggestion.placePrediction;
+                    return {
+                        placeId: placePrediction.placeId,
+                        description: placePrediction.text.text,
+                        mainText: placePrediction.structuredFormat.mainText.text,
+                        secondaryText: placePrediction.structuredFormat.secondaryText?.text || ""
+                    };
+                });
+
+                console.log('📝 Formatted suggestions:', formattedSuggestions);
+                setSuggestions(formattedSuggestions);
+                setShowSuggestions(true);
+                onValidationChange?.(false);
+            } else {
+                console.log('❌ No suggestions found');
+                setSuggestions([]);
+                setShowSuggestions(true);
+                onValidationChange?.(false);
             }
         } catch (error) {
             console.error('❌ Error fetching suggestions:', error);
-            setHasSearched(true);
-            onValidationChange?.(false);
-        } finally {
             setIsLoading(false);
+            setHasSearched(true);
+            setSuggestions([]);
+            onValidationChange?.(false);
         }
     };
 
@@ -118,8 +151,8 @@ export function AddressAutocomplete({
     const handleInputChange = (value: string) => {
         setInputValue(value);
         setActiveSuggestionIndex(-1);
-        setIsAddressSelected(false); // RESET KHI USER THAY ĐỔI INPUT
-        onValidationChange?.(false); // BÁO KHÔNG HỢP LỆ
+        setIsAddressSelected(false);
+        onValidationChange?.(false);
 
         if (value.trim().length === 0) {
             setShowSuggestions(false);
@@ -138,35 +171,101 @@ export function AddressAutocomplete({
         }, 500);
     };
 
+    // Get place details using New Places API
+    const getPlaceDetails = async (placeId: string, description: string) => {
+        try {
+            console.log('📍 Fetching place details for:', placeId);
+
+            const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': googleMapsApiKey,
+                    'X-Goog-FieldMask': 'id,displayName,formattedAddress,addressComponents,location'
+                }
+            });
+
+            const data = await response.json();
+            console.log('📥 Place details received:', data);
+
+            if (data && data.addressComponents) {
+                let streetNumber = "";
+                let route = "";
+                let city = "";
+                let state = "";
+                let country = "";
+                let postalCode = "";
+
+                data.addressComponents.forEach((component: any) => {
+                    const types = component.types;
+
+                    if (types.includes("street_number")) {
+                        streetNumber = component.longText;
+                    }
+                    if (types.includes("route")) {
+                        route = component.longText;
+                    }
+                    if (types.includes("locality")) {
+                        city = component.longText;
+                    }
+                    if (types.includes("administrative_area_level_1")) {
+                        state = component.longText;
+                    }
+                    if (types.includes("country")) {
+                        country = component.longText;
+                    }
+                    if (types.includes("postal_code")) {
+                        postalCode = component.longText;
+                    }
+                });
+
+                // Create full address
+                const fullAddress = `${streetNumber} ${route}`.trim() || description.split(',')[0];
+
+                // For Vietnam, city is usually the province/state
+                const isVietnam = country === "Vietnam" || country === "Việt Nam";
+                const finalCity = isVietnam ? state : city;
+
+                const selectedData = {
+                    address: fullAddress,
+                    city: finalCity || city || state,
+                    code: postalCode,
+                    region: country,
+                    lat: data.location.latitude.toString(),
+                    lon: data.location.longitude.toString()
+                };
+
+                console.log('✅ Selected data:', selectedData);
+
+                setInputValue(fullAddress);
+                setShowSuggestions(false);
+                setSuggestions([]);
+                setIsAddressSelected(true);
+                onValidationChange?.(true);
+                onSelect(selectedData);
+
+                // Generate new session token for next search
+                const newToken = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+                setSessionToken(newToken);
+
+                if (checkDirty) {
+                    checkDirty();
+                }
+            } else {
+                console.error("❌ Invalid place details response");
+            }
+        } catch (error) {
+            console.error('❌ Error getting place details:', error);
+        }
+    };
+
     // Handle suggestion selection
     const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
-        const isVietnam = suggestion.address.country === 'Việt Nam' ||
-            suggestion.address.country === 'Vietnam' ||
-            suggestion.address.country_code === 'vn';
-
-        const city = isVietnam
-            ? (suggestion.address.state || suggestion.address.city || '')
-            : (suggestion.address.city || suggestion.address.state || '');
-
-        const selectedData = {
-            address: suggestion.name,
-            city,
-            code: suggestion.address.postcode || '',
-            region: suggestion.address.country || '',
-            lat: suggestion.lat,
-            lon: suggestion.lon
-        };
-
-        setInputValue(suggestion.name);
-        setShowSuggestions(false);
-        setSuggestions([]);
-        setIsAddressSelected(true); // ĐÁNH DẤU ĐÃ CHỌN ĐỊA CHỈ
-        onValidationChange?.(true); // BÁO HỢP LỆ
-        onSelect(selectedData);
-
-        if (checkDirty) {
-            checkDirty();
-        }
+        getPlaceDetails(suggestion.placeId, suggestion.description);
     };
 
     // Handle keyboard navigation
@@ -213,7 +312,6 @@ export function AddressAutocomplete({
             };
 
             updatePosition();
-            // Update on scroll and resize
             window.addEventListener('resize', updatePosition);
             window.addEventListener('scroll', updatePosition, true);
 
@@ -252,9 +350,9 @@ export function AddressAutocomplete({
                     {suggestions.length > 0 ? (
                         suggestions.map((suggestion, index) => (
                             <div
-                                key={index}
-                                onMouseDown={(e) => {  // ✅ THAY ĐỔI: onClick → onMouseDown
-                                    e.preventDefault(); // ✅ THÊM: Ngăn input blur
+                                key={suggestion.placeId}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
                                     handleSelectSuggestion(suggestion);
                                 }}
                                 className={`${styles.suggestionItem} ${index === activeSuggestionIndex ? styles.active : ''}`}
@@ -265,10 +363,10 @@ export function AddressAutocomplete({
                                 </div>
                                 <div className={styles.textContent}>
                                     <div className={styles.mainText}>
-                                        {suggestion.display_name.split(',')[0]}
+                                        {suggestion.mainText}
                                     </div>
                                     <div className={styles.subText}>
-                                        {suggestion.display_name}
+                                        {suggestion.secondaryText || suggestion.description}
                                     </div>
                                 </div>
                             </div>

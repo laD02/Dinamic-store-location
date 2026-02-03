@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from "../css/themeSetup.module.css";
 import { fontList } from "app/utils/primaryFont";
 
-export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any) => void, config: any }) {
+export default function ThemeSetUp({ onChange, config, onClosePickerRequest }: { onChange: (theme: any) => void, config: any, onClosePickerRequest?: boolean }) {
   const [primaryColor, setPrimaryColor] = useState(config?.primaryColor ?? "#000");
   const [secondaryColor, setSecondaryColor] = useState(config?.secondaryColor ?? "#000");
   const [activePicker, setActivePicker] = useState<"primary" | "secondary" | null>(null);
@@ -18,6 +18,10 @@ export default function ThemeSetUp({ onChange, config }: { onChange: (theme: any
   const togglePicker = (picker: "primary" | "secondary") => {
     setActivePicker(activePicker === picker ? null : picker);
   };
+
+  useEffect(() => {
+    setActivePicker(null);
+  }, [onClosePickerRequest]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

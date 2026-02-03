@@ -91,6 +91,7 @@ export default function MapDesigners() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
   const SAVE_BAR_ID = "map-designer-save-bar";
+  const [closePickerTrigger, setClosePickerTrigger] = useState(false);
 
   const defaultTheme = {
     primaryColor: "#000",
@@ -228,6 +229,7 @@ export default function MapDesigners() {
   }, [stores, searchAddress])
 
   const handleSave = () => {
+    setClosePickerTrigger(prev => !prev);
     fetcher.submit(
       {
         theme: JSON.stringify(theme),
@@ -238,6 +240,7 @@ export default function MapDesigners() {
   };
 
   const handleDiscard = () => {
+    setClosePickerTrigger(prev => !prev);
     setTheme(savedConfigRef.current.theme);
     setPopup(savedConfigRef.current.popup);
     shopify.saveBar.hide(SAVE_BAR_ID);
@@ -294,6 +297,7 @@ export default function MapDesigners() {
         >
           <MapDesigner
             config={{ theme, popup }}
+            onClosePickerRequest={closePickerTrigger}
             onThemeChange={(v) => {
               setTheme(v);
               if (isConfigChanged(v, popup)) {

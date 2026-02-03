@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useNavigate } from "react-router";
+import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useLoaderData, useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
@@ -13,7 +13,8 @@ import { AddressAutocomplete } from "app/component/addressAutocomplete";
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const filter = await prisma.attribute.findMany()
-    return filter;
+    const googleMapsApiKey = process.env.GOOGLE_MAP_KEY || "";
+    return { filter, googleMapsApiKey };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -115,6 +116,8 @@ type HourSchedule = {
 };
 
 export default function AddLocation() {
+    const loaderData = useLoaderData<typeof loader>();
+    const googleMapsApiKey = loaderData.googleMapsApiKey;
     const navigate = useNavigate();
     const fetcher = useFetcher()
     const shopify = useAppBridge()
@@ -327,7 +330,7 @@ export default function AddLocation() {
     // NEW: Add hour schedule row
     const handleAddHourSchedule = () => {
         setHourSchedules([...hourSchedules, {
-            day: "All days",
+            day: "Monday",
             openTime: "09:00",
             closeTime: "17:00"
         }]);
@@ -657,6 +660,7 @@ export default function AddLocation() {
                                                     defaultValue=""
                                                     error={fieldErrors.address}
                                                     checkDirty={checkDirty}
+                                                    googleMapsApiKey={googleMapsApiKey}
                                                     onValidationChange={(isValid) => {
                                                         setIsAddressValid(isValid); // CẬP NHẬT TRẠNG THÁI
 

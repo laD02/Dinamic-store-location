@@ -18,6 +18,7 @@
     padding: 6px;
     animation: slideDown 0.2s ease-out;
     transform-origin: top center;
+    box-sizing: border-box;
 }
 
 @keyframes slideDown {

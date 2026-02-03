@@ -8,10 +8,12 @@ export default function MapDesigner({
     onThemeChange,
     onPopupChange,
     config,
+    onClosePickerRequest
 }: {
     onThemeChange: (theme: any) => void;
     onPopupChange: (popup: any) => void;
     config: any,
+    onClosePickerRequest?: boolean;
 }) {
 
     const [selected, setSeleceted] = useState<number>(0)
@@ -43,7 +45,7 @@ export default function MapDesigner({
                 </s-stack>
 
                 <div className={styles.body}>
-                    <ThemeSetUp onChange={onThemeChange} config={config.theme} />
+                    <ThemeSetUp onChange={onThemeChange} config={config.theme} onClosePickerRequest={onClosePickerRequest} />
                     {/* <PopupStyle onChange={onPopupChange} config={config.popup}/> */}
                 </div>
             </s-section>
@@ -69,7 +71,7 @@ export default function MapDesigner({
 
                 <div className={styles.body}>
                     {/* <ThemeSetUp onChange={onThemeChange} config={config.theme}/> */}
-                    <PopupStyle onChange={onPopupChange} config={config.popup} />
+                    <PopupStyle onChange={onPopupChange} config={config.popup} onClosePickerRequest={onClosePickerRequest} />
                 </div>
             </s-section>
         </s-stack>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "../css/popupStyle.module.css"
 
-export default function PopupStyle({ onChange, config }: { onChange: (popup: any) => void, config: any }) {
+export default function PopupStyle({ onChange, config, onClosePickerRequest }: { onChange: (popup: any) => void, config: any, onClosePickerRequest?: boolean }) {
     const [backgroundColor, setBackgroundColor] = useState(config?.backgroundColor ?? "#fff");
     const [color, setColor] = useState(config?.color ?? "#000000")
     const [iconColor, setIconColor] = useState(config?.iconColor ?? "#5230f9")
@@ -25,6 +25,10 @@ export default function PopupStyle({ onChange, config }: { onChange: (popup: any
     const togglePicker = (picker: "backgroundColor" | "color" | "iconColor" | "shadowColor") => {
         setActivePicker(activePicker === picker ? null : picker);
     };
+
+    useEffect(() => {
+        setActivePicker(null);
+    }, [onClosePickerRequest]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

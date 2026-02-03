@@ -16,8 +16,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
     const store = await prisma.store.findUnique({
         where: { id },
     });
-
-    return { store, filter };
+    const googleMapsApiKey = process.env.GOOGLE_MAP_KEY || "";
+    return { store, filter, googleMapsApiKey };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -152,7 +152,7 @@ type HourSchedule = {
 
 export default function EditLocation() {
     const fetcher = useFetcher()
-    const { store, filter } = useLoaderData()
+    const { store, filter, googleMapsApiKey } = useLoaderData()
     const navigate = useNavigate();
     const shopify = useAppBridge()
     const [visibility, setVisibility] = useState("visible");
@@ -869,6 +869,7 @@ export default function EditLocation() {
                                                     defaultValue={store.address || ""}
                                                     error={fieldErrors.address}
                                                     checkDirty={checkDirty}
+                                                    googleMapsApiKey={googleMapsApiKey}
                                                     onValidationChange={(isValid) => {
                                                         setIsAddressValid(isValid); // CẬP NHẬT TRẠNG THÁI
                                                         setIsAddressChanged(true);
