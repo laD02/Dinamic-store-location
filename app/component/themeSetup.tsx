@@ -77,7 +77,7 @@ export default function ThemeSetUp({ onChange, config, onClosePickerRequest }: {
 
   return (
     <s-stack inlineSize="100%" >
-      <s-text type="strong">Theme Color</s-text>
+      <s-heading >Theme Color</s-heading>
       {/* Primary color */}
       <s-stack direction="inline" gap="small" paddingBlockStart="small" >
         <div className={styles.colorBoxWrapper} ref={primaryPickerRef}>
@@ -106,7 +106,7 @@ export default function ThemeSetUp({ onChange, config, onClosePickerRequest }: {
           )}
         </div>
         <s-stack>
-          <s-text type="strong">Primary Theme Color</s-text>
+          <s-heading>Primary Theme Color</s-heading>
           <s-text color="subdued">{primaryColor}</s-text>
         </s-stack>
       </s-stack>
@@ -143,16 +143,16 @@ export default function ThemeSetUp({ onChange, config, onClosePickerRequest }: {
           )}
         </div>
         <s-stack>
-          <s-text type="strong">Secondary Theme Color</s-text>
+          <s-heading>Secondary Theme Color</s-heading>
           <s-text color="subdued">{secondaryColor}</s-text>
         </s-stack>
       </s-stack>
 
       <s-stack gap="small" paddingBlockStart="large">
-        <s-text type="strong">Theme Fonts</s-text>
+        <s-heading>Theme Fonts</s-heading>
         <s-stack gap="small-100">
           <s-stack>
-            <s-text type="strong">Primary Font Family</s-text>
+            <s-heading>Primary Font Family</s-heading>
             <s-select value={primaryFont} onChange={(e) => setPrimaryFont(e.currentTarget.value)}>
               {fontList.map((font) => (
                 <s-option key={font} value={font}>
@@ -163,7 +163,7 @@ export default function ThemeSetUp({ onChange, config, onClosePickerRequest }: {
           </s-stack>
 
           <s-stack>
-            <s-text type="strong">Secondary Font Family</s-text>
+            <s-heading>Secondary Font Family</s-heading>
             <s-select value={secondaryFont} onChange={(e) => setSecondaryFont(e.currentTarget.value)}>
               {fontList.map((font) => (
                 <s-option key={font} value={font} >

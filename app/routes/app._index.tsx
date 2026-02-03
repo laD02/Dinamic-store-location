@@ -154,7 +154,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Onboarding() {
-    const [index, setIndex] = useState<number>(0)
+    const [index, setIndex] = useState<number>(1)
     const [count, setCount] = useState(0)
     const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount } = useLoaderData()
 

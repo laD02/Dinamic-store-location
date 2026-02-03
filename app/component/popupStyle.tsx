@@ -109,7 +109,7 @@ export default function PopupStyle({ onChange, config, onClosePickerRequest }: {
         <s-stack inlineSize="100%" >
             <div className={styles.maxBlockSize}>
                 <div className={styles.leftBox}>
-                    <s-text type="strong">Popup Box</s-text>
+                    <s-heading>Popup Box</s-heading>
                     <div className={styles.backgroundColor}>
                         <div ref={backgroundPickerRef}>
                             <div
@@ -138,12 +138,12 @@ export default function PopupStyle({ onChange, config, onClosePickerRequest }: {
                             )}
                         </div>
                         <div className={styles.colorInfo}>
-                            <strong>Background Color</strong>
+                            <s-heading>Background Color</s-heading>
                             <span>{backgroundColor}</span>
                         </div>
                     </div>
                     <div className={styles.corner}>
-                        <s-text type="strong">Corner radius</s-text>
+                        <s-heading>Corner radius</s-heading>
                         <div className={styles.inputRange}>
                             <span>0px</span>
                             <input
@@ -161,7 +161,7 @@ export default function PopupStyle({ onChange, config, onClosePickerRequest }: {
                         </div>
                     </div>
                     {/* <s-divider /> */}
-                    <s-text type="strong">Font Color</s-text>
+                    <s-heading>Font Color</s-heading>
                     <div className={styles.backgroundColor} >
                         <div ref={colorPickerRef}>
                             <div
@@ -229,7 +229,7 @@ export default function PopupStyle({ onChange, config, onClosePickerRequest }: {
                     {/* </div>
                 <s-divider direction="block"/>
                 <div className={styles.rightBox}> */}
-                    <s-text type="strong">Drop Shadow</s-text>
+                    <s-heading>Drop Shadow</s-heading>
                     <div className={styles.backgroundColor} >
                         <div ref={shadowPickerRef}>
                             <div

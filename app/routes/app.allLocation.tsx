@@ -473,7 +473,7 @@ export default function AllLocation() {
                               checked={selectedIds.has(store.id)}
                               onChange={() => toggleSelect(store.id)}
                             />
-                            <s-thumbnail src={store.image || ''} size="small" />
+                            <s-thumbnail src={store.image || '/shop.png'} size="small" />
                             <s-link href={`/app/editLocation/${store.id}`}>
                               <s-box>{store.storeName}</s-box>
                               <s-box>{store.address}, {store.city}, {store.region}{store.code ? `, ${store.code}` : ''}</s-box>
