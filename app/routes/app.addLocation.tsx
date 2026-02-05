@@ -154,6 +154,8 @@ export default function AddLocation() {
         state: "",
         code: "",
         url: "",
+        lat: "",
+        lon: ""
     });
     const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
 
@@ -536,6 +538,8 @@ export default function AddLocation() {
             state: "",
             code: "",
             url: "",
+            lat: "",
+            lon: ""
         });
 
         setPhoneError("");
@@ -715,7 +719,9 @@ export default function AddLocation() {
                                                                 address: data.address,
                                                                 city: data.city,
                                                                 code: data.code,
-                                                                region: data.region
+                                                                region: data.region,
+                                                                lat: data.lat,
+                                                                lon: data.lon
                                                             }));
 
                                                             // Clear errors
@@ -1201,6 +1207,20 @@ export default function AddLocation() {
                                                     })
                                                 }
                                             </div>
+
+                                            <a
+                                                href={`https://www.google.com/maps/dir/?api=1&destination=${previewData.lat || ''},${previewData.lon || ''}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className={styles.directionButton}
+                                                style={{
+                                                    backgroundColor: 'blue',
+                                                    color: '#ffffff'
+                                                }}
+                                            >
+                                                <i className="fa-solid fa-diamond-turn-right"></i>
+                                                Get Direction
+                                            </a>
                                         </div>
                                     </div>
                                 </s-grid-item>

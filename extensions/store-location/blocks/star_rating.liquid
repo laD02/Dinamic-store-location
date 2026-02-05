@@ -10,7 +10,8 @@
     {
       "type": "text",
       "id": "google_api_key",
-      "label": "Google Map API Key"
+      "label": "Google Map API Key",
+      "info": "Leave blank to use OpenStreetMap (free alternative)"
     },
     {
       "type": "text",
@@ -124,42 +125,30 @@
         </div>
         <div class="store-list" style="font-size: 12px"></div>
       </div>
-      
     {% endif %}
 
-    {% if block.settings.google_api_key != blank %}
-      <!-- Nếu có API key thì hiện map -->
-      
-      <div
-        class="sl-map"
-        data-gmap-key="{{ block.settings.google_api_key }}"
-      >
-        <div class="map-loading" style="
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background-color: #f5f5f5;
-          z-index: 10;
-          color: #999;
-          font-size: 16px;
-        ">
-          Loading map...
-        </div>
+    <div
+      class="sl-map"
+      data-gmap-key="{{ block.settings.google_api_key }}"
+      data-map-type="{% if block.settings.google_api_key != blank %}google{% else %}osm{% endif %}"
+    >
+      <div class="map-loading" style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f5f5f5;
+        z-index: 10;
+        color: #999;
+        font-size: 16px;
+      ">
+        Loading map...
       </div>
-    {% else %}
-      <!-- Nếu không có API key -->
-      <div class="sl-map sl-no-key" style="display:flex; justify-content:center; align-items:center; text-align:center;">
-        <p style="padding:20px; text-align:center; opacity:0.7;">
-          Google Maps API key is missing.<br>
-          Please add your key in the section settings.
-        </p>
-      </div>
-    {% endif %}
+    </div>
   </div>
 </div>
 
@@ -173,28 +162,28 @@
     if (!section) return;
     
     if (!appEmbed) {
-      // App embed bị tắt → ẩn section
       section.style.display = 'none';
     } else {
-      // App embed đang bật → hiện section
       section.style.display = 'block';
     }
   }
 
-  // Chạy sau khi DOM load xong
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', checkAppEmbed);
   } else {
     checkAppEmbed();
   }
 
-  // Lắng nghe thay đổi (cho trường hợp Theme Editor)
   if (window.Shopify && Shopify.designMode) {
     document.addEventListener('shopify:section:load', checkAppEmbed);
     document.addEventListener('shopify:section:reorder', checkAppEmbed);
   }
 })();
 </script>
+
+<!-- Leaflet CSS và JS cho OpenStreetMap -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="{{ 'google-map.js' | asset_url }}" defer></script>
 <script src="{{ 'store-locator.js' | asset_url }}" defer></script>

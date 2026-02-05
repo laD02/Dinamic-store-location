@@ -13,6 +13,8 @@ import { exportStoresToCSV } from "../utils/exportCSV";
 import { useAppBridge } from '@shopify/app-bridge-react';
 import { authenticate } from "../shopify.server";
 import { deleteImageFromCloudinary } from "../utils/upload.server";
+import Import from "app/component/allLocation/Import";
+import { getCoordinatesFromAddress } from "../utils/Geocoding";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -34,6 +36,208 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const actionType = formData.get("actionType");
+
+  if (actionType === "import") {
+    const { session } = await authenticate.admin(request);
+    const shop = session?.shop;
+    const file = formData.get("file");
+
+    if (!file) {
+      return { error: "No file uploaded" };
+    }
+
+    if (!(file instanceof File)) {
+      return { error: "Invalid file format" };
+    }
+
+    try {
+      // Đọc file content - xử lý cho cả browser và Node.js environment
+      let text: string;
+
+      if (typeof file.text === 'function') {
+        // Browser environment
+        text = await file.text();
+      } else {
+        // Node.js environment - convert to buffer then string
+        const buffer = await file.arrayBuffer();
+        text = new TextDecoder('utf-8').decode(buffer);
+      }
+
+      // Xử lý BOM (Byte Order Mark) nếu có
+      const cleanText = text.replace(/^\uFEFF/, '');
+
+      const lines = cleanText.split(/\r?\n/).filter(line => line.trim());
+
+      if (lines.length < 2) {
+        return { error: "CSV file is empty or invalid. Please ensure it has header row and at least one data row." };
+      }
+
+      // Bỏ qua dòng header
+      const dataLines = lines.slice(1);
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < dataLines.length; i++) {
+        const line = dataLines[i];
+
+        // Skip empty lines
+        if (!line.trim()) {
+          continue;
+        }
+
+        try {
+          // Parse CSV line - cải thiện regex để xử lý tốt hơn
+          const values: string[] = [];
+          let current = '';
+          let inQuotes = false;
+
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            const nextChar = line[j + 1];
+
+            if (char === '"') {
+              if (inQuotes && nextChar === '"') {
+                current += '"';
+                j++; // Skip next quote
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              values.push(current.trim());
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          values.push(current.trim()); // Add last value
+
+          // Validate minimum columns (Store Name, Address, City, Zip Code, Country)
+          if (values.length < 5) {
+            errors.push(`Line ${i + 2}: Not enough columns (found ${values.length}, need at least 5)`);
+            errorCount++;
+            continue;
+          }
+
+          // Map theo template: Store Name, Address, City, Zip Code, Country, Phone, Website
+          const storeName = values[0] || "";
+          const address = values[1] || "";
+          const city = values[2] || "";
+          const code = values[3] || "";
+          const country = values[4] || "";
+          const phone = values[5] || "";
+          const website = values[6] || "";
+
+          // Validate required fields
+          if (!storeName.trim()) {
+            errors.push(`Line ${i + 2}: Store Name is required`);
+            errorCount++;
+            continue;
+          }
+          if (!address.trim()) {
+            errors.push(`Line ${i + 2}: Address is required`);
+            errorCount++;
+            continue;
+          }
+          if (!city.trim()) {
+            errors.push(`Line ${i + 2}: City is required`);
+            errorCount++;
+            continue;
+          }
+
+          if (!country.trim()) {
+            errors.push(`Line ${i + 2}: Country is required`);
+            errorCount++;
+            continue;
+          }
+
+          if (!phone.trim()) {
+            errors.push(`Line ${i + 2}: Phone is required`);
+            errorCount++;
+            continue;
+          }
+
+          // Lấy tọa độ từ địa chỉ
+          const coordinates = await getCoordinatesFromAddress(
+            address.trim(),
+            city.trim(),
+            country.trim(),
+            code.trim() || undefined
+          );
+
+          // Nếu không lấy được tọa độ, ghi log nhưng vẫn tiếp tục tạo store
+          if (!coordinates) {
+            console.warn(`Line ${i + 2}: Could not geocode address for ${storeName}`);
+          }
+
+          // Tạo store mới với đúng schema, bao gồm tọa độ
+          await prisma.store.create({
+            data: {
+              shop: shop || "",
+              storeName: storeName.trim(),
+              address: address.trim(),
+              city: city.trim(),
+              state: "",
+              code: code.trim(),
+              region: country.trim(),
+              phone: phone.trim(),
+              image: "",
+              url: website.trim(),
+              directions: "",
+              source: "import",
+              visibility: "hidden",
+              lat: coordinates?.lat || null,
+              lng: coordinates?.lng || null,
+              time: {
+                mondayOpen: "09:00",
+                mondayClose: "17:00",
+                tuesdayOpen: "09:00",
+                tuesdayClose: "17:00",
+                wednesdayOpen: "09:00",
+                wednesdayClose: "17:00",
+                thursdayOpen: "09:00",
+                thursdayClose: "17:00",
+                fridayOpen: "09:00",
+                fridayClose: "17:00",
+                saturdayOpen: "09:00",
+                saturdayClose: "17:00",
+                sundayOpen: "09:00",
+                sundayClose: "17:00",
+              }
+            }
+          });
+
+          successCount++;
+
+          // Thêm delay nhỏ giữa các request để tránh rate limit
+          if (i < dataLines.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+        } catch (error: any) {
+          errors.push(`Line ${i + 2}: ${error.message}`);
+          errorCount++;
+        }
+      }
+
+      if (successCount === 0) {
+        const errorMsg = errors.length > 0
+          ? `No locations imported. First 3 errors: ${errors.slice(0, 3).join('; ')}`
+          : 'No valid data rows found in CSV file.';
+        return { error: errorMsg };
+      }
+
+      return {
+        success: true,
+        count: successCount,
+        message: `Successfully imported ${successCount} location${successCount > 1 ? 's' : ''}${errorCount > 0 ? `. ${errorCount} row${errorCount > 1 ? 's' : ''} had errors and were skipped.` : '!'}`
+      };
+
+    } catch (error: any) {
+      console.error("Import error:", error);
+      return { error: `Failed to process CSV file: ${error.message}` };
+    }
+  }
 
   if (actionType === "deleteId") {
     const id = formData.get("id") as string;
@@ -286,12 +490,14 @@ export default function AllLocation() {
           windowWidth > 768
             ?
             <s-stack direction="inline" gap="base">
+              <Import />
               <Link to="/app/addLocation" >
                 <s-button variant="primary" icon="plus-circle">Add Location</s-button>
               </Link>
             </s-stack>
             :
             <s-stack direction="inline" justifyContent="end" gap="base">
+              <Import />
               <Link to="/app/addLocation" >
                 <s-button variant="primary" icon="plus-circle"></s-button>
               </Link>
@@ -473,7 +679,7 @@ export default function AllLocation() {
                               checked={selectedIds.has(store.id)}
                               onChange={() => toggleSelect(store.id)}
                             />
-                            <s-thumbnail src={store.image || '/shop.png'} size="small" />
+                            <s-thumbnail src={store.image || ''} size="small" />
                             <s-link href={`/app/editLocation/${store.id}`}>
                               <s-box>{store.storeName}</s-box>
                               <s-box>{store.address}, {store.city}, {store.region}{store.code ? `, ${store.code}` : ''}</s-box>

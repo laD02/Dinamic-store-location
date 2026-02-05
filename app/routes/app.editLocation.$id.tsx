@@ -1415,6 +1415,20 @@ export default function EditLocation() {
                                                     })
                                                 }
                                             </div>
+
+                                            <a
+                                                href={`https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat || ''},${coordinates.lon || ''}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className={styles.directionButton}
+                                                style={{
+                                                    backgroundColor: 'blue',
+                                                    color: '#ffffff'
+                                                }}
+                                            >
+                                                <i className="fa-solid fa-diamond-turn-right"></i>
+                                                Get Direction
+                                            </a>
                                         </div>
                                     </div>
                                 </s-grid-item>

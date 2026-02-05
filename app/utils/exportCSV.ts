@@ -12,11 +12,12 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   const headers = [
     "No",
     "Store Name",
-    "Visibility",
     "Address",
     "City",
-    "State",
-    "Code",
+    "Zip Code",
+    "Country",
+    "Phone",
+    "Website",
     "Added",
     "Updated"
   ];
@@ -24,11 +25,12 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   const rows = selectedStores.map((store, index) => [
     index + 1,
     store.storeName,
-    store.visibility,
     store.address,
     store.city,
-    store.state,
     store.code,
+    store.region,
+    store.phone,
+    store.url,
     new Date(store.createdAt).toLocaleString(),
     new Date(store.updatedAt).toLocaleString()
   ]);

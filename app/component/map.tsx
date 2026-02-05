@@ -233,6 +233,20 @@ export default function xMapGoogle({
                     <i className="fa-brands fa-facebook"></i>
                   </a>
                 </div>
+
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.directionButton}
+                  style={{
+                    backgroundColor: popupStyle.iconColor, // Main color for button background
+                    color: '#ffffff' // White text for contrast
+                  }}
+                >
+                  <i className="fa-solid fa-diamond-turn-right"></i>
+                  Get Direction
+                </a>
               </div>
             </div>
           </OverlayView>
