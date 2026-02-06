@@ -573,6 +573,10 @@ export default function EditLocation() {
         }
     };
 
+    const callPhone = (phone: string) => {
+        window.top!.location.href = `tel:${phone}`;
+    };
+
     const handleSubmit = () => {
         if (!formRef.current) return;
 
@@ -1358,7 +1362,21 @@ export default function EditLocation() {
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone"></i>
-                                                <span>{previewData.phone || ''}</span>
+                                                <a
+                                                    onClick={() => callPhone(previewData.phone)}
+                                                    style={{
+                                                        cursor: "pointer",
+                                                        textDecoration: "none"
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.textDecoration = "underline";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.textDecoration = "none";
+                                                    }}
+                                                >
+                                                    {previewData.phone || ""}
+                                                </a>
                                             </div>
 
                                             <div className={styles.contactRow}>

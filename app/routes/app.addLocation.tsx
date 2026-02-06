@@ -411,6 +411,10 @@ export default function AddLocation() {
         }
     };
 
+    const callPhone = (phone: string) => {
+        window.top!.location.href = `tel:${phone}`;
+    };
+
     const handleSubmit = () => {
         if (!formRef.current) return;
 
@@ -1151,7 +1155,21 @@ export default function AddLocation() {
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone" ></i>
-                                                <span>{previewData.phone || '+1 408-996-1010'}</span>
+                                                <a
+                                                    onClick={() => callPhone(previewData.phone || '+1 408-996-1010')}
+                                                    style={{
+                                                        cursor: "pointer",
+                                                        textDecoration: "none"
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.textDecoration = "underline";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.textDecoration = "none";
+                                                    }}
+                                                >
+                                                    {previewData.phone || "+1 408-996-1010"}
+                                                </a>
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-earth-americas"></i>
