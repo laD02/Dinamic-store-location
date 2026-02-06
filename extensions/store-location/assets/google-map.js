@@ -99,10 +99,10 @@ async function initStoreLocator(wrapper) {
         const { stores, style } = await res.json();
         mapStyle = style || {};
 
-        // Lọc stores có tọa độ hợp lệ
-        const validStores = stores.filter(store =>
-            isValidCoordinate(store.lat, store.lng)
-        );
+        // Lọc stores có tọa độ hợp lệ VÀ GIỮ INDEX GỐC
+        const validStores = stores
+            .map((store, index) => ({ ...store, originalIndex: index }))
+            .filter(store => isValidCoordinate(store.lat, store.lng));
 
         if (validStores.length === 0) {
             console.warn("No stores with valid coordinates found");
@@ -130,12 +130,17 @@ async function initStoreLocator(wrapper) {
             }
 
             if (useGoogleMaps) {
-                const storeData = markers.find(m => m.index === storeIndex);
+                // TÌM MARKER THEO originalIndex
+                const storeData = markers.find(m => m.originalIndex === storeIndex);
                 if (storeData) {
                     panToStoreGoogle(storeData.store, storeData.marker);
                 }
             } else {
-                panToStoreOSM(store, storeIndex);
+                // TÌM MARKER THEO originalIndex
+                const markerData = markers.find(m => m.originalIndex === storeIndex);
+                if (markerData) {
+                    panToStoreOSM(markerData.store, markerData.originalIndex);
+                }
             }
         });
 
@@ -281,7 +286,7 @@ async function initStoreLocator(wrapper) {
 
         const bounds = new google.maps.LatLngBounds();
 
-        stores.forEach((store, index) => {
+        stores.forEach((store) => {
             // Kiểm tra lại tọa độ trước khi tạo marker
             if (!isValidCoordinate(store.lat, store.lng)) {
                 console.warn(`Skipping store "${store.storeName}" - invalid coordinates`);
@@ -299,7 +304,12 @@ async function initStoreLocator(wrapper) {
                 panToStoreGoogle(store, marker);
             });
 
-            markers.push({ marker, store, index });
+            // LƯU originalIndex để map với store list
+            markers.push({
+                marker,
+                store,
+                originalIndex: store.originalIndex
+            });
             bounds.extend(marker.getPosition());
         });
 
@@ -473,7 +483,7 @@ async function initStoreLocator(wrapper) {
         });
 
         // Thêm markers
-        stores.forEach((store, index) => {
+        stores.forEach((store) => {
             // Kiểm tra lại tọa độ trước khi tạo marker
             if (!isValidCoordinate(store.lat, store.lng)) {
                 console.warn(`Skipping store "${store.storeName}" - invalid coordinates`);
@@ -484,10 +494,15 @@ async function initStoreLocator(wrapper) {
                 .addTo(map);
 
             marker.on('click', () => {
-                panToStoreOSM(store, index);
+                panToStoreOSM(store, store.originalIndex);
             });
 
-            markers.push({ marker, store, index });
+            // LƯU originalIndex để map với store list
+            markers.push({
+                marker,
+                store,
+                originalIndex: store.originalIndex
+            });
             bounds.extend([store.lat, store.lng]);
         });
 
