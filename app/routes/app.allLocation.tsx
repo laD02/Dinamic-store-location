@@ -37,6 +37,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const actionType = formData.get("actionType");
 
+  // app/routes/app.help-center.tsx - phần action "import"
+
   if (actionType === "import") {
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
@@ -51,43 +53,64 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     try {
-      // Đọc file content - xử lý cho cả browser và Node.js environment
       let text: string;
 
       if (typeof file.text === 'function') {
-        // Browser environment
         text = await file.text();
       } else {
-        // Node.js environment - convert to buffer then string
         const buffer = await file.arrayBuffer();
         text = new TextDecoder('utf-8').decode(buffer);
       }
 
-      // Xử lý BOM (Byte Order Mark) nếu có
       const cleanText = text.replace(/^\uFEFF/, '');
-
       const lines = cleanText.split(/\r?\n/).filter(line => line.trim());
 
       if (lines.length < 2) {
         return { error: "CSV file is empty or invalid. Please ensure it has header row and at least one data row." };
       }
 
-      // Bỏ qua dòng header
       const dataLines = lines.slice(1);
       let successCount = 0;
       let errorCount = 0;
       const errors: string[] = [];
 
+      // Helper function để validate format giờ HH:MM (ví dụ: 09:00, 17:30)
+      const isValidTimeFormat = (time: string): boolean => {
+        const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+        return timeRegex.test(time);
+      };
+
+      // Helper function để parse giờ mở cửa
+      const parseTimeSlot = (timeStr: string) => {
+        if (!timeStr || timeStr.trim().toLowerCase() === 'closed') {
+          return { open: "close", close: "close" };
+        }
+
+        const parts = timeStr.split('-').map(t => t.trim());
+
+        // Phải có đúng 2 phần (open - close)
+        if (parts.length !== 2) {
+          return { open: "close", close: "close" };
+        }
+
+        const [open, close] = parts;
+
+        // Kiểm tra format của cả open và close
+        if (!isValidTimeFormat(open) || !isValidTimeFormat(close)) {
+          return { open: "close", close: "close" };
+        }
+
+        return { open, close };
+      };
+
       for (let i = 0; i < dataLines.length; i++) {
         const line = dataLines[i];
 
-        // Skip empty lines
         if (!line.trim()) {
           continue;
         }
 
         try {
-          // Parse CSV line - cải thiện regex để xử lý tốt hơn
           const values: string[] = [];
           let current = '';
           let inQuotes = false;
@@ -99,7 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
             if (char === '"') {
               if (inQuotes && nextChar === '"') {
                 current += '"';
-                j++; // Skip next quote
+                j++;
               } else {
                 inQuotes = !inQuotes;
               }
@@ -110,16 +133,15 @@ export async function action({ request }: ActionFunctionArgs) {
               current += char;
             }
           }
-          values.push(current.trim()); // Add last value
+          values.push(current.trim());
 
-          // Validate minimum columns (Store Name, Address, City, Zip Code, Country)
           if (values.length < 5) {
             errors.push(`Line ${i + 2}: Not enough columns (found ${values.length}, need at least 5)`);
             errorCount++;
             continue;
           }
 
-          // Map theo template: Store Name, Address, City, Zip Code, Country, Phone, Website
+          // Map columns theo template
           const storeName = values[0] || "";
           const address = values[1] || "";
           const city = values[2] || "";
@@ -127,6 +149,16 @@ export async function action({ request }: ActionFunctionArgs) {
           const country = values[4] || "";
           const phone = values[5] || "";
           const website = values[6] || "";
+          const visibility = values[7] || "hidden";
+
+          // Parse giờ mở cửa (index 8-14)
+          const monday = parseTimeSlot(values[8] || "");
+          const tuesday = parseTimeSlot(values[9] || "");
+          const wednesday = parseTimeSlot(values[10] || "");
+          const thursday = parseTimeSlot(values[11] || "");
+          const friday = parseTimeSlot(values[12] || "");
+          const saturday = parseTimeSlot(values[13] || "");
+          const sunday = parseTimeSlot(values[14] || "");
 
           // Validate required fields
           if (!storeName.trim()) {
@@ -144,20 +176,17 @@ export async function action({ request }: ActionFunctionArgs) {
             errorCount++;
             continue;
           }
-
           if (!country.trim()) {
             errors.push(`Line ${i + 2}: Country is required`);
             errorCount++;
             continue;
           }
-
           if (!phone.trim()) {
             errors.push(`Line ${i + 2}: Phone is required`);
             errorCount++;
             continue;
           }
 
-          // Lấy tọa độ từ địa chỉ
           const coordinates = await getCoordinatesFromAddress(
             address.trim(),
             city.trim(),
@@ -165,12 +194,28 @@ export async function action({ request }: ActionFunctionArgs) {
             code.trim() || undefined
           );
 
-          // Nếu không lấy được tọa độ, ghi log nhưng vẫn tiếp tục tạo store
           if (!coordinates) {
             console.warn(`Line ${i + 2}: Could not geocode address for ${storeName}`);
           }
 
-          // Tạo store mới với đúng schema, bao gồm tọa độ
+          // Tạo time object
+          const timeData = {
+            mondayOpen: monday.open,
+            mondayClose: monday.close,
+            tuesdayOpen: tuesday.open,
+            tuesdayClose: tuesday.close,
+            wednesdayOpen: wednesday.open,
+            wednesdayClose: wednesday.close,
+            thursdayOpen: thursday.open,
+            thursdayClose: thursday.close,
+            fridayOpen: friday.open,
+            fridayClose: friday.close,
+            saturdayOpen: saturday.open,
+            saturdayClose: saturday.close,
+            sundayOpen: sunday.open,
+            sundayClose: sunday.close,
+          };
+
           await prisma.store.create({
             data: {
               shop: shop || "",
@@ -185,31 +230,15 @@ export async function action({ request }: ActionFunctionArgs) {
               url: website.trim(),
               directions: "",
               source: "import",
-              visibility: "hidden",
+              visibility: visibility.toLowerCase() === "visible" ? "visible" : "hidden",
               lat: coordinates?.lat || null,
               lng: coordinates?.lng || null,
-              time: {
-                mondayOpen: "09:00",
-                mondayClose: "17:00",
-                tuesdayOpen: "09:00",
-                tuesdayClose: "17:00",
-                wednesdayOpen: "09:00",
-                wednesdayClose: "17:00",
-                thursdayOpen: "09:00",
-                thursdayClose: "17:00",
-                fridayOpen: "09:00",
-                fridayClose: "17:00",
-                saturdayOpen: "09:00",
-                saturdayClose: "17:00",
-                sundayOpen: "09:00",
-                sundayClose: "17:00",
-              }
+              time: timeData,
             }
           });
 
           successCount++;
 
-          // Thêm delay nhỏ giữa các request để tránh rate limit
           if (i < dataLines.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 100));
           }

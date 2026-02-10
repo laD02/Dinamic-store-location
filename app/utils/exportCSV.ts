@@ -1,6 +1,23 @@
 // app/utils/exportCSV.ts
 import { Store } from "@prisma/client";
 
+interface StoreTime {
+  mondayOpen?: string;
+  mondayClose?: string;
+  tuesdayOpen?: string;
+  tuesdayClose?: string;
+  wednesdayOpen?: string;
+  wednesdayClose?: string;
+  thursdayOpen?: string;
+  thursdayClose?: string;
+  fridayOpen?: string;
+  fridayClose?: string;
+  saturdayOpen?: string;
+  saturdayClose?: string;
+  sundayOpen?: string;
+  sundayClose?: string;
+}
+
 export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   const selectedStores = stores.filter(store => selectedIds.includes(store.id));
 
@@ -18,22 +35,46 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
     "Country",
     "Phone",
     "Website",
+    "Visibility",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
     "Added",
     "Updated"
   ];
 
-  const rows = selectedStores.map((store, index) => [
-    index + 1,
-    store.storeName,
-    store.address,
-    store.city,
-    store.code,
-    store.region,
-    store.phone,
-    store.url,
-    new Date(store.createdAt).toLocaleString(),
-    new Date(store.updatedAt).toLocaleString()
-  ]);
+  const formatHours = (open?: string, close?: string) => {
+    return (open === "close" && close === "close") ? "Close" : `${open} - ${close}`;
+  };
+
+  const rows = selectedStores.map((store, index) => {
+    const time = store.time as StoreTime | null;
+
+    return [
+      index + 1,
+      store.storeName,
+      store.address,
+      store.city,
+      store.code,
+      store.region || "",
+      store.phone || "",
+      store.url || "",
+      store.visibility,
+      formatHours(time?.mondayOpen, time?.mondayClose),
+      formatHours(time?.tuesdayOpen, time?.tuesdayClose),
+      formatHours(time?.wednesdayOpen, time?.wednesdayClose),
+      formatHours(time?.thursdayOpen, time?.thursdayClose),
+      formatHours(time?.fridayOpen, time?.fridayClose),
+      formatHours(time?.saturdayOpen, time?.saturdayClose),
+      formatHours(time?.sundayOpen, time?.sundayClose),
+      new Date(store.createdAt).toLocaleString(),
+      new Date(store.updatedAt).toLocaleString()
+    ];
+  });
 
   const csvContent = [headers, ...rows]
     .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))

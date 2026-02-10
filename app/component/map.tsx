@@ -175,10 +175,10 @@ export default function xMapGoogle({
               </div>
 
               <div className={styles.storeInfo}>
-                <h3 className={styles.storeName}>Apple Park</h3>
+                <h3 className={styles.storeName}>Downtown Store</h3>
                 <div className={styles.contactRow}>
                   <i className="fa-solid fa-location-dot" style={{ color: popupStyle.iconColor }}></i>
-                  <span className={styles.storeAddress}> 1 Apple Park Way, Cupertino, CA 95014, USA</span>
+                  <span className={styles.storeAddress}> 123 Main Street, New York, United States, 10001</span>
                 </div>
                 <div className={styles.contactRow}>
                   <i className="fa-solid fa-phone" style={{ color: popupStyle.iconColor }}></i>
@@ -233,11 +233,9 @@ export default function xMapGoogle({
                     <i className="fa-brands fa-facebook"></i>
                   </a>
                 </div>
-
                 <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
                   className={styles.directionButton}
                   style={{
                     backgroundColor: popupStyle.iconColor, // Main color for button background

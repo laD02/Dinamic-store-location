@@ -17,9 +17,35 @@ export default function Import() {
             "Country",
             "Phone",
             "Website",
+            "Visibility",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
         ];
 
-        const rows = [headers];
+        const exampleRow = [
+            "Downtown Store",
+            "123 Main Street",
+            "New York",
+            "10001",
+            "United States",
+            "+1 408-996-1010",
+            "https://example.com",
+            "Hidden",
+            "Close",
+            "09:00 - 17:00",
+            "09:00 - 17:00",
+            "09:00 - 17:00",
+            "09:00 - 17:00",
+            "09:00 - 17:00",
+            "Close",
+        ];
+
+        const rows = [headers, exampleRow];
 
         const csvContent = rows
             .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))

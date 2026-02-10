@@ -1148,10 +1148,10 @@ export default function AddLocation() {
                                         </div>
 
                                         <div className={styles.storeInfo}>
-                                            <h3 className={styles.storeName}>{previewData.storeName || 'Apple Park'}</h3>
+                                            <h3 className={styles.storeName}>{previewData.storeName || 'Downtown Store'}</h3>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-location-dot" ></i>
-                                                <span className={styles.storeAddress}> {previewData.address || 'Apple Park Way'}, {previewData.city || 'Cupertino'}, {previewData.region || 'United States'}{previewData.code !== '' ? ', ' + previewData.code : ''}</span>
+                                                <span className={styles.storeAddress}> {previewData.address || '123 Main Street'}, {previewData.city || 'New York'}, {previewData.region || 'United States'}, {previewData.code || '10001'}</span>
                                             </div>
                                             <div className={styles.contactRow}>
                                                 <i className="fa-solid fa-phone" ></i>
