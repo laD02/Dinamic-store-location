@@ -80,9 +80,19 @@ export async function action({ request }: ActionFunctionArgs) {
         return timeRegex.test(time);
       };
 
-      // Helper function để parse giờ mở cửa
-      const parseTimeSlot = (timeStr: string) => {
-        if (!timeStr || timeStr.trim().toLowerCase() === 'closed') {
+      // Helper function để so sánh 2 giờ (return true nếu time1 < time2)
+      const isTimeBefore = (time1: string, time2: string): boolean => {
+        const [hours1, minutes1] = time1.split(':').map(Number);
+        const [hours2, minutes2] = time2.split(':').map(Number);
+
+        if (hours1 < hours2) return true;
+        if (hours1 > hours2) return false;
+        return minutes1 < minutes2;
+      };
+
+      // Helper function để parse giờ mở cửa - throw error nếu invalid
+      const parseTimeSlot = (timeStr: string, dayName: string) => {
+        if (!timeStr || timeStr.trim().toLowerCase() === 'close') {
           return { open: "close", close: "close" };
         }
 
@@ -90,14 +100,24 @@ export async function action({ request }: ActionFunctionArgs) {
 
         // Phải có đúng 2 phần (open - close)
         if (parts.length !== 2) {
-          return { open: "close", close: "close" };
+          throw new Error(`${dayName} time must be in format "HH:MM - HH:MM" or "Close"`);
         }
 
         const [open, close] = parts;
 
-        // Kiểm tra format của cả open và close
-        if (!isValidTimeFormat(open) || !isValidTimeFormat(close)) {
-          return { open: "close", close: "close" };
+        // Kiểm tra format của open
+        if (!isValidTimeFormat(open)) {
+          throw new Error(`${dayName} opening time "${open}" is invalid. Must be HH:MM format (e.g., 09:00)`);
+        }
+
+        // Kiểm tra format của close
+        if (!isValidTimeFormat(close)) {
+          throw new Error(`${dayName} closing time "${close}" is invalid. Must be HH:MM format (e.g., 17:00)`);
+        }
+
+        // Kiểm tra open phải < close
+        if (!isTimeBefore(open, close)) {
+          throw new Error(`${dayName} opening time "${open}" must be before closing time "${close}"`);
         }
 
         return { open, close };
@@ -136,7 +156,7 @@ export async function action({ request }: ActionFunctionArgs) {
           values.push(current.trim());
 
           if (values.length < 5) {
-            errors.push(`Line ${i + 2}: Not enough columns (found ${values.length}, need at least 5)`);
+            errors.push(`Not enough columns (found ${values.length}, need at least 5)`);
             errorCount++;
             continue;
           }
@@ -151,41 +171,41 @@ export async function action({ request }: ActionFunctionArgs) {
           const website = values[6] || "";
           const visibility = values[7] || "hidden";
 
-          // Parse giờ mở cửa (index 8-14)
-          const monday = parseTimeSlot(values[8] || "");
-          const tuesday = parseTimeSlot(values[9] || "");
-          const wednesday = parseTimeSlot(values[10] || "");
-          const thursday = parseTimeSlot(values[11] || "");
-          const friday = parseTimeSlot(values[12] || "");
-          const saturday = parseTimeSlot(values[13] || "");
-          const sunday = parseTimeSlot(values[14] || "");
-
           // Validate required fields
           if (!storeName.trim()) {
-            errors.push(`Line ${i + 2}: Store Name is required`);
+            errors.push(`Store Name is required`);
             errorCount++;
             continue;
           }
           if (!address.trim()) {
-            errors.push(`Line ${i + 2}: Address is required`);
+            errors.push(`Address is required`);
             errorCount++;
             continue;
           }
           if (!city.trim()) {
-            errors.push(`Line ${i + 2}: City is required`);
+            errors.push(`City is required`);
             errorCount++;
             continue;
           }
           if (!country.trim()) {
-            errors.push(`Line ${i + 2}: Country is required`);
+            errors.push(`Country is required`);
             errorCount++;
             continue;
           }
           if (!phone.trim()) {
-            errors.push(`Line ${i + 2}: Phone is required`);
+            errors.push(`Phone is required`);
             errorCount++;
             continue;
           }
+
+          // Parse giờ mở cửa (index 8-14) - throw error nếu invalid
+          const monday = parseTimeSlot(values[8] || "", "Monday");
+          const tuesday = parseTimeSlot(values[9] || "", "Tuesday");
+          const wednesday = parseTimeSlot(values[10] || "", "Wednesday");
+          const thursday = parseTimeSlot(values[11] || "", "Thursday");
+          const friday = parseTimeSlot(values[12] || "", "Friday");
+          const saturday = parseTimeSlot(values[13] || "", "Saturday");
+          const sunday = parseTimeSlot(values[14] || "", "Sunday");
 
           const coordinates = await getCoordinatesFromAddress(
             address.trim(),
@@ -195,7 +215,7 @@ export async function action({ request }: ActionFunctionArgs) {
           );
 
           if (!coordinates) {
-            console.warn(`Line ${i + 2}: Could not geocode address for ${storeName}`);
+            console.warn(`Could not geocode address for ${storeName}`);
           }
 
           // Tạo time object
@@ -244,14 +264,14 @@ export async function action({ request }: ActionFunctionArgs) {
           }
 
         } catch (error: any) {
-          errors.push(`Line ${i + 2}: ${error.message}`);
+          errors.push(`${error.message}`);
           errorCount++;
         }
       }
 
       if (successCount === 0) {
         const errorMsg = errors.length > 0
-          ? `No locations imported. First 3 errors: ${errors.slice(0, 3).join('; ')}`
+          ? `No locations imported. Errors: ${errors.slice(0, 5).join('; ')}`
           : 'No valid data rows found in CSV file.';
         return { error: errorMsg };
       }
