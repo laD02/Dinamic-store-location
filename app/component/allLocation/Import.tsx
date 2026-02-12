@@ -5,6 +5,10 @@ import { useFetcher } from 'react-router';
 
 export default function Import() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [importResult, setImportResult] = useState<{
+        type: 'success' | 'error';
+        message: string;
+    } | null>(null);
     const fetcher = useFetcher();
     const shopify = useAppBridge();
 
@@ -64,7 +68,23 @@ export default function Import() {
     const handleFileSelect = (event: any) => {
         const files = event.target?.files || event.detail?.files;
         if (files && files.length > 0) {
-            setSelectedFile(files[0]);
+            const file = files[0];
+
+            // Kiểm tra extension file
+            const fileName = file.name.toLowerCase();
+            const isCSV = fileName.endsWith('.csv');
+
+            if (!isCSV) {
+                setImportResult({
+                    type: 'error',
+                    message: 'The file is not in the correct format. Please download the template and use the correct format.'
+                });
+                setSelectedFile(null);
+                return;
+            }
+
+            setSelectedFile(file);
+            setImportResult(null);
         }
     };
 
@@ -72,20 +92,40 @@ export default function Import() {
         event.preventDefault();
         const files = event.dataTransfer?.files;
         if (files && files.length > 0) {
-            setSelectedFile(files[0]);
+            const file = files[0];
+
+            // Kiểm tra extension file
+            const fileName = file.name.toLowerCase();
+            const isCSV = fileName.endsWith('.csv');
+
+            if (!isCSV) {
+                setImportResult({
+                    type: 'error',
+                    message: 'The file is not in the correct format. Please download the template and use the correct format.'
+                });
+                setSelectedFile(null);
+                return;
+            }
+
+            setSelectedFile(file);
+            setImportResult(null);
         }
     };
 
     const handleRemoveFile = () => {
         setSelectedFile(null);
+        setImportResult(null);
     };
 
     const handleModalClose = () => {
         setSelectedFile(null);
+        setImportResult(null);
     };
 
     const handleImport = async () => {
         if (!selectedFile) return;
+
+        setImportResult(null);
 
         const formData = new FormData();
         formData.append('actionType', 'import');
@@ -113,25 +153,42 @@ export default function Import() {
         };
     }, []);
 
-    // Reset file sau khi import thành công
     useEffect(() => {
         if (fetcher.data?.success) {
-            setSelectedFile(null);
             const message = fetcher.data.message || `Successfully imported ${fetcher.data.count} locations`;
             shopify.toast.show(message);
+
+            // Đóng modal và reset state
+            // Đóng modal bằng cách trigger hidden button
+            const closeBtn = document.getElementById('close-import-modal-btn');
+            closeBtn?.click();
+
+            // Reset sau khi đóng modal
+            setTimeout(() => {
+                setSelectedFile(null);
+                setImportResult(null);
+            }, 100);
         }
 
         if (fetcher.data?.error) {
-            shopify.toast.show(fetcher.data.error, { isError: true });
+            // Không đóng modal - chỉ hiển thị lỗi inline
+            setImportResult({ type: 'error', message: fetcher.data.error });
+            setSelectedFile(null);
         }
     }, [fetcher.data, shopify]);
-
 
     return (
         <>
             <s-button icon="import" commandFor="btnImport">
                 Import
             </s-button>
+            <div style={{ display: "none" }}>
+                <s-button
+                    id="close-import-modal-btn"
+                    commandFor="btnImport"
+                    command="--hide"
+                ></s-button>
+            </div>
             <s-modal id="btnImport" heading="Bulk Import Your Locations">
 
                 <s-stack gap="base">
@@ -148,6 +205,15 @@ export default function Import() {
                         <s-paragraph>
                             When your list is ready, select or drag/drop your template below to upload your locations to Store Locator
                         </s-paragraph>
+
+                        {/* Hiển thị kết quả import ngay dưới phần upload */}
+                        {importResult && (
+                            <s-banner
+                                tone={importResult.type === 'success' ? 'success' : 'critical'}
+                            >
+                                <s-paragraph>{importResult.message}</s-paragraph>
+                            </s-banner>
+                        )}
 
                         {!selectedFile ? (
                             <s-drop-zone
@@ -183,12 +249,11 @@ export default function Import() {
                 <s-button
                     slot="primary-action"
                     variant="primary"
-                    commandFor="btnImport"
-                    command="--hide"
                     disabled={!selectedFile || fetcher.state === 'submitting'}
                     onClick={handleImport}
+                    loading={fetcher.state === 'submitting'}
                 >
-                    {fetcher.state === 'submitting' ? 'Importing...' : 'Import Location List'}
+                    Import Location List
                 </s-button>
             </s-modal>
         </>

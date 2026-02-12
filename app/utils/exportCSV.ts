@@ -27,7 +27,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
   }
 
   const headers = [
-    "No",
     "Store Name",
     "Address",
     "City",
@@ -43,8 +42,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
     "Friday",
     "Saturday",
     "Sunday",
-    "Added",
-    "Updated"
   ];
 
   const formatHours = (open?: string, close?: string) => {
@@ -55,7 +52,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
     const time = store.time as StoreTime | null;
 
     return [
-      index + 1,
       store.storeName,
       store.address,
       store.city,
@@ -71,8 +67,6 @@ export const exportStoresToCSV = (stores: Store[], selectedIds: string[]) => {
       formatHours(time?.fridayOpen, time?.fridayClose),
       formatHours(time?.saturdayOpen, time?.saturdayClose),
       formatHours(time?.sundayOpen, time?.sundayClose),
-      new Date(store.createdAt).toLocaleString(),
-      new Date(store.updatedAt).toLocaleString()
     ];
   });
 
