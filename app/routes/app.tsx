@@ -57,7 +57,8 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app/allLocation">All Location</s-link>
         <s-link href="/app/map-designers">Map Designers</s-link>
-        {/* <s-link href="/app/settings">Settings</s-link> */}
+        <s-link href="/app/integrations">Integrations</s-link>
+        {/* <s-link href="/app/plan">Pricing</s-link> */}
       </s-app-nav>
 
       {isLoading ? (

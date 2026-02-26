@@ -43,10 +43,10 @@ model Store {
   visibility String
   time       Json?
   tags       Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
   lat        Float?
   lng        Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }
 
 model Style {
@@ -65,6 +65,10 @@ model Style {
   anchorx         Int
   anchory         Int
   cornerRadius    Int
+  styleMaker      String?
+  colorMaker      String?
+  width           Int?
+  height          Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
 }
@@ -91,14 +95,24 @@ model Attribute {
 }
 
 model Key {
-  id     String @id @default(cuid())
-  shop   String @default("")
-  url    String? @unique
-  ggKey  String? @default("")
-  b2bKey String? @default("")
+  id      String  @id @default(cuid())
+  shop    String  @unique
+  b2bKey  String? @unique
+}
+
+model ShopConnection {
+  id            String   @id @default(cuid())
+
+  sourceShop    String   // shop tạo key
+  targetShop    String   // shop nhập key
+  sourceShopUrl String   // url của shop tạo
+  createdAt     DateTime @default(now())
+
+  @@unique([sourceShop, targetShop])
 }
 
 model Plan {
   id              String @id @default(cuid())
+  shop            String? @unique
   level           String @default("basic")
 }

@@ -1,78 +1,201 @@
 .wrapper {
-    margin-top: 60px;
-    margin-right: 100px;
-    margin-left: 100px;
+    margin: 40px auto;
+    max-width: 1000px;
+    padding: 0 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
-h3 i{
-    margin-right: 4px;
-    padding: 4px;
-    border-radius: 8px;
-}
-
-i:hover {
-    background-color: rgb(210, 210, 210);
-}
-
-.body {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px
-}
-
-.select {
-    background-color: white;
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid rgb(210, 210, 210);
+.header {
+    text-align: center;
+    margin-bottom: 48px;
+    position: relative;
     display: flex;
     flex-direction: column;
-    width: 100% ;
+    align-items: center;
+}
+
+.headerContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.header h3 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #202223;
+    margin: 0;
+}
+
+.backBtn {
+    position: absolute;
+    left: 0;
+    font-size: 20px;
+    color: #6d7175;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.backBtn:hover {
+    background-color: #f4f6f8;
+    color: #202223;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #6d7175;
+    margin: 0;
+}
+
+.plansGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.planCardWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 12px;
+}
+
+.planCardWrapper:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+.popularCard {
+    position: relative;
+    z-index: 1;
+    transform: scale(1.05);
+}
+
+.popularCard:hover {
+    transform: scale(1.05) translateY(-4px);
+    box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.12);
+}
+
+.popularBadge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #008060, #00a07a);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(0, 128, 96, 0.3);
+    z-index: 2;
+}
+
+.contentFlex {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.titleWrapper {
+    min-height: 28px;
+    margin-bottom: 12px;
+    width: 100%;
 }
 
 .title {
-    color: rgb(120, 120, 120);
+    font-size: 20px;
+    font-weight: 600;
+    color: #202223;
 }
 
 .pricing {
-    font-size: 28px;
-    padding-top: 16px;
-    padding-bottom: 16px;
+    font-size: 40px;
+    font-weight: 700;
+    color: #202223;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 4px;
 }
 
 .pricing span {
-    color: rgb(120, 120, 120);
-    font-size: 12px;
+    color: #6d7175;
+    font-size: 16px;
+    font-weight: 400;
 }
 
 .info {
-    padding-bottom: 50px;
-    height: 20px;
+    color: #8c9196;
+    font-size: 14px;
+    min-height: 20px;
+    margin-bottom: 24px;
 }
 
-.boxBtn {
-    height: 52px;
-}
-
-.btnSelect {
+.buttonWrapper {
+    margin-bottom: 24px;
+    min-height: 36px;
+    display: flex;
+    align-items: flex-end;
     width: 100%;
-    background-color: rgb(40, 40, 40);
-    color: white;
-    border-radius: 8px;
-    padding: 8px;
-    cursor: pointer;
 }
 
-.btnSelect:hover {
-    background-color: black;
+.divider {
+    height: 1px;
+    background-color: #e1e3e5;
+    margin: 0 0 24px 0;
+    width: 100%;
 }
 
 .list {
-    margin-top: 16px;
     display: flex;
     flex-direction: column;
-    color: rgb(120, 120, 120);
-    font-size: 12px;
+    gap: 16px;
+    flex-grow: 1;
 }
 
+.listItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: #404446;
+    font-size: 14px;
+    line-height: 1.4;
+}
 
+.checkIcon {
+    color: #008060;
+    font-size: 14px;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .plansGrid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .popularCard {
+        transform: scale(1);
+    }
+
+    .popularCard:hover {
+        transform: translateY(-4px);
+    }
+}

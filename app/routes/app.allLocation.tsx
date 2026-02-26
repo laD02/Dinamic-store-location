@@ -19,13 +19,26 @@ import { getCoordinatesFromAddress } from "../utils/Geocoding";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session?.shop;
-  const storeData = await prisma.store.findMany({
-    where: { shop },
-    orderBy: { createdAt: 'desc' },
-  });
+  const connections = await prisma.shopConnection.findMany({
+    where: {
+      targetShop: shop
+    }
+  })
 
-  return storeData.map((s: any) => ({
+  const sourceShops = connections.map(c => c.sourceShop)
+
+  const stores = await prisma.store.findMany({
+    where: {
+      OR: [
+        { shop },
+        { shop: { in: sourceShops } }
+      ]
+    }
+  })
+
+  return stores.map((s: any) => ({
     ...s,
+    type: s.shop === shop ? "Manual" : "Shopify B2B",
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
   }));
@@ -324,11 +337,17 @@ export async function action({ request }: ActionFunctionArgs) {
   return { error: "Unknown action" };
 }
 
+type UIStore = Omit<Store, "createdAt" | "updatedAt"> & {
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export default function AllLocation() {
-  const storesData = useLoaderData<Store[]>();
+  const storesData = useLoaderData<UIStore[]>();
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [stores, setStores] = useState<Store[]>([]);
+  const [stores, setStores] = useState<UIStore[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const fetcher = useFetcher();
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -440,7 +459,7 @@ export default function AllLocation() {
 
   const handleExport = () => {
     const selectedStoreList = stores.filter(s => selectedIds.has(s.id));
-    const success = exportStoresToCSV(selectedStoreList, Array.from(selectedIds));
+    const success = exportStoresToCSV(selectedStoreList as unknown as Store[], Array.from(selectedIds));
     if (success) shopify.toast.show('Stores exported successfully!');
   };
 
@@ -536,6 +555,7 @@ export default function AllLocation() {
                       StoreName
                     </s-stack>
                   </s-table-header>
+                  <s-table-header listSlot="labeled">Source</s-table-header>
                   <s-table-header listSlot="labeled">Visibility</s-table-header>
                   <s-table-header listSlot="labeled">Created</s-table-header>
                   <s-table-header listSlot="labeled">Update</s-table-header>
@@ -549,6 +569,7 @@ export default function AllLocation() {
                       {checkedRowCount} selected
                     </s-stack>
                   </s-table-header>
+                  <s-table-header listSlot="labeled"></s-table-header>
                   <s-table-header listSlot="labeled"></s-table-header>
                   <s-table-header listSlot="labeled"></s-table-header>
                   <s-table-header listSlot="labeled"></s-table-header>
@@ -567,6 +588,9 @@ export default function AllLocation() {
                           <s-box>{store.address}, {store.city}, {store.region}{store.code ? `, ${store.code}` : ''}</s-box>
                         </s-link>
                       </s-stack>
+                    </s-table-cell>
+                    <s-table-cell>
+                      <s-badge tone={store.type === "Manual" ? "info" : "caution"}>{store.type}</s-badge>
                     </s-table-cell>
                     <s-table-cell>
                       <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>

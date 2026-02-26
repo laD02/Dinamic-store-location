@@ -7,6 +7,7 @@ import prisma from 'app/db.server'
 import Review from 'app/component/onboarding/review'
 import Update from 'app/component/onboarding/update'
 import { hasStoreLocatorEmbedEnabled } from 'app/utils/embedStore'
+import Integrations from 'app/component/onboarding/integrations'
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
@@ -43,11 +44,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })
 
     const visibleCount = await prisma.store.count({
-        where: { shop, visibility: "visible" }
+        where: {
+            OR: [
+                { shop, visibility: "visible" },
+                // Lấy các shop được connect với shop hiện tại
+                {
+                    shop: {
+                        in: await prisma.shopConnection.findMany({
+                            where: { targetShop: shop },
+                            select: { sourceShop: true }
+                        }).then(connections => connections.map(c => c.sourceShop))
+                    },
+                    visibility: "visible"
+                }
+            ]
+        }
     })
 
     const hiddenCount = await prisma.store.count({
-        where: { shop, visibility: "hidden" }
+        where: {
+            OR: [
+                { shop, visibility: "hidden" },
+                // Lấy các shop được connect với shop hiện tại
+                {
+                    shop: {
+                        in: await prisma.shopConnection.findMany({
+                            where: { targetShop: shop },
+                            select: { sourceShop: true }
+                        }).then(connections => connections.map(c => c.sourceShop))
+                    },
+                    visibility: "hidden"
+                }
+            ]
+        }
     })
 
     const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
@@ -100,6 +129,7 @@ export async function action({ request }: ActionFunctionArgs) {
         saveDesignMap: "designMap",
         saveReview: "review",
         saveUpdate: "update",
+        saveIntegrations: "integrations",
         saveAddMap: "addMap",
     }
 
@@ -161,6 +191,7 @@ export default function Onboarding() {
     const designFetcher = useFetcher()
     const reviewFetcher = useFetcher()
     const updateFetcher = useFetcher()
+    const integrationsFetcher = useFetcher()
     const addMapFetcher = useFetcher()
 
     function getOptimisticState(
@@ -181,6 +212,7 @@ export default function Onboarding() {
     const design = getOptimisticState("designMap", designFetcher, false)
     const review = getOptimisticState("review", reviewFetcher, false)
     const update = getOptimisticState("update", updateFetcher, false)
+    const integrations = getOptimisticState("integrations", integrationsFetcher, false)
     const addMap = getOptimisticState("addMap", addMapFetcher, false)
 
     const handleCheck = (step: string, check: boolean) => {
@@ -188,6 +220,7 @@ export default function Onboarding() {
             designMap: designFetcher,
             review: reviewFetcher,
             update: updateFetcher,
+            integrations: integrationsFetcher,
             addMap: addMapFetcher
         }
         const fetcher = fetcherMap[step]
@@ -201,9 +234,9 @@ export default function Onboarding() {
 
     useEffect(() => {
         setCount(
-            [design, review, update, addMap].filter(Boolean).length
+            [design, review, update, integrations, addMap].filter(Boolean).length
         )
-    }, [design, review, update, addMap])
+    }, [design, review, update, integrations, addMap])
 
     const hasAddMapStep =
         Array.isArray(onBoard?.onBoarding) &&
@@ -258,7 +291,7 @@ export default function Onboarding() {
                             </s-stack>
                             <s-stack gap='small'>
                                 <s-box>
-                                    <s-text>{count} of 4 tasks completed </s-text>
+                                    <s-text>{count} of 5 tasks completed </s-text>
                                 </s-box>
                                 <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                     <div
@@ -311,6 +344,15 @@ export default function Onboarding() {
                                 </s-clickable>
 
                                 <s-clickable onClick={() => setIndex(4)} background={index === 4 ? 'subdued' : 'base'} borderRadius='large'>
+                                    <Integrations
+                                        storeHandle={storeHandle}
+                                        check={integrations}
+                                        handleCheck={(val) => handleCheck("integrations", val)}
+                                        index={index}
+                                    />
+                                </s-clickable>
+
+                                <s-clickable onClick={() => setIndex(5)} background={index === 5 ? 'subdued' : 'base'} borderRadius='large'>
                                     <AddMapToStore
                                         storeHandle={storeHandle}
                                         themeId={themeId}

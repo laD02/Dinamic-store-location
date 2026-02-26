@@ -643,6 +643,7 @@ export default function AddLocation() {
                                         <s-stack>
                                             <s-stack direction="inline" justifyContent="space-between">
                                                 <s-heading>Location Information</s-heading>
+                                                <s-badge tone="info">Manual</s-badge>
                                             </s-stack>
                                         </s-stack>
                                         <s-stack paddingBlockStart="small" gap="small-200">
