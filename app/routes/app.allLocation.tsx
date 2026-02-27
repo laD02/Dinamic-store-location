@@ -397,7 +397,7 @@ export default function AllLocation() {
         store.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         store.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
         store.address.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSource = selectedSources.length === 0 || selectedSources.includes(store.source);
+      const matchesSource = selectedSources.length === 0 || selectedSources.includes(store.type);
       const matchesVisibility = !selectedVisibility || store.visibility.toLowerCase() === selectedVisibility.toLowerCase();
       return matchesSearch && matchesSource && matchesVisibility;
     });
@@ -526,6 +526,29 @@ export default function AllLocation() {
                   <s-tooltip id="sort-tooltip"><s-text>Sort</s-text></s-tooltip>
                   <s-popover id="sort-actions">
                     <s-stack gap="none">
+                      <s-box padding="small">
+                        Source
+                        <s-checkbox
+                          label="Manual"
+                          checked={selectedSources.includes("Manual")}
+                          onChange={(e: any) => {
+                            const checked = e.currentTarget.checked;
+                            setSelectedSources(prev =>
+                              checked ? [...prev, "Manual"] : prev.filter(s => s !== "Manual")
+                            );
+                          }}
+                        />
+                        <s-checkbox
+                          label="Shopify B2B"
+                          checked={selectedSources.includes("Shopify B2B")}
+                          onChange={(e: any) => {
+                            const checked = e.currentTarget.checked;
+                            setSelectedSources(prev =>
+                              checked ? [...prev, "Shopify B2B"] : prev.filter(s => s !== "Shopify B2B")
+                            );
+                          }}
+                        />
+                      </s-box>
                       <s-divider />
                       <s-box padding="small">
                         <s-choice-list

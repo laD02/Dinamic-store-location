@@ -296,7 +296,7 @@ export default function Onboarding() {
                                 <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                     <div
                                         style={{
-                                            width: `${(count / 4) * 100}%`,
+                                            width: `${(count / 5) * 100}%`,
                                             height: 8,
                                             background: "rgb(145, 208, 255)",
                                             borderRadius: 4,

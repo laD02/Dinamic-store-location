@@ -39,7 +39,6 @@ model Store {
   url        String?
   directions String?
   contract   Json?
-  source     String
   visibility String
   time       Json?
   tags       Json?
@@ -65,10 +64,6 @@ model Style {
   anchorx         Int
   anchory         Int
   cornerRadius    Int
-  styleMaker      String?
-  colorMaker      String?
-  width           Int?
-  height          Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
 }
@@ -89,11 +84,6 @@ model OnBoard {
   onBoarding       Json?
 }
 
-model Attribute {
-  id              String @id @default(cuid())
-  filter          String
-}
-
 model Key {
   id      String  @id @default(cuid())
   shop    String  @unique
@@ -111,8 +101,3 @@ model ShopConnection {
   @@unique([sourceShop, targetShop])
 }
 
-model Plan {
-  id              String @id @default(cuid())
-  shop            String? @unique
-  level           String @default("basic")
-}
