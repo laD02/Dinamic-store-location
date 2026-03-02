@@ -14,3 +14,6 @@ if (process.env.NODE_ENV !== "production") {
 const prisma = global.prismaGlobal ?? new PrismaClient();
 
 export default prisma;
+
+// Auto-start background cron jobs
+import "./cron.server";

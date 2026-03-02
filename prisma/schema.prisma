@@ -46,6 +46,9 @@ model Store {
   lng        Float?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
+
+  events     StoreEvent[] 
+  dailyStats StoreDailyStat[]
 }
 
 model Style {
@@ -99,5 +102,54 @@ model ShopConnection {
   createdAt     DateTime @default(now())
 
   @@unique([sourceShop, targetShop])
+}
+
+model StoreEvent {
+  id        String   @id @default(cuid())
+
+  shop      String   // shopify domain
+
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  sessionId String?  // để group 1 user session
+  eventType StoreEventType
+
+  searchKeyword String?
+  country       String?
+  city          String?
+  device        String?  // mobile / desktop
+
+  createdAt DateTime @default(now())
+
+  @@index([shop])
+  @@index([storeId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model StoreDailyStat {
+  id        String   @id @default(cuid())
+
+  shop      String
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  date      DateTime  // lưu dạng 2026-02-27 00:00:00
+
+  searchCount     Int @default(0)
+  viewCount       Int @default(0)
+  directionCount  Int @default(0)
+  callCount       Int @default(0)
+
+  @@unique([shop, storeId, date])
+  @@index([shop, date])
+}
+
+enum StoreEventType {
+  SEARCH
+  VIEW_STORE
+  CLICK_DIRECTION
+  CLICK_CALL
 }
 

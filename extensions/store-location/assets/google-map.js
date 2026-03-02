@@ -772,7 +772,7 @@ async function initStoreLocator(wrapper) {
                 ${s.phone ? `
                 <div class="map-overlay-row">
                     <i class="fa-solid fa-phone" style="color:${mapStyle.iconColor};"></i>
-                    <a href="tel:${s.phone}" style="color:${mapStyle.color};">${s.phone}</a>
+                    <a href="tel:${s.phone}" style="color:${mapStyle.color};" onclick="if(window.trackStoreEvent) window.trackStoreEvent('CLICK_CALL', {storeId: '${s.id}'})">${s.phone}</a>
                 </div>
                 ` : ''}
 
@@ -798,6 +798,7 @@ async function initStoreLocator(wrapper) {
                 <a href="${directionUrl}" 
                    target="_blank" 
                    class="map-overlay-direction-btn"
+                   onclick="if(window.trackStoreEvent) window.trackStoreEvent('CLICK_DIRECTION', {storeId: '${s.id}'})"
                    style="
                        display: flex;
                        justify-content: center;
@@ -811,7 +812,7 @@ async function initStoreLocator(wrapper) {
                        font-size: 14px;
                        transition: all 0.3s ease;
                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                       background-color: ${mapStyle.iconColor || '#333'}; 
+                       background-color: ${mapStyle.iconColor || '#5230f9'}; 
                        color: #ffffff;
                    "
                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.15)'; this.style.opacity='0.95';"
@@ -841,7 +842,7 @@ async function initStoreLocator(wrapper) {
                     <span>Location not available on map</span>
                 </div>
                 `}
-            </div>
+            </div >
         `;
     }
 }

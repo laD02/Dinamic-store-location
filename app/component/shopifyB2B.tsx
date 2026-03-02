@@ -207,6 +207,7 @@ export default function ShopifyB2B() {
                         <s-banner
                             heading="In order to pull in your B2B customer information from another Shopify store you own into the Retail Locator on this store, you must load the app to your other store. Download the Dynamic Store locator app to your wholesale store, then go to the Shopify B2B section in the Integrations tab. In the blue box, click to display the store's unique API key. Copy that key over into the field above."
                             tone="warning"
+                            dismissible
                         />
                     </s-stack>
                 </s-stack>

@@ -1,6 +1,6 @@
 import prisma from "app/db.server";
 import { authenticate } from "../shopify.server";
-import { LoaderFunctionArgs } from "react-router";
+import { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   let shop: string | undefined;
@@ -56,6 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       secondaryColor: "#000",
       primaryFont: "Roboto",
       secondaryFont: "Open Sans",
+      color: "#000",
     };
 
   return new Response(
@@ -67,4 +68,87 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
     }
   );
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  }
+
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop");
+
+  if (!shop) {
+    return new Response(JSON.stringify({ error: "Missing shop" }), { status: 400 });
+  }
+
+  try {
+    const body = await request.json();
+    const { eventType, storeId, storeIds, searchKeyword, device, sessionId } = body;
+
+    const validEvents = ["SEARCH", "VIEW_STORE", "CLICK_DIRECTION", "CLICK_CALL"];
+    if (!validEvents.includes(eventType)) {
+      return new Response(JSON.stringify({ error: "Invalid event" }), { status: 400 });
+    }
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    if (eventType === "SEARCH") {
+      // Increment stats and track events for each store matched
+      if (Array.isArray(storeIds) && storeIds.length > 0) {
+        await Promise.all(
+          storeIds.map(async (id) => {
+            // Record an individual StoreEvent for each matched store
+            await prisma.storeEvent.create({
+              data: {
+                shop,
+                storeId: id,
+                eventType,
+                searchKeyword: searchKeyword || null,
+                device: device || null,
+                sessionId: sessionId || null,
+              },
+            });
+            // We now use a cron job to aggregate StoreEvents into StoreDailyStat,
+            // so we don't do real-time upserts here anymore.
+          })
+        );
+      }
+    } else {
+      // Capture the single store event
+      await prisma.storeEvent.create({
+        data: {
+          shop,
+          storeId: storeId || null,
+          eventType,
+          searchKeyword: searchKeyword || null,
+          device: device || null,
+          sessionId: sessionId || null,
+        },
+      });
+
+      // We now use a cron job to aggregate StoreEvents into StoreDailyStat,
+      // so we don't do real-time upserts here anymore.
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error) {
+    console.error("Tracking error:", error);
+    return new Response(JSON.stringify({ error: "Internal error" }), {
+      status: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
+  }
 }

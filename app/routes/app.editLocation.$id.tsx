@@ -12,12 +12,11 @@ import { AddressAutocomplete } from "app/component/addressAutocomplete";
 
 export async function loader({ params }: LoaderFunctionArgs) {
     const { id } = params;
-    const filter = await prisma.attribute.findMany()
     const store = await prisma.store.findUnique({
         where: { id },
     });
     const googleMapsApiKey = process.env.GOOGLE_MAP_KEY || "";
-    return { store, filter, googleMapsApiKey };
+    return { store, googleMapsApiKey };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -111,7 +110,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
             url: formData.get("url")?.toString() ?? "",
             directions: formData.get("directions")?.toString() ?? "",
             contract,
-            source: formData.get("source")?.toString() ?? "Manual",
             visibility: formData.get("visibility")?.toString() ?? "",
             time: {
                 mondayOpen: formData.get("Monday-open")?.toString() ?? "",

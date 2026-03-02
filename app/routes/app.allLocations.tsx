@@ -276,7 +276,6 @@ export async function action({ request }: ActionFunctionArgs) {
             image: "",
             url: website.trim(),
             directions: "",
-            source: "import",
             visibility: visibility.toLowerCase() === "visible" ? "visible" : "hidden",
             lat: coordinates?.lat || null,
             lng: coordinates?.lng || null,
@@ -662,7 +661,7 @@ export default function AllLocation() {
 
       <s-stack alignItems="center" paddingBlock="large-200">
         <s-text>
-          Learn more about <span style={{ color: 'blue' }}><s-link href="">Location section</s-link></span>
+          Learn more about <span style={{ color: 'blue' }}><s-link href="">Locations section</s-link></span>
         </s-text>
       </s-stack>
     </s-page>

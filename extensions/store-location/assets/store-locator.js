@@ -9,6 +9,38 @@ async function loadStores(wrapper, onSelectStore) {
 
     if (!container) return;
 
+    // Helper for Event Tracking
+    window.slSessionId = window.slSessionId || Math.random().toString(36).substring(2, 15);
+    window.trackStoreEvent = async function (eventType, data = {}) {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let shop = urlParams.get('shop') || window.Shopify?.shop;
+        if (!shop && document.querySelector('.sl-wrapper')) {
+          // Attempt to get shop from a data attribute if available, or just send without and let proxy handle if it can. 
+          // Often Shopify App Proxy automatically includes ?shop= in the forwarded request.
+        }
+
+        const payload = {
+          eventType,
+          sessionId: window.slSessionId,
+          device: window.innerWidth < 768 ? 'mobile' : 'desktop',
+          ...data
+        };
+
+        const fetchUrl = shop ? `/apps/store-locator?shop=${shop}` : '/apps/store-locator';
+
+        fetch(fetchUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        }).catch(err => console.error("Tracking Error:", err));
+      } catch (e) {
+        console.error("Failed to track event:", e);
+      }
+    };
+
     /************************************************
      * Render stores
      ************************************************/
@@ -83,19 +115,23 @@ async function loadStores(wrapper, onSelectStore) {
      * Search
      ************************************************/
     if (searchInput) {
+      let searchTimeout;
       searchInput.addEventListener("input", e => {
         const term = e.target.value.toLowerCase().trim();
-
-        if (!term) {
-          renderStores(stores);
-          return;
-        }
 
         const filtered = stores.filter(store =>
           store.storeName?.toLowerCase().includes(term) ||
           store.address?.toLowerCase().includes(term) ||
           store.code?.toLowerCase().includes(term)
         );
+
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          if (term) {
+            const storeIds = filtered.map(s => s.id).filter(Boolean);
+            window.trackStoreEvent("SEARCH", { searchKeyword: term, storeIds });
+          }
+        }, 1000); // 1s debounce
 
         renderStores(filtered);
       });
@@ -120,6 +156,12 @@ async function loadStores(wrapper, onSelectStore) {
       // callback cho map
       if (typeof onSelectStore === "function") {
         onSelectStore(originalIndex);
+      }
+
+      // Track Event
+      const clickedStore = stores[originalIndex];
+      if (clickedStore) {
+        window.trackStoreEvent("VIEW_STORE", { storeId: clickedStore.id });
       }
     });
 

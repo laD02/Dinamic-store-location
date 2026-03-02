@@ -418,7 +418,7 @@ export default function MapDesigners() {
 
       <s-stack alignItems="center" paddingBlock="large-200">
         <s-text>
-          Learn more about <span style={{ color: 'blue' }}><s-link href="">Map Designer section</s-link></span>
+          Learn more about <span style={{ color: 'blue' }}><s-link href="">Map Designers section</s-link></span>
         </s-text>
       </s-stack>
     </s-page>

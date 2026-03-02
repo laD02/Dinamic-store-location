@@ -12,9 +12,8 @@ import { validatePhoneNumber } from "app/utils/phoneValidation";
 import { AddressAutocomplete } from "app/component/addressAutocomplete";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-    const filter = await prisma.attribute.findMany()
     const googleMapsApiKey = process.env.GOOGLE_MAP_KEY || "";
-    return { filter, googleMapsApiKey };
+    return { googleMapsApiKey };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -77,7 +76,6 @@ export async function action({ request }: ActionFunctionArgs) {
             url: formData.get("url")?.toString() ?? "",
             directions: formData.get("directions")?.toString() ?? "",
             contract,
-            source: formData.get('source')?.toString() ?? "Manual",
             visibility: formData.get('visibility')?.toString() ?? "",
             time: {
                 mondayOpen: formData.get('Monday-open')?.toString() ?? "",
