@@ -1,10 +1,49 @@
 import Index from "app/component/analytics/Index";
+import prisma from "app/db.server";
+import { authenticate } from "app/shopify.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-    return {
+    const { session } = await authenticate.admin(request);
+    const shop = session?.shop;
 
-    }
+    const connections = await prisma.shopConnection.findMany({
+        where: { targetShop: shop }
+    });
+
+    const sourceShops = connections.map(c => c.sourceShop);
+
+    const stats = await prisma.storeDailyStat.findMany({
+        where: {
+            OR: [
+                { shop },
+                { shop: { in: sourceShops } }
+            ]
+        },
+        include: {
+            store: {
+                select: {
+                    id: true,
+                    storeName: true,
+                    address: true,
+                    city: true,
+                    state: true,
+                    code: true,
+                    phone: true,
+                    image: true,
+                    visibility: true,
+                    shop: true,
+                    lat: true,
+                    lng: true,
+                }
+            }
+        },
+        orderBy: {
+            date: "desc"
+        }
+    });
+
+    return { stats };
 }
 
 export async function action({ request }: ActionFunctionArgs) {

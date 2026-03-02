@@ -352,7 +352,7 @@ export default function AllLocation() {
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedVisibility, setSelectedVisibility] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const shopify = useAppBridge();
   const [windowWidth, setWindowWidth] = useState(0);
 

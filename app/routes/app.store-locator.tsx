@@ -101,14 +101,21 @@ export async function action({ request }: ActionFunctionArgs) {
     today.setUTCHours(0, 0, 0, 0);
 
     if (eventType === "SEARCH") {
-      // Increment stats and track events for each store matched
       if (Array.isArray(storeIds) && storeIds.length > 0) {
+        // Fetch the actual shop owner for each store
+        const stores = await prisma.store.findMany({
+          where: { id: { in: storeIds } },
+          select: { id: true, shop: true },
+        });
+
+        const storeShopMap = new Map(stores.map((s) => [s.id, s.shop]));
+
         await Promise.all(
           storeIds.map(async (id) => {
-            // Record an individual StoreEvent for each matched store
+            const storeShop = storeShopMap.get(id) ?? shop;
             await prisma.storeEvent.create({
               data: {
-                shop,
+                shop: storeShop, // ✅ shop chứa store, không phải shop đang xem
                 storeId: id,
                 eventType,
                 searchKeyword: searchKeyword || null,
@@ -116,16 +123,23 @@ export async function action({ request }: ActionFunctionArgs) {
                 sessionId: sessionId || null,
               },
             });
-            // We now use a cron job to aggregate StoreEvents into StoreDailyStat,
-            // so we don't do real-time upserts here anymore.
           })
         );
       }
     } else {
-      // Capture the single store event
+      // Fetch the actual shop owner of this store
+      let storeShop = shop;
+      if (storeId) {
+        const storeRecord = await prisma.store.findUnique({
+          where: { id: storeId },
+          select: { shop: true },
+        });
+        if (storeRecord) storeShop = storeRecord.shop;
+      }
+
       await prisma.storeEvent.create({
         data: {
-          shop,
+          shop: storeShop, // ✅ shop chứa store, không phải shop đang xem
           storeId: storeId || null,
           eventType,
           searchKeyword: searchKeyword || null,
@@ -133,9 +147,6 @@ export async function action({ request }: ActionFunctionArgs) {
           sessionId: sessionId || null,
         },
       });
-
-      // We now use a cron job to aggregate StoreEvents into StoreDailyStat,
-      // so we don't do real-time upserts here anymore.
     }
 
     return new Response(JSON.stringify({ success: true }), {
