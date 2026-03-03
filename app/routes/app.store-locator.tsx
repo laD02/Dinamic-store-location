@@ -92,7 +92,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const body = await request.json();
     const { eventType, storeId, storeIds, searchKeyword, device, sessionId } = body;
 
-    const validEvents = ["SEARCH", "VIEW_STORE", "CLICK_DIRECTION", "CLICK_CALL"];
+    const validEvents = ["SEARCH", "VIEW_STORE", "CLICK_DIRECTION", "CLICK_CALL", "CLICK_WEBSITE"];
     if (!validEvents.includes(eventType)) {
       return new Response(JSON.stringify({ error: "Invalid event" }), { status: 400 });
     }

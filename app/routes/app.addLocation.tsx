@@ -584,7 +584,7 @@ export default function AddLocation() {
                             onClick={() => {
                                 handleDiscard();
                                 requestAnimationFrame(() => {
-                                    navigate('/app/allLocation');
+                                    navigate('/app/allLocations');
                                 });
                             }}
                             icon="arrow-left"

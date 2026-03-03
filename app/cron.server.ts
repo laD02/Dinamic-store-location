@@ -39,6 +39,7 @@ export function startCron() {
                 viewCount: number,
                 directionCount: number,
                 callCount: number,
+                websiteCount: number,
                 eventIds: string[]
             }> = {};
 
@@ -60,6 +61,7 @@ export function startCron() {
                         viewCount: 0,
                         directionCount: 0,
                         callCount: 0,
+                        websiteCount: 0,
                         eventIds: []
                     };
                 }
@@ -79,6 +81,9 @@ export function startCron() {
                     case "CLICK_CALL":
                         aggregation[key].callCount++;
                         break;
+                    case "CLICK_WEBSITE":
+                        aggregation[key].websiteCount++;
+                        break;
                 }
             }
 
@@ -92,7 +97,7 @@ export function startCron() {
                     const existingStat = await tx.storeDailyStat.findFirst({
                         where: {
                             shop: data.shop,
-                            storeId: data.storeId,
+                            storeId: data.storeId ?? null,
                             date: data.date
                         }
                     });
@@ -105,18 +110,20 @@ export function startCron() {
                                 viewCount: { increment: data.viewCount },
                                 directionCount: { increment: data.directionCount },
                                 callCount: { increment: data.callCount },
+                                websiteCount: { increment: data.websiteCount },
                             }
                         });
                     } else {
                         await tx.storeDailyStat.create({
                             data: {
                                 shop: data.shop,
-                                storeId: data.storeId,
+                                storeId: data.storeId ?? null,
                                 date: data.date,
                                 searchCount: data.searchCount,
                                 viewCount: data.viewCount,
                                 directionCount: data.directionCount,
                                 callCount: data.callCount,
+                                websiteCount: data.websiteCount,
                             }
                         });
                     }

@@ -132,7 +132,7 @@ model StoreDailyStat {
   id        String   @id @default(cuid())
 
   shop      String
-  storeId   String?
+  storeId   String? 
   store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   date      DateTime  // lưu dạng 2026-02-27 00:00:00
@@ -141,6 +141,7 @@ model StoreDailyStat {
   viewCount       Int @default(0)
   directionCount  Int @default(0)
   callCount       Int @default(0)
+  websiteCount    Int @default(0)
 
   @@unique([shop, storeId, date])
   @@index([shop, date])
@@ -151,5 +152,6 @@ enum StoreEventType {
   VIEW_STORE
   CLICK_DIRECTION
   CLICK_CALL
+  CLICK_WEBSITE
 }
 

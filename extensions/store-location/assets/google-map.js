@@ -779,7 +779,7 @@ async function initStoreLocator(wrapper) {
                 ${s.url ? `
                 <div class="map-overlay-row">
                     <i class="fa-solid fa-earth-americas" style="color:${mapStyle.iconColor};"></i>
-                    <a href="${s.url}" target="_blank" style="color:${mapStyle.color};">${s.url}</a>
+                    <a href="${s.url}" target="_blank" style="color:${mapStyle.color};" onclick="if(window.trackStoreEvent) window.trackStoreEvent('CLICK_WEBSITE', {storeId: '${s.id}'})">${s.url}</a>
                 </div>
                 ` : ''}
 

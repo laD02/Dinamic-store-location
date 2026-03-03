@@ -33,7 +33,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         { shop },
         { shop: { in: sourceShops } }
       ]
-    }
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   })
 
   return stores.map((s: any) => ({

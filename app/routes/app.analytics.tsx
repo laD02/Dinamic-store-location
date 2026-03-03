@@ -27,14 +27,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
                     storeName: true,
                     address: true,
                     city: true,
-                    state: true,
-                    code: true,
-                    phone: true,
-                    image: true,
-                    visibility: true,
-                    shop: true,
-                    lat: true,
-                    lng: true,
+                    region: true,
+                    image: true
                 }
             }
         },
