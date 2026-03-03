@@ -1,5 +1,5 @@
 
-export default function Review({
+export default function Analytic({
     storeHandle,
     check,
     handleCheck,
@@ -35,14 +35,14 @@ export default function Review({
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-heading>Review Synced Locations</s-heading>
+                    <s-heading>Store Interaction Analytics</s-heading>
                     {
-                        index === 2 &&
+                        index === 5 &&
                         <>
-                            <s-paragraph>In the All Locations table, you can review data synced from third-party integrations, hide specific locations, and bulk update tags to improve search and filtering on your map.</s-paragraph>
+                            <s-paragraph>This dashboard provides a comprehensive overview of how customers interact with your store locations. Track store views, searches, direction requests, website visits, and phone clicks to understand customer intent and optimize your store performance.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocations`}>
-                                    <s-button variant="primary">View All Locations</s-button>
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/analytics`}>
+                                    <s-button variant="primary">Go to Analytics</s-button>
                                 </s-link>
                             </s-stack>
                         </>

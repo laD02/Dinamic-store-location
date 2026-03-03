@@ -8,6 +8,7 @@ import Review from 'app/component/onboarding/review'
 import Update from 'app/component/onboarding/update'
 import { hasStoreLocatorEmbedEnabled } from 'app/utils/embedStore'
 import Integrations from 'app/component/onboarding/integrations'
+import Analytic from 'app/component/onboarding/analytic'
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
@@ -192,6 +193,7 @@ export default function Onboarding() {
     const reviewFetcher = useFetcher()
     const updateFetcher = useFetcher()
     const integrationsFetcher = useFetcher()
+    const analyticFetcher = useFetcher()
     const addMapFetcher = useFetcher()
 
     function getOptimisticState(
@@ -213,6 +215,7 @@ export default function Onboarding() {
     const review = getOptimisticState("review", reviewFetcher, false)
     const update = getOptimisticState("update", updateFetcher, false)
     const integrations = getOptimisticState("integrations", integrationsFetcher, false)
+    const analytic = getOptimisticState("analytic", analyticFetcher, false)
     const addMap = getOptimisticState("addMap", addMapFetcher, false)
 
     const handleCheck = (step: string, check: boolean) => {
@@ -221,6 +224,7 @@ export default function Onboarding() {
             review: reviewFetcher,
             update: updateFetcher,
             integrations: integrationsFetcher,
+            analytic: analyticFetcher,
             addMap: addMapFetcher
         }
         const fetcher = fetcherMap[step]
@@ -234,9 +238,9 @@ export default function Onboarding() {
 
     useEffect(() => {
         setCount(
-            [design, review, update, integrations, addMap].filter(Boolean).length
+            [design, review, update, integrations, analytic, addMap].filter(Boolean).length
         )
-    }, [design, review, update, integrations, addMap])
+    }, [design, review, update, integrations, analytic, addMap])
 
     const hasAddMapStep =
         Array.isArray(onBoard?.onBoarding) &&
@@ -353,6 +357,15 @@ export default function Onboarding() {
                                 </s-clickable>
 
                                 <s-clickable onClick={() => setIndex(5)} background={index === 5 ? 'subdued' : 'base'} borderRadius='large'>
+                                    <Analytic
+                                        storeHandle={storeHandle}
+                                        check={analytic}
+                                        handleCheck={(val) => handleCheck("analytic", val)}
+                                        index={index}
+                                    />
+                                </s-clickable>
+
+                                <s-clickable onClick={() => setIndex(6)} background={index === 6 ? 'subdued' : 'base'} borderRadius='large'>
                                     <AddMapToStore
                                         storeHandle={storeHandle}
                                         themeId={themeId}

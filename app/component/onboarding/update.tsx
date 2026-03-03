@@ -41,7 +41,7 @@ export default function Update({
                         <>
                             <s-paragraph>Click on individual locations to add or update imported or synced data, ensuring your store locator remains accurate. You can also preview how each location will appear on your live site.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocation`}>
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocations`}>
                                     <s-button variant="primary">View All Locations</s-button>
                                 </s-link>
                             </s-stack>
