@@ -26,6 +26,8 @@ export default function Index() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showSearch, setShowSearch] = useState(false);
+    const [interval, setInterval] = useState<"0" | "1" | "2">("0"); // 0=Daily, 1=Weekly, 2=Monthly
+    const [activityFilter, setActivityFilter] = useState<"0" | "1" | "2" | "3" | "4" | "5">("0");
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState<"viewCount" | "searchCount" | "callCount" | "directionCount" | "websiteCount" | null>(null);
 
@@ -54,16 +56,28 @@ export default function Index() {
         return Object.values(map);
     }, [stats]);
 
-    // Group stats by date (tổng hợp tất cả stores, theo ngày)
     const dailyTotals = useMemo(() => {
-        const map: Record<string, { date: string; dateObj: Date; viewCount: number; searchCount: number; callCount: number; directionCount: number; websiteCount: number }> = {};
+        const map: Record<string, { viewCount: number; searchCount: number; callCount: number; directionCount: number; websiteCount: number }> = {};
 
         for (const stat of stats) {
             const dateObj = new Date(stat.date);
-            const dateKey = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            let dateKey = "";
+
+            if (interval === "0") {
+                // Daily: key là "Jan 1"
+                dateKey = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            } else if (interval === "1") {
+                // Weekly: key là "W1 Jan" (tuần bắt đầu từ thứ 2)
+                const monday = new Date(dateObj);
+                monday.setDate(dateObj.getDate() - ((dateObj.getDay() + 6) % 7));
+                dateKey = monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            } else {
+                // Monthly: key là "Jan 2024"
+                dateKey = dateObj.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+            }
 
             if (!map[dateKey]) {
-                map[dateKey] = { date: dateKey, dateObj, viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 };
+                map[dateKey] = { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 };
             }
             map[dateKey].viewCount += stat.viewCount;
             map[dateKey].searchCount += stat.searchCount;
@@ -72,10 +86,40 @@ export default function Index() {
             map[dateKey].websiteCount += stat.websiteCount;
         }
 
-        return Object.values(map)
-            .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-            .map(({ dateObj, ...rest }) => rest);
-    }, [stats]);
+        const result = [];
+        const today = new Date();
+
+        if (interval === "0") {
+            // 30 ngày gần nhất
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const dateKey = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }) });
+            }
+        } else if (interval === "1") {
+            // 12 tuần gần nhất (lấy thứ 2 của tuần hiện tại rồi trừ lui)
+            const currentMonday = new Date(today);
+            currentMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+            currentMonday.setHours(0, 0, 0, 0);
+
+            for (let i = 11; i >= 0; i--) {
+                const monday = new Date(currentMonday);
+                monday.setDate(currentMonday.getDate() - i * 7);
+                const dateKey = monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }) });
+            }
+        } else {
+            // 12 tháng gần nhất
+            for (let i = 11; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const dateKey = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }) });
+            }
+        }
+
+        return result;
+    }, [stats, interval]);
 
     const filteredStores = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
@@ -110,8 +154,15 @@ export default function Index() {
         if (currentPage > totalPages && totalPages > 0) setCurrentPage(totalPages);
     }, [filteredStores.length, currentPage, totalPages]);
 
-    // Top 5 stores by total activity cho BarChart
     const top5Stores = useMemo(() => {
+        const ACTIVITY_MAP: Record<string, keyof typeof groupedStores[0]> = {
+            "1": "viewCount",
+            "2": "searchCount",
+            "3": "callCount",
+            "4": "directionCount",
+            "5": "websiteCount",
+        };
+
         return [...groupedStores]
             .map((s: any) => ({
                 name: s.store?.storeName?.slice(0, 16) ?? "Unknown",
@@ -120,10 +171,13 @@ export default function Index() {
                 Phone: s.callCount,
                 Directions: s.directionCount,
                 Website: s.websiteCount,
+                _total: activityFilter === "0"
+                    ? s.viewCount + s.searchCount + s.callCount + s.directionCount + s.websiteCount
+                    : s[ACTIVITY_MAP[activityFilter]],
             }))
-            .sort((a, b) => (b.Views + b.Searches + b.Phone + b.Directions + b.Website) - (a.Views + a.Searches + a.Phone + a.Directions + a.Website))
+            .sort((a, b) => b._total - a._total)
             .slice(0, 5);
-    }, [groupedStores]);
+    }, [groupedStores, activityFilter]);
 
     // Overall totals
     const overallTotals = useMemo(() => groupedStores.reduce((acc: any, s: any) => ({
@@ -141,6 +195,28 @@ export default function Index() {
         { value: "directionCount", label: "Direction" },
         { value: "websiteCount", label: "Website" },
     ];
+
+    const activityLabel = {
+        "0": "All Activity",
+        "1": "Views",
+        "2": "Searches",
+        "3": "Phone",
+        "4": "Directions",
+        "5": "Website",
+    }[activityFilter];
+
+    const handleChangeDate = (e: any) => {
+        setInterval(e.target.values?.[0] ?? "0");
+    };
+
+    const handleChangeActivity = (e: any) => {
+        setActivityFilter(e.target.values?.[0] ?? "0");
+    };
+
+    const chartHeading = interval === "0" ? "Daily Trend — Last 30 Days"
+        : interval === "1" ? "Weekly Trend — Last 12 Weeks"
+            : "Monthly Trend — Last 12 Months";
+
 
     return (
         <s-stack inlineSize="100%">
@@ -161,11 +237,22 @@ export default function Index() {
                     ))}
                 </s-grid>
 
+                <s-button icon="calendar" commandFor="date">Time Interval</s-button>
+                <s-popover id="date">
+                    <s-stack padding="small">
+                        <s-choice-list name="date-interval" onChange={(e: any) => handleChangeDate(e)}>
+                            <s-choice value="0" selected>Daily</s-choice>
+                            <s-choice value="1">Weekly</s-choice>
+                            <s-choice value="2">Monthly</s-choice>
+                        </s-choice-list>
+                    </s-stack>
+                </s-popover>
+
                 {/* Charts row */}
                 <s-grid gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr, 1fr' gap="base">
 
                     {/* Daily trend line chart */}
-                    <s-section heading="Daily Trend (All Stores)">
+                    <s-section heading={chartHeading}>
                         {dailyTotals.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
                                 <LineChart data={dailyTotals} margin={{ top: 8, right: 16, left: -16, bottom: 4 }}>
@@ -184,8 +271,21 @@ export default function Index() {
                         )}
                     </s-section>
 
-                    {/* Top 5 stores bar chart */}
-                    <s-section heading="Top Stores by Activity">
+                    <s-button icon="calendar" commandFor="activity">Top Activity</s-button>
+                    <s-popover id="activity">
+                        <s-stack padding="small">
+                            <s-choice-list name="activity-interval" onChange={(e: any) => handleChangeActivity(e)}>
+                                <s-choice value="0" selected>All activity</s-choice>
+                                <s-choice value="1">Views</s-choice>
+                                <s-choice value="2">Searches</s-choice>
+                                <s-choice value="3">Phone</s-choice>
+                                <s-choice value="4">Directions</s-choice>
+                                <s-choice value="5">Website</s-choice>
+                            </s-choice-list>
+                        </s-stack>
+                    </s-popover>
+
+                    <s-section heading={`Top Stores by ${activityLabel}`}>
                         {top5Stores.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
                                 <BarChart data={top5Stores} margin={{ top: 8, right: 16, left: -16, bottom: 4 }}>
@@ -194,11 +294,11 @@ export default function Index() {
                                     <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }} />
                                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                                    <Bar dataKey="Views" fill="#4f6ef7" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Searches" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Phone" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Directions" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Website" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                    {activityFilter === "0" || activityFilter === "1" ? <Bar dataKey="Views" fill="#4f6ef7" radius={[4, 4, 0, 0]} /> : null}
+                                    {activityFilter === "0" || activityFilter === "2" ? <Bar dataKey="Searches" fill="#f59e0b" radius={[4, 4, 0, 0]} /> : null}
+                                    {activityFilter === "0" || activityFilter === "3" ? <Bar dataKey="Phone" fill="#10b981" radius={[4, 4, 0, 0]} /> : null}
+                                    {activityFilter === "0" || activityFilter === "4" ? <Bar dataKey="Directions" fill="#ef4444" radius={[4, 4, 0, 0]} /> : null}
+                                    {activityFilter === "0" || activityFilter === "5" ? <Bar dataKey="Website" fill="#8b5cf6" radius={[4, 4, 0, 0]} /> : null}
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
