@@ -272,7 +272,10 @@ export default function MapDesigners() {
         </button>
       </SaveBar>
 
-      <h2>Map Designer</h2>
+      <s-stack direction="inline" alignItems="center" gap="small-400">
+        <s-icon type="theme-edit"></s-icon>
+        <h2>Map Designer</h2>
+      </s-stack>
 
       <div
         ref={containerRef}

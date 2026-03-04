@@ -15,14 +15,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (!shop) {
     return new Response(JSON.stringify({ stores: [], style: null }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 
-  // 1️⃣ Lấy các shop connect tới shop hiện tại
   const connections = await prisma.shopConnection.findMany({
     where: { targetShop: shop },
     select: { sourceShop: true },
@@ -30,7 +26,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const sourceShops = connections.map((c) => c.sourceShop);
 
-  // 2️⃣ Lấy store của shop chính + shop connect
   const stores = await prisma.store.findMany({
     where: {
       AND: [
@@ -43,15 +38,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         { visibility: "visible" },
       ],
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
   });
 
   const style =
-    (await prisma.style.findFirst({
-      where: { shop },
-    })) || {
+    (await prisma.style.findFirst({ where: { shop } })) || {
       primaryColor: "#000",
       secondaryColor: "#000",
       primaryFont: "Roboto",
@@ -59,16 +50,105 @@ export async function loader({ request }: LoaderFunctionArgs) {
       color: "#000",
     };
 
-  return new Response(
-    JSON.stringify({ stores, style }),
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-    }
-  );
+  return new Response(JSON.stringify({ stores, style }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
 }
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const EVENT_FIELD_MAP: Record<string, string> = {
+  VIEW_STORE: "uniqueViewSessions",
+  SEARCH: "uniqueSearchSessions",
+  CLICK_DIRECTION: "uniqueDirectionSessions",
+  CLICK_CALL: "uniqueCallSessions",
+  CLICK_WEBSITE: "uniqueWebsiteSessions",
+};
+
+const VALID_EVENTS = Object.keys(EVENT_FIELD_MAP);
+
+async function trackSingleStore(
+  tx: Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">,
+  params: {
+    shop: string;
+    storeId: string | null;
+    eventType: string;
+    searchKeyword?: string | null;
+    device?: string | null;
+    sessionId?: string | null;
+    date: Date;
+  }
+) {
+  const { shop, storeId, eventType, searchKeyword, device, sessionId, date } = params;
+
+  // 1️⃣ Luôn lưu raw event
+  await tx.storeEvent.create({
+    data: {
+      shop,
+      storeId: storeId || null,
+      eventType: eventType as any,
+      searchKeyword: searchKeyword || null,
+      device: device || null,
+      sessionId: sessionId || null,
+    },
+  });
+
+  // Thiếu sessionId hoặc storeId → không cần tracking session
+  if (!sessionId || !storeId) return;
+
+  const nextDay = new Date(date);
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+  // 2️⃣ Upsert StoreDailyStat — đảm bảo row tồn tại trước khi update
+  await tx.storeDailyStat.upsert({
+    where: { shop_storeId_date: { shop, storeId, date } },
+    create: { shop, storeId, date, uniqueSessions: 0 },
+    update: {},
+  });
+
+  // 3️⃣ Kiểm tra StoreSession — đại diện cho "session tổng" của store trong ngày
+  const existingSession = await tx.storeSession.findUnique({
+    where: { shop_storeId_sessionId_date: { shop, storeId, sessionId, date } },
+  });
+
+  if (!existingSession) {
+    await tx.storeSession.create({
+      data: { shop, storeId, sessionId, date },
+    });
+
+    await tx.storeDailyStat.update({
+      where: { shop_storeId_date: { shop, storeId, date } },
+      data: { uniqueSessions: { increment: 1 } },
+    });
+  }
+
+  // 4️⃣ Kiểm tra xem (sessionId + storeId + eventType) đã từng xảy ra hôm nay chưa
+  //    dựa vào StoreEvent (raw log). Vì raw event vừa được tạo ở bước 1,
+  //    nên nếu count > 1 → đã có từ trước → bỏ qua.
+  const eventCountToday = await tx.storeEvent.count({
+    where: {
+      shop,
+      storeId,
+      sessionId,
+      eventType: eventType as any,
+      createdAt: { gte: date, lt: nextDay },
+    },
+  });
+
+  if (eventCountToday === 1) {
+    // Lần đầu tiên session này trigger eventType này hôm nay → tăng counter
+    const field = EVENT_FIELD_MAP[eventType];
+    if (field) {
+      await tx.storeDailyStat.update({
+        where: { shop_storeId_date: { shop, storeId, date } },
+        data: { [field]: { increment: 1 } },
+      });
+    }
+  }
+  // Nếu count > 1 → đã đếm rồi, bỏ qua
+}
+
+// ─── Action ──────────────────────────────────────────────────────────────────
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method === "OPTIONS") {
@@ -92,8 +172,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const body = await request.json();
     const { eventType, storeId, storeIds, searchKeyword, device, sessionId } = body;
 
-    const validEvents = ["SEARCH", "VIEW_STORE", "CLICK_DIRECTION", "CLICK_CALL", "CLICK_WEBSITE"];
-    if (!validEvents.includes(eventType)) {
+    if (!VALID_EVENTS.includes(eventType)) {
       return new Response(JSON.stringify({ error: "Invalid event" }), { status: 400 });
     }
 
@@ -101,8 +180,8 @@ export async function action({ request }: ActionFunctionArgs) {
     today.setUTCHours(0, 0, 0, 0);
 
     if (eventType === "SEARCH") {
+      // SEARCH: có thể ảnh hưởng nhiều store cùng lúc (qua storeIds)
       if (Array.isArray(storeIds) && storeIds.length > 0) {
-        // Fetch the actual shop owner for each store
         const stores = await prisma.store.findMany({
           where: { id: { in: storeIds } },
           select: { id: true, shop: true },
@@ -111,23 +190,23 @@ export async function action({ request }: ActionFunctionArgs) {
         const storeShopMap = new Map(stores.map((s) => [s.id, s.shop]));
 
         await Promise.all(
-          storeIds.map(async (id) => {
-            const storeShop = storeShopMap.get(id) ?? shop;
-            await prisma.storeEvent.create({
-              data: {
-                shop: storeShop, // ✅ shop chứa store, không phải shop đang xem
+          storeIds.map((id) =>
+            prisma.$transaction((tx) =>
+              trackSingleStore(tx, {
+                shop: storeShopMap.get(id) ?? shop,
                 storeId: id,
                 eventType,
-                searchKeyword: searchKeyword || null,
-                device: device || null,
-                sessionId: sessionId || null,
-              },
-            });
-          })
+                searchKeyword,
+                device,
+                sessionId,
+                date: today,
+              })
+            )
+          )
         );
       }
     } else {
-      // Fetch the actual shop owner of this store
+      // Các event khác: một store duy nhất
       let storeShop = shop;
       if (storeId) {
         const storeRecord = await prisma.store.findUnique({
@@ -137,16 +216,17 @@ export async function action({ request }: ActionFunctionArgs) {
         if (storeRecord) storeShop = storeRecord.shop;
       }
 
-      await prisma.storeEvent.create({
-        data: {
-          shop: storeShop, // ✅ shop chứa store, không phải shop đang xem
+      await prisma.$transaction((tx) =>
+        trackSingleStore(tx, {
+          shop: storeShop,
           storeId: storeId || null,
           eventType,
-          searchKeyword: searchKeyword || null,
-          device: device || null,
-          sessionId: sessionId || null,
-        },
-      });
+          searchKeyword,
+          device,
+          sessionId,
+          date: today,
+        })
+      );
     }
 
     return new Response(JSON.stringify({ success: true }), {

@@ -468,7 +468,10 @@ export default function AllLocation() {
   return (
     <s-page heading="Store Locator">
       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-        <h2>All Locations</h2>
+        <s-stack direction="inline" alignItems="center" gap="small-400">
+          <s-icon type="catalog-product"></s-icon>
+          <h2>All Locations</h2>
+        </s-stack>
         {windowWidth > 768 ? (
           <s-stack direction="inline" gap="base">
             <Import />
@@ -609,7 +612,7 @@ export default function AllLocation() {
                         <s-checkbox checked={selectedIds.has(store.id)} onChange={() => toggleSelect(store.id)} />
                         <s-thumbnail src={store.image || ''} size="small" />
                         <s-link href={`/app/editLocation/${store.id}`}>
-                          <s-box>{store.storeName}</s-box>
+                          <s-box><span style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a' }}>{store.storeName}</span></s-box>
                           <s-box>{store.address}, {store.city}, {store.region}{store.code ? `, ${store.code}` : ''}</s-box>
                         </s-link>
                       </s-stack>

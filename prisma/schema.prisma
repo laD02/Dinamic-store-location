@@ -129,22 +129,33 @@ model StoreEvent {
 }
 
 model StoreDailyStat {
-  id        String   @id @default(cuid())
+  id                      String   @id @default(cuid())
 
-  shop      String
-  storeId   String? 
-  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  shop                    String
+  storeId                 String? 
+  store                   Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
-  date      DateTime  // lưu dạng 2026-02-27 00:00:00
-
-  searchCount     Int @default(0)
-  viewCount       Int @default(0)
-  directionCount  Int @default(0)
-  callCount       Int @default(0)
-  websiteCount    Int @default(0)
+  date                    DateTime  // lưu dạng 2026-02-27 00:00:00
+  uniqueSessions          Int 
+  uniqueViewSessions      Int @default(0)
+  uniqueSearchSessions    Int @default(0)
+  uniqueDirectionSessions Int @default(0)
+  uniqueCallSessions      Int @default(0)
+  uniqueWebsiteSessions   Int @default(0)
 
   @@unique([shop, storeId, date])
-  @@index([shop, date])
+  @@index([shop, storeId, date])
+}
+
+model StoreSession {
+  id        String @id @default(cuid())
+  shop      String
+  storeId   String
+  sessionId String
+  date      DateTime
+
+  @@unique([shop, storeId, sessionId, date])
+  @@index([shop, storeId, date])
 }
 
 enum StoreEventType {

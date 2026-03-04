@@ -117,7 +117,10 @@ export default function Intergrations() {
 
   return (
     <s-page heading="Dynamic Store Locator">
-      <h2>Integrations</h2>
+      <s-stack direction="inline" alignItems="center" gap="small-400">
+        <s-icon type="connect"></s-icon>
+        <h2>Integrations</h2>
+      </s-stack>
       <div className={styles.wrapper}>
         <s-stack inlineSize="100%">
           {number === 0 && <ShopifyB2B />}

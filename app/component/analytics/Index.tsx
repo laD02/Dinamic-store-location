@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import Conversion from "./conversion";
 import {
     BarChart,
     Bar,
@@ -11,16 +12,111 @@ import {
     LineChart,
     Line,
     Legend,
+    AreaChart,
+    Area,
 } from "recharts";
 
 const METRICS = [
-    { key: "viewCount", label: "Views", color: "#4f6ef7" },
-    { key: "searchCount", label: "Searches", color: "#f59e0b" },
-    { key: "callCount", label: "Phone", color: "#10b981" },
-    { key: "directionCount", label: "Directions", color: "#ef4444" },
-    { key: "websiteCount", label: "Website", color: "#8b5cf6" },
+    { key: "uniqueViewSessions", label: "Views", icon: "👁", color: "#4f6ef7" },
+    { key: "uniqueSearchSessions", label: "Searches", icon: "🔍", color: "#f59e0b" },
+    { key: "uniqueCallSessions", label: "Phone", icon: "📞", color: "#10b981" },
+    { key: "uniqueDirectionSessions", label: "Directions", icon: "🗺", color: "#ef4444" },
+    { key: "uniqueWebsiteSessions", label: "Website", icon: "🌐", color: "#8b5cf6" },
 ];
 
+function ConversionChart({
+    data,
+    interval,
+    visibleMetrics,
+}: {
+    data: any[];
+    interval: string;
+    visibleMetrics: Set<string>;
+}) {
+    const chartData = useMemo(() => {
+        return data.map((d) => {
+            const views = d.uniqueViewSessions || 0;
+
+            return {
+                date: d.date,
+                uniqueCallSessions:
+                    views > 0
+                        ? Number(((d.uniqueCallSessions / views) * 100).toFixed(2))
+                        : 0,
+                uniqueDirectionSessions:
+                    views > 0
+                        ? Number(((d.uniqueDirectionSessions / views) * 100).toFixed(2))
+                        : 0,
+                uniqueWebsiteSessions:
+                    views > 0
+                        ? Number(((d.uniqueWebsiteSessions / views) * 100).toFixed(2))
+                        : 0,
+            };
+        });
+    }, [data]);
+
+    const formatTooltip = (value: any) => `${value}%`;
+    const formatYAxis = (value: any) => `${value}%`;
+
+    return (
+        <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                    {METRICS.map(m => (
+                        <linearGradient key={`grad-conv-${m.key}`} id={`grad-conv-${m.key}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={m.color} stopOpacity={0.2} />
+                            <stop offset="95%" stopColor={m.color} stopOpacity={0} />
+                        </linearGradient>
+                    ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: "#6b7280" }}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                />
+                <YAxis
+                    tick={{ fontSize: 11, fill: "#6b7280" }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={formatYAxis}
+                    dx={-10}
+                />
+                <Tooltip
+                    formatter={formatTooltip}
+                    contentStyle={{
+                        borderRadius: '12px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        fontSize: '12px'
+                    }}
+                />
+                <Legend
+                    verticalAlign="top"
+                    align="right"
+                    height={36}
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: '12px', paddingBottom: '20px' }}
+                />
+                {METRICS.filter(m => visibleMetrics.has(m.key) && ["uniqueCallSessions", "uniqueDirectionSessions", "uniqueWebsiteSessions"].includes(m.key)).map(m => (
+                    <Area
+                        key={m.key}
+                        type="monotone"
+                        dataKey={m.key}
+                        name={m.label + " Conversion"}
+                        stroke={m.color}
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill={`url(#grad-conv-${m.key})`}
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                    />
+                ))}
+            </AreaChart>
+        </ResponsiveContainer>
+    );
+}
 export default function Index() {
     const { stats } = useLoaderData();
     const [currentPage, setCurrentPage] = useState(1);
@@ -29,7 +125,33 @@ export default function Index() {
     const [interval, setInterval] = useState<"0" | "1" | "2">("0"); // 0=Daily, 1=Weekly, 2=Monthly
     const [activityFilter, setActivityFilter] = useState<"0" | "1" | "2" | "3" | "4" | "5">("0");
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortBy, setSortBy] = useState<"viewCount" | "searchCount" | "callCount" | "directionCount" | "websiteCount" | null>(null);
+    const [sortBy, setSortBy] = useState<"uniqueViewSessions" | "uniqueSearchSessions" | "uniqueCallSessions" | "uniqueDirectionSessions" | "uniqueWebsiteSessions" | null>(null);
+    const [visibleMetrics, setVisibleMetrics] = useState<Set<string>>(
+        new Set(METRICS.map(m => m.key))
+    );
+
+    const toggleMetric = (key: string) => {
+        setVisibleMetrics(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
+    const [conversionInterval, setConversionInterval] = useState<"0" | "1" | "2">("0");
+    const [conversionVisibleMetrics, setConversionVisibleMetrics] = useState<Set<string>>(
+        new Set(["uniqueCallSessions", "uniqueDirectionSessions", "uniqueWebsiteSessions"])
+    );
+
+    const toggleConversionMetric = (key: string) => {
+        setConversionVisibleMetrics(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
 
     // Group stats by store (tổng hợp tất cả ngày)
     const groupedStores = useMemo(() => {
@@ -40,24 +162,24 @@ export default function Index() {
                 map[key] = {
                     storeId: stat.storeId,
                     store: stat.store,
-                    viewCount: 0,
-                    searchCount: 0,
-                    callCount: 0,
-                    directionCount: 0,
-                    websiteCount: 0,
+                    uniqueViewSessions: 0,
+                    uniqueSearchSessions: 0,
+                    uniqueCallSessions: 0,
+                    uniqueDirectionSessions: 0,
+                    uniqueWebsiteSessions: 0,
                 };
             }
-            map[key].viewCount += stat.viewCount;
-            map[key].searchCount += stat.searchCount;
-            map[key].callCount += stat.callCount;
-            map[key].directionCount += stat.directionCount;
-            map[key].websiteCount += stat.websiteCount;
+            map[key].uniqueViewSessions += stat.uniqueViewSessions;
+            map[key].uniqueSearchSessions += stat.uniqueSearchSessions;
+            map[key].uniqueCallSessions += stat.uniqueCallSessions;
+            map[key].uniqueDirectionSessions += stat.uniqueDirectionSessions;
+            map[key].uniqueWebsiteSessions += stat.uniqueWebsiteSessions;
         }
         return Object.values(map);
     }, [stats]);
 
     const dailyTotals = useMemo(() => {
-        const map: Record<string, { viewCount: number; searchCount: number; callCount: number; directionCount: number; websiteCount: number }> = {};
+        const map: Record<string, { uniqueViewSessions: number; uniqueSearchSessions: number; uniqueCallSessions: number; uniqueDirectionSessions: number; uniqueWebsiteSessions: number }> = {};
 
         for (const stat of stats) {
             const dateObj = new Date(stat.date);
@@ -77,13 +199,19 @@ export default function Index() {
             }
 
             if (!map[dateKey]) {
-                map[dateKey] = { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 };
+                map[dateKey] = {
+                    uniqueViewSessions: 0,
+                    uniqueSearchSessions: 0,
+                    uniqueCallSessions: 0,
+                    uniqueDirectionSessions: 0,
+                    uniqueWebsiteSessions: 0,
+                };
             }
-            map[dateKey].viewCount += stat.viewCount;
-            map[dateKey].searchCount += stat.searchCount;
-            map[dateKey].callCount += stat.callCount;
-            map[dateKey].directionCount += stat.directionCount;
-            map[dateKey].websiteCount += stat.websiteCount;
+            map[dateKey].uniqueViewSessions += stat.uniqueViewSessions;
+            map[dateKey].uniqueSearchSessions += stat.uniqueSearchSessions;
+            map[dateKey].uniqueCallSessions += stat.uniqueCallSessions;
+            map[dateKey].uniqueDirectionSessions += stat.uniqueDirectionSessions;
+            map[dateKey].uniqueWebsiteSessions += stat.uniqueWebsiteSessions;
         }
 
         const result = [];
@@ -95,7 +223,7 @@ export default function Index() {
                 const d = new Date(today);
                 d.setDate(today.getDate() - i);
                 const dateKey = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                result.push({ date: dateKey, ...(map[dateKey] ?? { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }) });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueSearchSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }) });
             }
         } else if (interval === "1") {
             // 12 tuần gần nhất (lấy thứ 2 của tuần hiện tại rồi trừ lui)
@@ -107,19 +235,77 @@ export default function Index() {
                 const monday = new Date(currentMonday);
                 monday.setDate(currentMonday.getDate() - i * 7);
                 const dateKey = monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                result.push({ date: dateKey, ...(map[dateKey] ?? { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }) });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueSearchSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }) });
             }
         } else {
             // 12 tháng gần nhất
             for (let i = 11; i >= 0; i--) {
                 const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
                 const dateKey = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-                result.push({ date: dateKey, ...(map[dateKey] ?? { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }) });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueSearchSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }) });
             }
         }
 
         return result;
     }, [stats, interval]);
+
+    const conversionDailyTotals = useMemo(() => {
+        const map: Record<string, { uniqueViewSessions: number; uniqueCallSessions: number; uniqueDirectionSessions: number; uniqueWebsiteSessions: number }> = {};
+
+        for (const stat of stats) {
+            const dateObj = new Date(stat.date);
+            let dateKey = "";
+
+            if (conversionInterval === "0") {
+                dateKey = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            } else if (conversionInterval === "1") {
+                const monday = new Date(dateObj);
+                monday.setDate(dateObj.getDate() - ((dateObj.getDay() + 6) % 7));
+                dateKey = monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            } else {
+                dateKey = dateObj.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+            }
+
+            if (!map[dateKey]) {
+                map[dateKey] = { uniqueViewSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 };
+            }
+            map[dateKey].uniqueViewSessions += stat.uniqueViewSessions;
+            map[dateKey].uniqueCallSessions += stat.uniqueCallSessions;
+            map[dateKey].uniqueDirectionSessions += stat.uniqueDirectionSessions;
+            map[dateKey].uniqueWebsiteSessions += stat.uniqueWebsiteSessions;
+        }
+
+        const result = [];
+        const today = new Date();
+
+        if (conversionInterval === "0") {
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const dateKey = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }) });
+            }
+        } else if (conversionInterval === "1") {
+            const currentMonday = new Date(today);
+            currentMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+            currentMonday.setHours(0, 0, 0, 0);
+
+            for (let i = 11; i >= 0; i--) {
+                const monday = new Date(currentMonday);
+                monday.setDate(currentMonday.getDate() - i * 7);
+                const dateKey = monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }) });
+            }
+        } else {
+            for (let i = 11; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const dateKey = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+                result.push({ date: dateKey, ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }) });
+            }
+        }
+
+        return result;
+    }, [stats, conversionInterval]);
 
     const filteredStores = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
@@ -155,24 +341,24 @@ export default function Index() {
     }, [filteredStores.length, currentPage, totalPages]);
 
     const top5Stores = useMemo(() => {
-        const ACTIVITY_MAP: Record<string, keyof typeof groupedStores[0]> = {
-            "1": "viewCount",
-            "2": "searchCount",
-            "3": "callCount",
-            "4": "directionCount",
-            "5": "websiteCount",
+        const ACTIVITY_MAP: Record<string, string> = {
+            "1": "uniqueViewSessions",
+            "2": "uniqueSearchSessions",
+            "3": "uniqueCallSessions",
+            "4": "uniqueDirectionSessions",
+            "5": "uniqueWebsiteSessions",
         };
 
         return [...groupedStores]
             .map((s: any) => ({
                 name: s.store?.storeName?.slice(0, 16) ?? "Unknown",
-                Views: s.viewCount,
-                Searches: s.searchCount,
-                Phone: s.callCount,
-                Directions: s.directionCount,
-                Website: s.websiteCount,
+                Views: s.uniqueViewSessions,
+                Searches: s.uniqueSearchSessions,
+                Phone: s.uniqueCallSessions,
+                Directions: s.uniqueDirectionSessions,
+                Website: s.uniqueWebsiteSessions,
                 _total: activityFilter === "0"
-                    ? s.viewCount + s.searchCount + s.callCount + s.directionCount + s.websiteCount
+                    ? s.uniqueViewSessions + s.uniqueSearchSessions + s.uniqueCallSessions + s.uniqueDirectionSessions + s.uniqueWebsiteSessions
                     : s[ACTIVITY_MAP[activityFilter]],
             }))
             .sort((a, b) => b._total - a._total)
@@ -180,20 +366,33 @@ export default function Index() {
     }, [groupedStores, activityFilter]);
 
     // Overall totals
-    const overallTotals = useMemo(() => groupedStores.reduce((acc: any, s: any) => ({
-        viewCount: acc.viewCount + s.viewCount,
-        searchCount: acc.searchCount + s.searchCount,
-        callCount: acc.callCount + s.callCount,
-        directionCount: acc.directionCount + s.directionCount,
-        websiteCount: acc.websiteCount + s.websiteCount,
-    }), { viewCount: 0, searchCount: 0, callCount: 0, directionCount: 0, websiteCount: 0 }), [groupedStores]);
+    const overallTotals = useMemo(
+        () =>
+            groupedStores.reduce(
+                (acc: any, s: any) => ({
+                    uniqueViewSessions: acc.uniqueViewSessions + s.uniqueViewSessions,
+                    uniqueSearchSessions: acc.uniqueSearchSessions + s.uniqueSearchSessions,
+                    uniqueCallSessions: acc.uniqueCallSessions + s.uniqueCallSessions,
+                    uniqueDirectionSessions: acc.uniqueDirectionSessions + s.uniqueDirectionSessions,
+                    uniqueWebsiteSessions: acc.uniqueWebsiteSessions + s.uniqueWebsiteSessions,
+                }),
+                {
+                    uniqueViewSessions: 0,
+                    uniqueSearchSessions: 0,
+                    uniqueCallSessions: 0,
+                    uniqueDirectionSessions: 0,
+                    uniqueWebsiteSessions: 0,
+                }
+            ),
+        [groupedStores]
+    );
 
     const sortOptions = [
-        { value: "viewCount", label: "View" },
-        { value: "searchCount", label: "Search" },
-        { value: "callCount", label: "Phone" },
-        { value: "directionCount", label: "Direction" },
-        { value: "websiteCount", label: "Website" },
+        { value: "uniqueViewSessions", label: "View" },
+        { value: "uniqueSearchSessions", label: "Search" },
+        { value: "uniqueCallSessions", label: "Phone" },
+        { value: "uniqueDirectionSessions", label: "Direction" },
+        { value: "uniqueWebsiteSessions", label: "Website" },
     ];
 
     const activityLabel = {
@@ -217,34 +416,86 @@ export default function Index() {
         : interval === "1" ? "Weekly Trend — Last 12 Weeks"
             : "Monthly Trend — Last 12 Months";
 
+    const conversionChartHeading = conversionInterval === "0" ? "Conversion Trend — Last 30 Days"
+        : conversionInterval === "1" ? "Conversion Trend — Last 12 Weeks"
+            : "Conversion Trend — Last 12 Months";
+
 
     return (
         <s-stack inlineSize="100%">
-            <h2>Analytics</h2>
+            <s-stack direction="inline" alignItems="center" gap="small-400">
+                <s-icon type="chart-vertical"></s-icon>
+                <h2>Analytics</h2>
+            </s-stack>
             <s-stack gap="base">
                 <s-banner tone="info" heading="Store Performance Analytics" dismissible>
                     This dashboard provides detailed information about your store's location performance, including store views, phone number clicks, directions requests, and store search activity.
                 </s-banner>
 
                 {/* Summary cards */}
-                <s-grid gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr 1fr 1fr, 1fr 1fr' gap="base">
+                <s-grid gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr 1fr 1fr 1fr, 1fr 1fr' gap="base">
                     {METRICS.map(m => (
-                        <s-section key={m.key} heading={m.label}>
-                            <h1 style={{ marginBlock: 0, color: m.color }}>
-                                {(overallTotals as any)[m.key] ?? 0}
-                            </h1>
+                        <s-section key={m.key}>
+                            <s-stack gap="small-200">
+                                <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280' }}>
+                                        <s-text tone="neutral">{m.label}</s-text>
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        backgroundColor: `${m.color}15`,
+                                        fontSize: '16px'
+                                    }}>
+                                        {m.key === 'uniqueViewSessions' ? '👁' : m.key === 'uniqueSearchSessions' ? '🔍' : m.key === 'uniqueCallSessions' ? '📞' : m.key === 'uniqueDirectionSessions' ? '🗺' : '🌐'}
+                                    </div>
+                                </s-stack>
+                                <h1 style={{
+                                    marginBlock: 0,
+                                    fontSize: '28px',
+                                    fontWeight: '700',
+                                    color: '#1a1a1a',
+                                    letterSpacing: '-0.5px'
+                                }}>
+                                    {(overallTotals as any)[m.key] ?? 0}
+                                </h1>
+                            </s-stack>
                         </s-section>
                     ))}
                 </s-grid>
 
-                <s-button icon="calendar" commandFor="date">Time Interval</s-button>
+                {/* Conversion Rate */}
+                <Conversion
+                    viewCount={overallTotals.uniqueViewSessions}
+                    callCount={overallTotals.uniqueCallSessions}
+                    directionCount={overallTotals.uniqueDirectionSessions}
+                    websiteCount={overallTotals.uniqueWebsiteSessions}
+                />
+
+                <s-button icon="calendar" commandFor="date">Analytics Filters</s-button>
                 <s-popover id="date">
                     <s-stack padding="small">
-                        <s-choice-list name="date-interval" onChange={(e: any) => handleChangeDate(e)}>
+                        <s-choice-list label="Time Interval" name="date-interval" onChange={(e: any) => handleChangeDate(e)}>
                             <s-choice value="0" selected>Daily</s-choice>
                             <s-choice value="1">Weekly</s-choice>
                             <s-choice value="2">Monthly</s-choice>
                         </s-choice-list>
+                    </s-stack>
+                    <s-divider></s-divider>
+                    <s-stack padding="small" gap="none">
+                        Activities
+                        {METRICS.map(m => (
+                            <s-checkbox
+                                key={m.key}
+                                label={m.label}
+                                checked={visibleMetrics.has(m.key)}
+                                onChange={() => toggleMetric(m.key)}
+                            />
+                        ))}
                     </s-stack>
                 </s-popover>
 
@@ -254,20 +505,97 @@ export default function Index() {
                     {/* Daily trend line chart */}
                     <s-section heading={chartHeading}>
                         {dailyTotals.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={220}>
-                                <LineChart data={dailyTotals} margin={{ top: 8, right: 16, left: -16, bottom: 4 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#6b7280" }} tickLine={false} axisLine={false} />
-                                    <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} tickLine={false} axisLine={false} allowDecimals={false} />
-                                    <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }} />
-                                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                                    {METRICS.map(m => (
-                                        <Line key={m.key} type="monotone" dataKey={m.key} name={m.label} stroke={m.color} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                            <ResponsiveContainer width="100%" height={250}>
+                                <AreaChart data={dailyTotals} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        {METRICS.map(m => (
+                                            <linearGradient key={`grad-${m.key}`} id={`grad-${m.key}`} x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={m.color} stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor={m.color} stopOpacity={0} />
+                                            </linearGradient>
+                                        ))}
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        allowDecimals={false}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            borderRadius: '12px',
+                                            border: '1px solid #e5e7eb',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                            fontSize: '12px'
+                                        }}
+                                    />
+                                    <Legend
+                                        verticalAlign="top"
+                                        align="right"
+                                        height={36}
+                                        iconType="circle"
+                                        wrapperStyle={{ fontSize: '12px', paddingBottom: '20px' }}
+                                    />
+                                    {METRICS.filter(m => visibleMetrics.has(m.key)).map(m => (
+                                        <Area
+                                            key={m.key}
+                                            type="monotone"
+                                            dataKey={m.key}
+                                            name={m.label}
+                                            stroke={m.color}
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill={`url(#grad-${m.key})`}
+                                            activeDot={{ r: 6, strokeWidth: 0 }}
+                                        />
                                     ))}
-                                </LineChart>
+                                </AreaChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div style={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No data</div>
+                            <div style={{ height: 250, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No data</div>
+                        )}
+                    </s-section>
+
+                    <s-button icon="calendar" commandFor="conversion-date">Conversion Filters</s-button>
+                    <s-popover id="conversion-date">
+                        <s-stack padding="small">
+                            <s-choice-list label="Time Interval" name="conversion-interval" onChange={(e: any) => setConversionInterval(e.target.values?.[0] ?? "0")}>
+                                <s-choice value="0" selected={conversionInterval === "0"}>Daily</s-choice>
+                                <s-choice value="1" selected={conversionInterval === "1"}>Weekly</s-choice>
+                                <s-choice value="2" selected={conversionInterval === "2"}>Monthly</s-choice>
+                            </s-choice-list>
+                        </s-stack>
+                        <s-divider></s-divider>
+                        <s-stack padding="small" gap="none">
+                            Metrics
+                            {METRICS.filter(m => ["uniqueCallSessions", "uniqueDirectionSessions", "uniqueWebsiteSessions"].includes(m.key)).map(m => (
+                                <s-checkbox
+                                    key={m.key}
+                                    label={m.label}
+                                    checked={conversionVisibleMetrics.has(m.key)}
+                                    onChange={() => toggleConversionMetric(m.key)}
+                                />
+                            ))}
+                        </s-stack>
+                    </s-popover>
+
+                    <s-section heading={conversionChartHeading}>
+                        {conversionDailyTotals.length > 0 ? (
+                            <ConversionChart
+                                data={conversionDailyTotals}
+                                interval={conversionInterval}
+                                visibleMetrics={conversionVisibleMetrics}
+                            />
+                        ) : (
+                            <div style={{ height: 250, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No data</div>
                         )}
                     </s-section>
 
@@ -287,22 +615,46 @@ export default function Index() {
 
                     <s-section heading={`Top Stores by ${activityLabel}`}>
                         {top5Stores.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={220}>
-                                <BarChart data={top5Stores} margin={{ top: 8, right: 16, left: -16, bottom: 4 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} />
-                                    <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} tickLine={false} axisLine={false} allowDecimals={false} />
-                                    <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }} />
-                                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                                    {activityFilter === "0" || activityFilter === "1" ? <Bar dataKey="Views" fill="#4f6ef7" radius={[4, 4, 0, 0]} /> : null}
-                                    {activityFilter === "0" || activityFilter === "2" ? <Bar dataKey="Searches" fill="#f59e0b" radius={[4, 4, 0, 0]} /> : null}
-                                    {activityFilter === "0" || activityFilter === "3" ? <Bar dataKey="Phone" fill="#10b981" radius={[4, 4, 0, 0]} /> : null}
-                                    {activityFilter === "0" || activityFilter === "4" ? <Bar dataKey="Directions" fill="#ef4444" radius={[4, 4, 0, 0]} /> : null}
-                                    {activityFilter === "0" || activityFilter === "5" ? <Bar dataKey="Website" fill="#8b5cf6" radius={[4, 4, 0, 0]} /> : null}
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart data={top5Stores} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fontSize: 10, fill: "#6b7280" }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        dy={5}
+                                    />
+                                    <YAxis
+                                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        allowDecimals={false}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            borderRadius: '12px',
+                                            border: '1px solid #e5e7eb',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 / 0.1)',
+                                            fontSize: '12px'
+                                        }}
+                                    />
+                                    <Legend
+                                        verticalAlign="top"
+                                        align="right"
+                                        height={36}
+                                        iconType="circle"
+                                        wrapperStyle={{ fontSize: '12px', paddingBottom: '20px' }}
+                                    />
+                                    {activityFilter === "0" || activityFilter === "1" ? <Bar dataKey="Views" fill="#4f6ef7" radius={[6, 6, 0, 0]} barSize={24} /> : null}
+                                    {activityFilter === "0" || activityFilter === "2" ? <Bar dataKey="Searches" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={24} /> : null}
+                                    {activityFilter === "0" || activityFilter === "3" ? <Bar dataKey="Phone" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} /> : null}
+                                    {activityFilter === "0" || activityFilter === "4" ? <Bar dataKey="Directions" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={24} /> : null}
+                                    {activityFilter === "0" || activityFilter === "5" ? <Bar dataKey="Website" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={24} /> : null}
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div style={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No data</div>
+                            <div style={{ height: 250, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>No data</div>
                         )}
                     </s-section>
 
@@ -374,17 +726,21 @@ export default function Index() {
                                                 <s-table-cell>
                                                     <s-stack direction="inline" alignItems="center" gap="base">
                                                         <s-thumbnail src={item.store?.image || ''} size="small" />
-                                                        <s-link href={`/app/analytic-detail/${item.store?.id}`}>
-                                                            <s-box>{item.store?.storeName}</s-box>
-                                                            <s-box>{item.store?.address}, {item.store?.city}, {item.store?.region}{item.store?.code ? `, ${item.store?.code}` : ''}</s-box>
-                                                        </s-link>
+                                                        <s-stack gap="none">
+                                                            <s-link href={`/app/analytic-detail/${item.store?.id}`}>
+                                                                <span style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a' }}>{item.store?.storeName}</span>
+                                                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                                                    <s-text tone="neutral">{item.store?.address}, {item.store?.city}</s-text>
+                                                                </div>
+                                                            </s-link>
+                                                        </s-stack>
                                                     </s-stack>
                                                 </s-table-cell>
-                                                <s-table-cell>{item.viewCount}</s-table-cell>
-                                                <s-table-cell>{item.searchCount}</s-table-cell>
-                                                <s-table-cell>{item.callCount}</s-table-cell>
-                                                <s-table-cell>{item.directionCount}</s-table-cell>
-                                                <s-table-cell>{item.websiteCount}</s-table-cell>
+                                                <s-table-cell><span style={{ fontWeight: '600' }}>{item.uniqueViewSessions}</span></s-table-cell>
+                                                <s-table-cell><span style={{ fontWeight: '600' }}>{item.uniqueSearchSessions}</span></s-table-cell>
+                                                <s-table-cell><span style={{ fontWeight: '600' }}>{item.uniqueCallSessions}</span></s-table-cell>
+                                                <s-table-cell><span style={{ fontWeight: '600' }}>{item.uniqueDirectionSessions}</span></s-table-cell>
+                                                <s-table-cell><span style={{ fontWeight: '600' }}>{item.uniqueWebsiteSessions}</span></s-table-cell>
                                             </s-table-row>
                                         ))}
                                     </s-table-body>

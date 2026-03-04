@@ -295,12 +295,12 @@ export default function Onboarding() {
                             </s-stack>
                             <s-stack gap='small'>
                                 <s-box>
-                                    <s-text>{count} of 5 tasks completed </s-text>
+                                    <s-text>{count} of 6 tasks completed </s-text>
                                 </s-box>
                                 <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                     <div
                                         style={{
-                                            width: `${(count / 5) * 100}%`,
+                                            width: `${(count / 6) * 100}%`,
                                             height: 8,
                                             background: "rgb(145, 208, 255)",
                                             borderRadius: 4,
