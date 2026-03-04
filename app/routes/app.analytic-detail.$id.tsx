@@ -8,7 +8,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Lấy thông tin store
     const storeInfo = await prisma.store.findUnique({
         where: { id },
-        select: { storeName: true, image: true, address: true, city: true, state: true }
+        select: { storeName: true, image: true, address: true, city: true, state: true, region: true, code: true }
     });
 
     // Lấy tất cả daily stats của store này, sort theo ngày tăng dần

@@ -29,7 +29,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
                         address: true,
                         city: true,
                         region: true,
-                        image: true
+                        image: true,
+                        code: true,
                     }
                 }
             },
@@ -49,7 +50,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
                 address: true,
                 city: true,
                 region: true,
-                image: true
+                image: true,
+                code: true,
             }
         })
     ]);
@@ -76,6 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
                 city: s.city,
                 region: s.region,
                 image: s.image,
+                code: s.code,
             },
         }));
 

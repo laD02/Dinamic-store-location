@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
+import { exportDetailToPDF } from "app/utils/exportDetailPDF";
+import { exportDetailToCSV } from "app/utils/exportDetailCSV";
 import {
     AreaChart,
     Area,
@@ -71,7 +73,8 @@ interface StoreData {
         image?: string;
         address?: string;
         city?: string;
-        state?: string;
+        region?: string;
+        code?: string;
     } | null;
     dailyStats: DailyStat[];
     uniqueViewSessions: number;
@@ -350,22 +353,93 @@ export default function Index() {
         uniqueWebsiteSessions: store.uniqueWebsiteSessions,
     };
 
+    // Compute aggregated trend data for current interval (used for export)
+    const dailyTrend = useMemo(() => {
+        const map: Record<string, { uniqueViewSessions: number; uniqueSearchSessions: number; uniqueCallSessions: number; uniqueDirectionSessions: number; uniqueWebsiteSessions: number }> = {};
+        for (const stat of store.dailyStats) {
+            const dateKey = getDateKey(new Date(stat.date), interval);
+            if (!map[dateKey]) map[dateKey] = { uniqueViewSessions: 0, uniqueSearchSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 };
+            map[dateKey].uniqueViewSessions += stat.uniqueViewSessions;
+            map[dateKey].uniqueSearchSessions += stat.uniqueSearchSessions;
+            map[dateKey].uniqueCallSessions += stat.uniqueCallSessions;
+            map[dateKey].uniqueDirectionSessions += stat.uniqueDirectionSessions;
+            map[dateKey].uniqueWebsiteSessions += stat.uniqueWebsiteSessions;
+        }
+        return getPeriodKeys(interval).map(dateKey => ({
+            date: dateKey,
+            ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueSearchSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }),
+        }));
+    }, [store.dailyStats, interval]);
+
+    const conversionTrend = useMemo(() => {
+        const map: Record<string, { uniqueViewSessions: number; uniqueCallSessions: number; uniqueDirectionSessions: number; uniqueWebsiteSessions: number }> = {};
+        for (const stat of store.dailyStats) {
+            const dateKey = getDateKey(new Date(stat.date), conversionInterval);
+            if (!map[dateKey]) map[dateKey] = { uniqueViewSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 };
+            map[dateKey].uniqueViewSessions += stat.uniqueViewSessions;
+            map[dateKey].uniqueCallSessions += stat.uniqueCallSessions;
+            map[dateKey].uniqueDirectionSessions += stat.uniqueDirectionSessions;
+            map[dateKey].uniqueWebsiteSessions += stat.uniqueWebsiteSessions;
+        }
+        return getPeriodKeys(conversionInterval).map(dateKey => ({
+            date: dateKey,
+            ...(map[dateKey] ?? { uniqueViewSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 }),
+        }));
+    }, [store.dailyStats, conversionInterval]);
+
     return (
         <s-query-container>
             <s-stack inlineSize="100%" gap="base">
 
                 {/* Header */}
-                <s-stack direction="inline" alignItems="center" gap="small-400">
-                    <s-button
-                        variant="tertiary"
-                        onClick={() => {
-                            requestAnimationFrame(() => {
-                                navigate("/app/analytics");
+                <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                    <s-stack direction="inline" alignItems="center" gap="small-400">
+                        <s-button
+                            variant="tertiary"
+                            onClick={() => {
+                                requestAnimationFrame(() => {
+                                    navigate("/app/analytics");
+                                });
+                            }}
+                            icon="arrow-left"
+                        ></s-button>
+                        <h2 style={{ margin: 0 }}>{store.store?.storeName ?? "Store"}</h2>
+                    </s-stack>
+
+                    <s-button commandFor="detail-export-menu" icon="export">Export</s-button>
+                    <s-menu id="detail-export-menu" accessibilityLabel="Export options">
+                        <s-button onClick={() => {
+                            const ok = exportDetailToPDF({
+                                store: store.store,
+                                totals: {
+                                    uniqueViewSessions: store.uniqueViewSessions,
+                                    uniqueSearchSessions: store.uniqueSearchSessions,
+                                    uniqueCallSessions: store.uniqueCallSessions,
+                                    uniqueDirectionSessions: store.uniqueDirectionSessions,
+                                    uniqueWebsiteSessions: store.uniqueWebsiteSessions,
+                                },
+                                chartHeadings: { trend: chartHeading, conversion: conversionChartHeading },
+                                dailyTrend,
+                                conversionTrend,
                             });
-                        }}
-                        icon="arrow-left"
-                    ></s-button>
-                    <h2 style={{ margin: 0 }}>{store.store?.storeName ?? "Store"}</h2>
+                            if (!ok) alert("No data to export.");
+                        }}>PDF</s-button>
+                        <s-button onClick={() => {
+                            const ok = exportDetailToCSV({
+                                store: store.store,
+                                totals: {
+                                    uniqueViewSessions: store.uniqueViewSessions,
+                                    uniqueSearchSessions: store.uniqueSearchSessions,
+                                    uniqueCallSessions: store.uniqueCallSessions,
+                                    uniqueDirectionSessions: store.uniqueDirectionSessions,
+                                    uniqueWebsiteSessions: store.uniqueWebsiteSessions,
+                                },
+                                dailyTrend,
+                                conversionTrend,
+                            });
+                            if (!ok) alert("No data to export.");
+                        }}>CSV</s-button>
+                    </s-menu>
                 </s-stack>
 
                 {/* Summary cards */}

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 import Conversion from "./conversion";
+import { exportAnalyticsToPDF } from "app/utils/exportAnalyticsPDF";
+import { exportAnalyticsToCSV } from "app/utils/exportAnalyticsCSV";
 import {
     BarChart,
     Bar,
@@ -423,9 +425,39 @@ export default function Index() {
 
     return (
         <s-stack inlineSize="100%">
-            <s-stack direction="inline" alignItems="center" gap="small-400">
-                <s-icon type="chart-vertical"></s-icon>
-                <h2>Analytics</h2>
+            <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                <s-stack direction="inline" alignItems="center" gap="small-400">
+                    <s-icon type="chart-vertical"></s-icon>
+                    <h2>Analytics</h2>
+                </s-stack>
+                <s-button commandFor="export-menu" icon="export">Export</s-button>
+
+                <s-menu id="export-menu" accessibilityLabel="Customer actions">
+                    <s-button onClick={() => {
+                        const ok = exportAnalyticsToPDF(filteredStores, {
+                            overallTotals,
+                            chartHeadings: {
+                                trend: chartHeading,
+                                conversion: conversionChartHeading,
+                                topStores: `Top Stores by ${activityLabel}`,
+                            },
+                            dailyTotals,
+                            conversionTotals: conversionDailyTotals,
+                            top5Stores,
+                        });
+                        if (!ok) alert("No data to export.");
+                    }}>PDF</s-button>
+                    <s-button onClick={() => {
+                        const ok = exportAnalyticsToCSV(filteredStores, {
+                            overallTotals,
+                            dailyTotals,
+                            conversionTotals: conversionDailyTotals,
+                            top5Stores,
+                        });
+                        if (!ok) alert("No data to export.");
+                    }}>CSV</s-button>
+                </s-menu>
+
             </s-stack>
             <s-stack gap="base">
                 <s-banner tone="info" heading="Store Performance Analytics" dismissible>
@@ -730,7 +762,7 @@ export default function Index() {
                                                             <s-link href={`/app/analytic-detail/${item.store?.id}`}>
                                                                 <span style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a' }}>{item.store?.storeName}</span>
                                                                 <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                                                    <s-text tone="neutral">{item.store?.address}, {item.store?.city}</s-text>
+                                                                    <s-text tone="neutral">{item.store?.address}, {item.store?.city}, {item.store?.region}{item.store?.code ? `, ${item.store?.code}` : ''}</s-text>
                                                                 </div>
                                                             </s-link>
                                                         </s-stack>
