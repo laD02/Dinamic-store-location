@@ -189,9 +189,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
         const storeShopMap = new Map(stores.map((s) => [s.id, s.shop]));
 
-        await Promise.all(
-          storeIds.map((id) =>
-            prisma.$transaction((tx) =>
+        await prisma.$transaction(async (tx) => {
+          await Promise.all(
+            storeIds.map((id) =>
               trackSingleStore(tx, {
                 shop: storeShopMap.get(id) ?? shop,
                 storeId: id,
@@ -202,8 +202,8 @@ export async function action({ request }: ActionFunctionArgs) {
                 date: today,
               })
             )
-          )
-        );
+          );
+        });
       }
     } else {
       // Các event khác: một store duy nhất

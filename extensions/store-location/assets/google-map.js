@@ -118,28 +118,153 @@ async function initStoreLocator(wrapper) {
             initOpenStreetMap(mapEl, validStores, mapStyle, mapLoading);
         }
 
-        // Load stores list (bao gồm cả stores không có tọa độ)
+        // Load stores list
         loadStores(wrapper, (storeIndex) => {
             const store = stores[storeIndex];
             if (!store) return;
 
-            // Kiểm tra tọa độ và thông báo người dùng
             if (!isValidCoordinate(store.lat, store.lng)) {
                 showCoordinateWarning(store);
                 return;
             }
 
             if (useGoogleMaps) {
-                // TÌM MARKER THEO originalIndex
                 const storeData = markers.find(m => m.originalIndex === storeIndex);
                 if (storeData) {
                     panToStoreGoogle(storeData.store, storeData.marker);
                 }
             } else {
-                // TÌM MARKER THEO originalIndex
                 const markerData = markers.find(m => m.originalIndex === storeIndex);
                 if (markerData) {
                     panToStoreOSM(markerData.store, markerData.originalIndex);
+                }
+            }
+        }, (filteredStores, userCoords) => {
+            // FILTER MAP MARKERS
+            const filteredIds = new Set(filteredStores.map(s => s.id));
+
+            markers.forEach(m => {
+                const isVisible = filteredIds.has(m.store.id);
+                if (useGoogleMaps) {
+                    m.marker.setVisible(isVisible);
+                } else {
+                    if (isVisible) {
+                        m.marker.addTo(map);
+                    } else {
+                        map.removeLayer(m.marker);
+                    }
+                }
+            });
+
+            // Close current overlay if the store is now hidden
+            if (currentOverlay) {
+                const isOpenStoreVisible = filteredIds.has(currentOverlay.store?.id);
+                if (!isOpenStoreVisible) {
+                    if (useGoogleMaps) {
+                        currentOverlay.setMap(null);
+                    } else {
+                        map.removeLayer(currentOverlay);
+                    }
+                    currentOverlay = null;
+                }
+            }
+
+            // HANDLE USER LOCATION MARKER & CENTERING
+            if (userCoords) {
+                if (useGoogleMaps) {
+                    if (!window.slUserMarker) {
+                        window.slUserMarker = new google.maps.Marker({
+                            position: userCoords,
+                            map,
+                            title: "Your location",
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 10,
+                                fillColor: "#3B82F6",
+                                fillOpacity: 1,
+                                strokeColor: "#ffffff",
+                                strokeWeight: 2,
+                            },
+                            zIndex: 999
+                        });
+                    } else {
+                        window.slUserMarker.setPosition(userCoords);
+                        window.slUserMarker.setMap(map);
+                    }
+                    map.panTo(userCoords);
+                    map.setZoom(13);
+                } else {
+                    if (!window.slUserMarkerOSM) {
+                        const userIcon = L.divIcon({
+                            className: 'sl-user-marker-osm',
+                            html: '<div style="width:16px; height:16px; background:#3B82F6; border:2px solid #fff; border-radius:50%; box-shadow: 0 0 10px rgba(59,130,246,0.5)"></div>',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        });
+                        window.slUserMarkerOSM = L.marker([userCoords.lat, userCoords.lng], { icon: userIcon }).addTo(map);
+                    } else {
+                        window.slUserMarkerOSM.setLatLng([userCoords.lat, userCoords.lng]).addTo(map);
+                    }
+                    map.setView([userCoords.lat, userCoords.lng], 13, { animate: true });
+                }
+            } else {
+                // Remove user marker if null
+                if (window.slUserMarker) window.slUserMarker.setMap(null);
+                if (window.slUserMarkerOSM && map.hasLayer(window.slUserMarkerOSM)) map.removeLayer(window.slUserMarkerOSM);
+            }
+
+            // HANDLE AUTO-BOUNDS FOR FILTERED STORES
+            if (filteredStores.length > 0) {
+                if (useGoogleMaps) {
+                    const bounds = new google.maps.LatLngBounds();
+                    let validCount = 0;
+                    filteredStores.forEach(s => {
+                        if (isValidCoordinate(s.lat, s.lng)) {
+                            if (userCoords) {
+                                // MIRROR POINT for symmetric bounds centered on user
+                                const mirrorLat = 2 * userCoords.lat - s.lat;
+                                const mirrorLng = 2 * userCoords.lng - s.lng;
+                                bounds.extend({ lat: s.lat, lng: s.lng });
+                                bounds.extend({ lat: mirrorLat, lng: mirrorLng });
+                            } else {
+                                bounds.extend({ lat: s.lat, lng: s.lng });
+                            }
+                            validCount++;
+                        }
+                    });
+
+                    if (validCount > 0) {
+                        if (validCount === 1 && !userCoords) {
+                            map.setCenter(bounds.getCenter());
+                            map.setZoom(15);
+                        } else {
+                            map.fitBounds(bounds);
+                        }
+                    }
+                } else {
+                    const osmBounds = L.latLngBounds();
+                    let validCount = 0;
+                    filteredStores.forEach(s => {
+                        if (isValidCoordinate(s.lat, s.lng)) {
+                            if (userCoords) {
+                                const mirrorLat = 2 * userCoords.lat - s.lat;
+                                const mirrorLng = 2 * userCoords.lng - s.lng;
+                                osmBounds.extend([s.lat, s.lng]);
+                                osmBounds.extend([mirrorLat, mirrorLng]);
+                            } else {
+                                osmBounds.extend([s.lat, s.lng]);
+                            }
+                            validCount++;
+                        }
+                    });
+
+                    if (validCount > 0) {
+                        if (validCount === 1 && !userCoords) {
+                            map.setView(osmBounds.getCenter(), 15, { animate: true });
+                        } else {
+                            map.fitBounds(osmBounds, { padding: [50, 50], animate: true });
+                        }
+                    }
                 }
             }
         });
@@ -302,6 +427,9 @@ async function initStoreLocator(wrapper) {
 
             marker.addListener("click", () => {
                 panToStoreGoogle(store, marker);
+                if (window.trackStoreEvent) {
+                    window.trackStoreEvent("VIEW_STORE", { storeId: store.id });
+                }
             });
 
             // LƯU originalIndex để map với store list
@@ -495,6 +623,9 @@ async function initStoreLocator(wrapper) {
 
             marker.on('click', () => {
                 panToStoreOSM(store, store.originalIndex);
+                if (window.trackStoreEvent) {
+                    window.trackStoreEvent("VIEW_STORE", { storeId: store.id });
+                }
             });
 
             // LƯU originalIndex để map với store list
@@ -665,6 +796,40 @@ async function initStoreLocator(wrapper) {
     }
 
     /************************************************
+     * Helper for Opening Hours
+     ************************************************/
+    function isStoreOpen(store) {
+        if (!store.time) return { isOpen: false, text: "Closed", class: "closed" };
+
+        const now = new Date();
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayName = days[now.getDay()];
+
+        const openTime = store.time[`${dayName}Open`];
+        const closeTime = store.time[`${dayName}Close`];
+
+        if (!openTime || !closeTime || openTime === 'close' || closeTime === 'close') {
+            return { isOpen: false, text: "Closed", class: "closed" };
+        }
+
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const parseTimeToMinutes = (timeStr) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        };
+
+        const openMinutes = parseTimeToMinutes(openTime);
+        const closeMinutes = parseTimeToMinutes(closeTime);
+
+        if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+            return { isOpen: true, text: "Open Now", class: "open" };
+        }
+
+        return { isOpen: false, text: "Closed", class: "closed" };
+    }
+
+    /************************************************
      * SHARED: Generate Overlay HTML
      ************************************************/
     function generateOverlayHTML(store) {
@@ -763,6 +928,15 @@ async function initStoreLocator(wrapper) {
 
             <div class="map-overlay-content" style="background:${mapStyle.backgroundColor || "#fff"};">
                 <h3 class="map-overlay-title" style="color:${mapStyle.color};">${s.storeName}</h3>
+                
+                <div style="margin-bottom: 12px;">
+                    ${(() => {
+                const status = isStoreOpen(s);
+                return `<span class="store-status-badge ${status.class}">
+                            <span class="status-dot"></span> ${status.text}
+                          </span>`;
+            })()}
+                </div>
                 
                 <div class="map-overlay-row">
                     <i class="fa-solid fa-location-dot" style="color:${mapStyle.iconColor};"></i>

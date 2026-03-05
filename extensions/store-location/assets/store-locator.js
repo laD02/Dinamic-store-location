@@ -1,4 +1,4 @@
-async function loadStores(wrapper, onSelectStore) {
+async function loadStores(wrapper, onSelectStore, onFilter) {
   try {
     const res = await fetch("/apps/store-locator");
     const { stores, style } = await res.json();
@@ -42,6 +42,42 @@ async function loadStores(wrapper, onSelectStore) {
     };
 
     /************************************************
+     * Helper for Opening Hours
+     ************************************************/
+    function isStoreOpen(store) {
+      if (!store.time) return { isOpen: false, text: "Closed", class: "closed" };
+
+      const now = new Date();
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = days[now.getDay()];
+
+      const openTime = store.time[`${dayName}Open`];
+      const closeTime = store.time[`${dayName}Close`];
+
+      if (!openTime || !closeTime || openTime === 'close' || closeTime === 'close') {
+        return { isOpen: false, text: "Closed", class: "closed" };
+      }
+
+      // Parse current time to minutes
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      // Parse open/close times (assuming format HH:mm or H:mm)
+      const parseTimeToMinutes = (timeStr) => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+
+      const openMinutes = parseTimeToMinutes(openTime);
+      const closeMinutes = parseTimeToMinutes(closeTime);
+
+      if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+        return { isOpen: true, text: "Open Now", class: "open" };
+      }
+
+      return { isOpen: false, text: "Closed", class: "closed" };
+    }
+
+    /************************************************
      * Render stores
      ************************************************/
     function renderStores(storesToRender) {
@@ -58,46 +94,30 @@ async function loadStores(wrapper, onSelectStore) {
 
       container.innerHTML = storesToRender
         .map(s => `
-          <div
-            class="store-item"
-            data-original-index="${stores.indexOf(s)}"
-            style="
-              border:2px solid rgb(210,207,207);
-              padding:12px;
-              margin-bottom:8px;
-              cursor:pointer;
-              background:white;
-              transition:border-color .2s;
-            "
-          >
-            <p style="
-              color:${style.primaryColor};
-              font-family:${style.primaryFont};
-              margin:0 0 6px;
-              font-weight:600;
-            ">
-              ${s.storeName}
-            </p>
+          <div class="store-item" data-original-index="${stores.indexOf(s)}">
+            <div class="store-item-header">
+              <h4 class="store-item-name">${s.storeName}</h4>
+              ${(() => {
+            const status = isStoreOpen(s);
+            return `<span class="store-status-badge ${status.class}">
+                  <span class="status-dot"></span> ${status.text}
+                </span>`;
+          })()}
+            </div>
 
-            <p style="
-              color:${style.primaryColor};
-              font-family:${style.secondaryFont};
-              margin:0 0 6px;
-              font-size:11px;
-            ">
-              ${s.address}, ${s.city}, ${s.code}
-            </p>
+            <div class="store-item-details">
+              <div class="store-item-row address-row">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>${[s.address, s.city, s.code].filter(Boolean).join(', ')}</span>
+              </div>
 
-            ${s.phone ? `
-              <p style="
-                color:${style.secondaryColor};
-                font-family:${style.secondaryFont};
-                margin:0;
-                font-size:11px;
-              ">
-                ${s.phone}
-              </p>
-            ` : ""}
+              ${s.phone ? `
+              <div class="store-item-row phone-row">
+                <i class="fa-solid fa-phone"></i>
+                <span>${s.phone}</span>
+              </div>
+              ` : ""}
+            </div>
           </div>
         `)
         .join("");
@@ -109,32 +129,139 @@ async function loadStores(wrapper, onSelectStore) {
     if (storeListLoading) storeListLoading.style.display = "none";
     container.style.display = "block";
 
+    // Set CSS variables for dynamic theming
+    if (style) {
+      container.style.setProperty('--sl-primary', style.primaryColor || '#000');
+      container.style.setProperty('--sl-secondary', style.secondaryColor || '#3B82F6');
+      container.style.setProperty('--sl-primary-font', style.primaryFont || 'inherit');
+      container.style.setProperty('--sl-secondary-font', style.secondaryFont || 'inherit');
+    }
+
     renderStores(stores);
 
     /************************************************
-     * Search
+     * Filter Logic
      ************************************************/
-    if (searchInput) {
-      let searchTimeout;
-      searchInput.addEventListener("input", e => {
-        const term = e.target.value.toLowerCase().trim();
+    const openNowFilter = wrapper.querySelector("#sl-open-now-filter");
+    const detectLocationBtn = wrapper.querySelector("#sl-detect-location");
+    const radiusSelect = wrapper.querySelector("#sl-radius-select");
+    let userCoords = null;
 
-        const filtered = stores.filter(store =>
+    // Haversine formula to calculate distance in KM
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function filterAndRender() {
+      const term = searchInput?.value?.toLowerCase().trim() || "";
+      const showOpenOnly = openNowFilter?.checked || false;
+      const radius = parseFloat(radiusSelect?.value) || Infinity;
+
+      const filtered = stores.filter(store => {
+        // Search term filter
+        const matchesTerm = !term ||
           store.storeName?.toLowerCase().includes(term) ||
           store.address?.toLowerCase().includes(term) ||
-          store.code?.toLowerCase().includes(term)
-        );
+          store.code?.toLowerCase().includes(term);
 
+        // Open status filter
+        let matchesOpen = true;
+        if (showOpenOnly) {
+          const status = isStoreOpen(store);
+          matchesOpen = status.isOpen;
+        }
+
+        // Radius filter
+        let matchesRadius = true;
+        if (userCoords && radius !== Infinity) {
+          if (store.lat && store.lng) {
+            const distance = calculateDistance(userCoords.lat, userCoords.lng, store.lat, store.lng);
+            store.distance = distance; // Store distance for possible sorting or display
+            matchesRadius = distance <= radius;
+          } else {
+            matchesRadius = false;
+          }
+        }
+
+        return matchesTerm && matchesOpen && matchesRadius;
+      });
+
+      // Sort by distance if user location is available
+      if (userCoords && radius !== Infinity) {
+        filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      }
+
+      renderStores(filtered);
+      if (typeof onFilter === "function") {
+        onFilter(filtered, userCoords);
+      }
+
+      // Track Search if term exists
+      if (term) {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-          if (term) {
-            const storeIds = filtered.map(s => s.id).filter(Boolean);
+          const storeIds = filtered.map(s => s.id).filter(Boolean);
+          if (window.trackStoreEvent) {
             window.trackStoreEvent("SEARCH", { searchKeyword: term, storeIds });
           }
-        }, 1000); // 1s debounce
+        }, 1000);
+      }
+    }
 
-        renderStores(filtered);
+    let searchTimeout;
+    if (searchInput) {
+      searchInput.addEventListener("input", filterAndRender);
+    }
+
+    if (openNowFilter) {
+      openNowFilter.addEventListener("change", filterAndRender);
+    }
+
+    if (detectLocationBtn) {
+      detectLocationBtn.addEventListener("click", () => {
+        if (detectLocationBtn.classList.contains('active')) {
+          // Reset location
+          userCoords = null;
+          detectLocationBtn.classList.remove('active');
+          radiusSelect.value = "";
+          radiusSelect.disabled = true;
+          filterAndRender();
+          return;
+        }
+
+        detectLocationBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userCoords = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            detectLocationBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+            detectLocationBtn.classList.add('active');
+            radiusSelect.disabled = false;
+            filterAndRender();
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+            detectLocationBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+            alert("Could not determine your location. Please check your browser permissions.");
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
       });
+    }
+
+    if (radiusSelect) {
+      radiusSelect.addEventListener("change", filterAndRender);
     }
 
     /************************************************
@@ -146,12 +273,12 @@ async function loadStores(wrapper, onSelectStore) {
 
       const originalIndex = Number(item.dataset.originalIndex);
 
-      // reset border CHỈ trong block này
+      // Single dynamic selection class
       container.querySelectorAll(".store-item").forEach(el => {
-        el.style.borderColor = "rgb(210,207,207)";
+        el.classList.remove("selected");
       });
 
-      item.style.borderColor = style.secondaryColor;
+      item.classList.add("selected");
 
       // callback cho map
       if (typeof onSelectStore === "function") {

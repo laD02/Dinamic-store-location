@@ -52,52 +52,337 @@
 
 .sl-address {
   width: 100%;
-  padding: 12px 12px 12px 12px;
-  /* Space for icon */
-  border-radius: 99px;
-  /* Pill shape */
-  border: 1px solid #E5E7EB;
+  padding: 12px 46px 12px 40px;
+  /* Extra space for icon */
+  border-radius: 14px;
+  /* More modern radius */
+  border: 1.5px solid #F1F5F9;
   outline: none;
   box-sizing: border-box;
   font-size: 14px;
-  transition: all 0.2s ease;
-  background-color: #F9FAFB;
-  color: #1F2937;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #F8FAFC;
+  color: #1E293B;
+  font-weight: 500;
+}
+
+.sl-address:hover {
+  background-color: #F1F5F9;
+  border-color: #E2E8F0;
 }
 
 .sl-address:focus {
   background-color: #fff;
   border-color: #3B82F6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
 }
 
 .sl-address::placeholder {
-  color: #9CA3AF;
+  color: #94A3B8;
+  font-weight: 400;
 }
 
+/* Filter Hub & Row Layout */
+.sl-filter-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #F1F5F9;
+  margin-bottom: 8px;
+}
+
+.sl-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 38px;
+}
+
+.sl-filter-item {
+  display: flex;
+  align-items: center;
+}
+
+.sl-search-location-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  z-index: 10;
+}
+
+.sl-search-location-btn {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  color: #94A3B8;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-search-location-btn:hover {
+  background: #EFF6FF;
+  color: #3B82F6;
+  transform: translateY(-50%) scale(1.05) !important;
+  box-shadow: none;
+}
+
+.sl-search-location-btn.active {
+  background: #3B82F6;
+  color: #fff;
+  transform: translateY(-50%) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.sl-search-location-btn.active i {
+  animation: sl-pulse-icon 2s infinite;
+}
+
+@keyframes sl-pulse-icon {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.sl-select-wrapper {
+  position: relative;
+  flex: 0 0 120px;
+  display: flex;
+  align-items: center;
+}
+
+.sl-select-icon {
+  position: absolute;
+  right: 12px;
+  font-size: 10px;
+  color: #64748B;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+
+.sl-radius-select {
+  width: 100%;
+  padding: 8px 30px 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  background: #F8FAFC;
+  border: 1.5px solid #F1F5F9;
+  border-radius: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.sl-radius-select:hover:not(:disabled) {
+  background-color: #F1F5F9;
+  border-color: #E2E8F0;
+}
+
+.sl-radius-select:focus:not(:disabled) {
+  border-color: #3B82F6;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+.sl-radius-select:focus:not(:disabled)+.sl-select-icon {
+  transform: rotate(180deg);
+  color: #3B82F6;
+}
+
+.sl-radius-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.sl-filter-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sl-filter-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.sl-filter-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  background-color: #cbd5e1;
+  border-radius: 20px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sl-filter-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sl-filter-checkbox:checked+.sl-filter-toggle {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  /* Emerald green */
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+.sl-filter-checkbox:checked+.sl-filter-toggle::after {
+  left: 18px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sl-filter-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: 0.01em;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sl-filter-text::before {
+  content: '\f017';
+  /* fa-clock */
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 13px;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.sl-filter-checkbox:checked~.sl-filter-text {
+  color: #047857;
+  /* Matches open status text */
+}
+
+.sl-filter-checkbox:checked~.sl-filter-text::before {
+  color: #10b981;
+  animation: sl-pulse 2s infinite;
+}
+
+@keyframes sl-pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Premium Store Item */
 .store-item {
   position: relative;
-  border: 1px solid transparent;
-  /* Prepare for border transition */
+  border: 1px solid #E5E7EB;
   padding: 16px;
   border-radius: 12px;
   margin-bottom: 0px;
-  /* Handle gap in container */
   cursor: pointer;
-  transition: all 0.2s ease;
   background-color: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .store-item:hover {
   background-color: #F9FAFB;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-color: #E5E7EB;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  border-color: #D1D5DB;
 }
 
 .store-item.selected {
-  border-color: #3B82F6;
-  background-color: #EFF6FF;
+  border-color: var(--sl-secondary, #3B82F6);
+  background-color: #F8FAFC;
+  box-shadow: 0 0 0 1px var(--sl-secondary, #3B82F6), 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.store-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.store-item-name {
+  margin: 0;
+  font-size: 15px;
+  color: var(--sl-primary, #1F2937);
+  font-family: var(--sl-primary-font, inherit);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.store-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.store-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  font-family: var(--sl-secondary-font, inherit);
+}
+
+.store-item-row.address-row {
+  color: var(--sl-primary, #4B5563);
+}
+
+.store-item-row.phone-row {
+  color: var(--sl-secondary, #3B82F6);
+  font-weight: 500;
+}
+
+.store-item-row i {
+  margin-top: 2px;
+  font-size: 13px;
+  opacity: 0.7;
 }
 
 .store-list {
@@ -152,6 +437,109 @@ p {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s ease, opacity 0.2s ease;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ========== PREMIUM STORE STATUS BADGE ========== */
+.store-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* Open Status - Glowing Emerald */
+.store-status-badge.open {
+  background: linear-gradient(135deg, rgba(209, 250, 229, 0.85) 0%, rgba(167, 243, 208, 0.5) 100%);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.15);
+}
+
+.store-status-badge.open .status-dot {
+  background-color: #10b981;
+  color: #10b981;
+  /* For glowing box-shadow */
+}
+
+.store-status-badge.open .status-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background-color: #10b981;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: status-pulse-open 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+/* Closed Status - Soft Rose */
+.store-status-badge.closed {
+  background: linear-gradient(135deg, rgba(254, 226, 226, 0.85) 0%, rgba(254, 202, 202, 0.5) 100%);
+  color: #be123c;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  box-shadow: 0 2px 10px rgba(225, 29, 72, 0.15);
+}
+
+.store-status-badge.closed .status-dot {
+  background-color: #e11d48;
+  color: #e11d48;
+  /* For glowing box-shadow */
+}
+
+/* Hover Enhancements */
+.store-status-badge:hover {
+  transform: translateY(-1px);
+}
+
+.store-item:hover .store-status-badge.open,
+.store-status-badge.open:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.6);
+  background: linear-gradient(135deg, rgba(209, 250, 229, 0.95) 0%, rgba(167, 243, 208, 0.6) 100%);
+}
+
+.store-item:hover .store-status-badge.closed,
+.store-status-badge.closed:hover {
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+  border-color: rgba(225, 29, 72, 0.6);
+  background: linear-gradient(135deg, rgba(254, 226, 226, 0.95) 0%, rgba(254, 202, 202, 0.6) 100%);
+}
+
+@keyframes status-pulse-open {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+
+  70% {
+    transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+  }
 }
 
 .map-overlay-hero {
@@ -351,10 +739,14 @@ p {
     flex-shrink: 0;
   }
 
+  .sl-filter-hub {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
   .sl-address {
-    padding: 10px;
+    padding: 10px 12px 10px 36px;
     font-size: 14px;
-    margin-bottom: 12px;
   }
 
   .store-list {
