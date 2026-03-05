@@ -99,6 +99,18 @@ async function initStoreLocator(wrapper) {
         const { stores, style } = await res.json();
         mapStyle = style || {};
 
+        // Calculate Activity Ranks for top 3
+        const storesSorted = [...stores]
+            .filter(s => (s.totalActivity || 0) > 0)
+            .sort((a, b) => (b.totalActivity || 0) - (a.totalActivity || 0));
+
+        stores.forEach(s => {
+            const idx = storesSorted.findIndex(sorted => sorted.id === s.id);
+            if (idx >= 0 && idx < 3) {
+                s.activityRank = idx + 1;
+            }
+        });
+
         // Lọc stores có tọa độ hợp lệ VÀ GIỮ INDEX GỐC
         const validStores = stores
             .map((store, index) => ({ ...store, originalIndex: index }))
@@ -156,17 +168,14 @@ async function initStoreLocator(wrapper) {
                 }
             });
 
-            // Close current overlay if the store is now hidden
+            // Close current overlay UNCONDITIONALLY when filters change
             if (currentOverlay) {
-                const isOpenStoreVisible = filteredIds.has(currentOverlay.store?.id);
-                if (!isOpenStoreVisible) {
-                    if (useGoogleMaps) {
-                        currentOverlay.setMap(null);
-                    } else {
-                        map.removeLayer(currentOverlay);
-                    }
-                    currentOverlay = null;
+                if (useGoogleMaps) {
+                    currentOverlay.setMap(null);
+                } else {
+                    map.removeLayer(currentOverlay);
                 }
+                currentOverlay = null;
             }
 
             // HANDLE USER LOCATION MARKER & CENTERING
@@ -927,14 +936,21 @@ async function initStoreLocator(wrapper) {
             ` : ''}
 
             <div class="map-overlay-content" style="background:${mapStyle.backgroundColor || "#fff"};">
-                <h3 class="map-overlay-title" style="color:${mapStyle.color};">${s.storeName}</h3>
+                <div class="map-overlay-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-right: 32px;">
+                    <h3 class="map-overlay-title" style="color:${mapStyle.color}; margin: 0; font-size: 17px;">${s.storeName}</h3>
+                    ${s.activityRank ? `
+                        <span class="sl-rank-badge rank-${s.activityRank} compact" style="flex-shrink: 0; margin: 0;">
+                            <i class="fa-solid fa-fire"></i> #${s.activityRank}
+                        </span>
+                    ` : ""}
+                </div>
                 
                 <div style="margin-bottom: 12px;">
                     ${(() => {
                 const status = isStoreOpen(s);
                 return `<span class="store-status-badge ${status.class}">
-                            <span class="status-dot"></span> ${status.text}
-                          </span>`;
+                                    <span class="status-dot"></span> ${status.text}
+                                  </span>`;
             })()}
                 </div>
                 

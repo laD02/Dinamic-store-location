@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 interface ConversionProps {
     viewCount: number;
     callCount: number;
@@ -19,6 +21,13 @@ function getTier(rate: number) {
 }
 
 export default function Conversion({ viewCount, callCount, directionCount, websiteCount }: ConversionProps) {
+    const [animate, setAnimate] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setAnimate(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
     const views = viewCount || 0;
 
     const metrics = [
@@ -33,69 +42,76 @@ export default function Conversion({ viewCount, callCount, directionCount, websi
     return (
         <s-query-container>
             <s-grid gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr 1fr, 1fr' gap="base">
-                {metrics.map((m) => {
+                {metrics.map((m, idx) => {
                     const rate = views > 0 ? Math.min((m.value / views) * 100, 100) : 0;
                     const rateStr = rate.toFixed(1);
                     const tier = getTier(rate);
-                    const progress = (rate / 100) * CIRCUMFERENCE;
+                    const targetProgress = (rate / 100) * CIRCUMFERENCE;
+                    const progress = animate ? targetProgress : 0;
 
                     return (
-                        <s-section key={m.key}>
-                            <s-stack gap="small-400" alignItems="center">
-                                <div style={{ position: "relative", width: 110, height: 110 }}>
-                                    <svg width="110" height="110" style={{ transform: "rotate(-90deg)" }}>
-                                        <circle cx="55" cy="55" r={R} fill="none" stroke="#f3f4f6" strokeWidth="10" />
-                                        <circle
-                                            cx="55"
-                                            cy="55"
-                                            r={R}
-                                            fill="none"
-                                            stroke={m.color}
-                                            strokeWidth="10"
-                                            strokeLinecap="round"
-                                            strokeDasharray={`${progress} ${CIRCUMFERENCE}`}
-                                            style={{ transition: "stroke-dasharray 0.6s ease" }}
-                                        />
-                                    </svg>
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            inset: 0,
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            gap: "2px",
-                                        }}
-                                    >
-                                        <span style={{ fontSize: "20px" }}>{m.icon}</span>
-                                        <span style={{ fontSize: "18px", fontWeight: 700, color: m.color, lineHeight: 1 }}>
-                                            {rateStr}%
-                                        </span>
+                        <div key={m.key} style={{
+                            opacity: animate ? 1 : 0,
+                            transform: animate ? 'translateY(0)' : 'translateY(20px)',
+                            transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${idx * 0.1}s`
+                        }}>
+                            <s-section>
+                                <s-stack gap="small-400" alignItems="center">
+                                    <div style={{ position: "relative", width: 110, height: 110 }}>
+                                        <svg width="110" height="110" style={{ transform: "rotate(-90deg)" }}>
+                                            <circle cx="55" cy="55" r={R} fill="none" stroke="#f3f4f6" strokeWidth="10" />
+                                            <circle
+                                                cx="55"
+                                                cy="55"
+                                                r={R}
+                                                fill="none"
+                                                stroke={m.color}
+                                                strokeWidth="10"
+                                                strokeLinecap="round"
+                                                strokeDasharray={`${progress} ${CIRCUMFERENCE}`}
+                                                style={{ transition: "stroke-dasharray 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s" }}
+                                            />
+                                        </svg>
+                                        <div
+                                            style={{
+                                                position: "absolute",
+                                                inset: 0,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "2px",
+                                            }}
+                                        >
+                                            <span style={{ fontSize: "20px" }}>{m.icon}</span>
+                                            <span style={{ fontSize: "18px", fontWeight: 700, color: m.color, lineHeight: 1 }}>
+                                                {rateStr}%
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <s-stack gap="small-200" alignItems="center">
-                                    <div style={{ fontWeight: 600, fontSize: "14px", color: "#111827" }}>{m.heading}</div>
-                                    <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                                        {m.value.toLocaleString()} {m.label} / {views.toLocaleString()} Views
-                                    </div>
-                                    <div
-                                        style={{
-                                            display: "inline-block",
-                                            padding: "3px 10px",
-                                            borderRadius: "99px",
-                                            background: tier.bg,
-                                            color: tier.text,
-                                            fontSize: "11px",
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        {tier.label}
-                                    </div>
+                                    <s-stack gap="small-200" alignItems="center">
+                                        <div style={{ fontWeight: 600, fontSize: "14px", color: "#111827" }}>{m.heading}</div>
+                                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                                            {m.value.toLocaleString()} {m.label} / {views.toLocaleString()} Views
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: "inline-block",
+                                                padding: "3px 10px",
+                                                borderRadius: "99px",
+                                                background: tier.bg,
+                                                color: tier.text,
+                                                fontSize: "11px",
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {tier.label}
+                                        </div>
+                                    </s-stack>
                                 </s-stack>
-                            </s-stack>
-                        </s-section>
+                            </s-section>
+                        </div>
                     );
                 })}
             </s-grid>

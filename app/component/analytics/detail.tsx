@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 import { exportDetailToPDF } from "app/utils/exportDetailPDF";
 import { exportDetailToCSV } from "app/utils/exportDetailCSV";
@@ -326,6 +326,12 @@ export default function Index() {
     const [conversionVisibleMetrics, setConversionVisibleMetrics] = useState<Set<string>>(
         new Set(["uniqueCallSessions", "uniqueDirectionSessions", "uniqueWebsiteSessions"])
     );
+    const [animate, setAnimate] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setAnimate(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const toggleMetric = (key: string) => {
         setVisibleMetrics(prev => {
@@ -447,37 +453,43 @@ export default function Index() {
                     gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr 1fr 1fr 1fr, 1fr 1fr'
                     gap="base"
                 >
-                    {METRIC_CONFIG.map((m) => (
-                        <s-section key={m.key}>
-                            <s-stack gap="small-200">
-                                <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280' }}>
-                                        <s-text tone="neutral">{m.heading}</s-text>
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '8px',
-                                        backgroundColor: `${m.color}15`,
-                                        fontSize: '18px'
+                    {METRIC_CONFIG.map((m, idx) => (
+                        <div key={m.key} style={{
+                            opacity: animate ? 1 : 0,
+                            transform: animate ? 'translateY(0)' : 'translateY(20px)',
+                            transition: `all 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${idx * 0.05}s`
+                        }}>
+                            <s-section>
+                                <s-stack gap="small-200">
+                                    <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                                        <div style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280' }}>
+                                            <s-text tone="neutral">{m.heading}</s-text>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '8px',
+                                            backgroundColor: `${m.color}15`,
+                                            fontSize: '18px'
+                                        }}>
+                                            {m.icon}
+                                        </div>
+                                    </s-stack>
+                                    <h1 style={{
+                                        marginBlock: 0,
+                                        fontSize: '28px',
+                                        fontWeight: '700',
+                                        color: '#1a1a1a',
+                                        letterSpacing: '-0.5px'
                                     }}>
-                                        {m.icon}
-                                    </div>
+                                        {totals[m.key] ?? 0}
+                                    </h1>
                                 </s-stack>
-                                <h1 style={{
-                                    marginBlock: 0,
-                                    fontSize: '28px',
-                                    fontWeight: '700',
-                                    color: '#1a1a1a',
-                                    letterSpacing: '-0.5px'
-                                }}>
-                                    {totals[m.key] ?? 0}
-                                </h1>
-                            </s-stack>
-                        </s-section>
+                            </s-section>
+                        </div>
                     ))}
                 </s-grid>
 
@@ -501,54 +513,61 @@ export default function Index() {
                                             : { label: 'Low', bg: '#fef2f2', text: '#dc2626' };
 
                                 const R = 44, CIRCUMFERENCE = 2 * Math.PI * R;
-                                const progress = (rate / 100) * CIRCUMFERENCE;
+                                const targetProgress = (rate / 100) * CIRCUMFERENCE;
+                                const progress = animate ? targetProgress : 0;
 
                                 return (
-                                    <s-section key={m.key}>
-                                        <s-stack gap="small-400" alignItems="center">
-                                            <div style={{ position: 'relative', width: 110, height: 110 }}>
-                                                <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
-                                                    <circle cx="55" cy="55" r={R} fill="none" stroke="#f3f4f6" strokeWidth="10" />
-                                                    <circle
-                                                        cx="55" cy="55" r={R}
-                                                        fill="none"
-                                                        stroke={m.color}
-                                                        strokeWidth="10"
-                                                        strokeLinecap="round"
-                                                        strokeDasharray={`${progress} ${CIRCUMFERENCE}`}
-                                                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
-                                                    />
-                                                </svg>
-                                                <div style={{
-                                                    position: 'absolute', inset: 0,
-                                                    display: 'flex', flexDirection: 'column',
-                                                    alignItems: 'center', justifyContent: 'center',
-                                                    gap: '2px',
-                                                }}>
-                                                    <span style={{ fontSize: '20px' }}>{m.icon}</span>
-                                                    <span style={{ fontSize: '18px', fontWeight: 700, color: m.color, lineHeight: 1 }}>{rateStr}%</span>
+                                    <div key={m.key} style={{
+                                        opacity: animate ? 1 : 0,
+                                        transform: animate ? 'translateY(0)' : 'translateY(20px)',
+                                        transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s'
+                                    }}>
+                                        <s-section>
+                                            <s-stack gap="small-400" alignItems="center">
+                                                <div style={{ position: 'relative', width: 110, height: 110 }}>
+                                                    <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
+                                                        <circle cx="55" cy="55" r={R} fill="none" stroke="#f3f4f6" strokeWidth="10" />
+                                                        <circle
+                                                            cx="55" cy="55" r={R}
+                                                            fill="none"
+                                                            stroke={m.color}
+                                                            strokeWidth="10"
+                                                            strokeLinecap="round"
+                                                            strokeDasharray={`${progress} ${CIRCUMFERENCE}`}
+                                                            style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s' }}
+                                                        />
+                                                    </svg>
+                                                    <div style={{
+                                                        position: 'absolute', inset: 0,
+                                                        display: 'flex', flexDirection: 'column',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        gap: '2px',
+                                                    }}>
+                                                        <span style={{ fontSize: '20px' }}>{m.icon}</span>
+                                                        <span style={{ fontSize: '18px', fontWeight: 700, color: m.color, lineHeight: 1 }}>{rateStr}%</span>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <s-stack gap="small-200" alignItems="center">
-                                                <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827' }}>{m.heading}</div>
-                                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                                    {m.value.toLocaleString()} {m.label} / {views.toLocaleString()} Views
-                                                </div>
-                                                <div style={{
-                                                    display: 'inline-block',
-                                                    padding: '3px 10px',
-                                                    borderRadius: '99px',
-                                                    background: tier.bg,
-                                                    color: tier.text,
-                                                    fontSize: '11px',
-                                                    fontWeight: 600,
-                                                }}>
-                                                    {tier.label}
-                                                </div>
+                                                <s-stack gap="small-200" alignItems="center">
+                                                    <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827' }}>{m.heading}</div>
+                                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                                        {m.value.toLocaleString()} {m.label} / {views.toLocaleString()} Views
+                                                    </div>
+                                                    <div style={{
+                                                        display: 'inline-block',
+                                                        padding: '3px 10px',
+                                                        borderRadius: '99px',
+                                                        background: tier.bg,
+                                                        color: tier.text,
+                                                        fontSize: '11px',
+                                                        fontWeight: 600,
+                                                    }}>
+                                                        {tier.label}
+                                                    </div>
+                                                </s-stack>
                                             </s-stack>
-                                        </s-stack>
-                                    </s-section>
+                                        </s-section>
+                                    </div>
                                 );
                             })}
                         </s-grid>
@@ -583,13 +602,19 @@ export default function Index() {
                 </s-popover>
 
                 {/* Charts */}
-                <s-section heading={chartHeading}>
-                    <CombinedChart
-                        data={store.dailyStats}
-                        interval={interval}
-                        visibleMetrics={visibleMetrics}
-                    />
-                </s-section>
+                <div style={{
+                    opacity: animate ? 1 : 0,
+                    transform: animate ? 'translateY(0)' : 'translateY(20px)',
+                    transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s'
+                }}>
+                    <s-section heading={chartHeading}>
+                        <CombinedChart
+                            data={store.dailyStats}
+                            interval={interval}
+                            visibleMetrics={visibleMetrics}
+                        />
+                    </s-section>
+                </div>
 
                 <s-button icon="calendar" commandFor="conversion-date">Conversion Filters</s-button>
                 <s-popover id="conversion-date">
@@ -619,13 +644,19 @@ export default function Index() {
                 </s-popover>
 
                 {/* Conversion Chart */}
-                <s-section heading={conversionChartHeading}>
-                    <ConversionChart
-                        data={store.dailyStats}
-                        interval={conversionInterval}
-                        visibleMetrics={conversionVisibleMetrics}
-                    />
-                </s-section>
+                <div style={{
+                    opacity: animate ? 1 : 0,
+                    transform: animate ? 'translateY(0)' : 'translateY(20px)',
+                    transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s'
+                }}>
+                    <s-section heading={conversionChartHeading}>
+                        <ConversionChart
+                            data={store.dailyStats}
+                            interval={conversionInterval}
+                            visibleMetrics={conversionVisibleMetrics}
+                        />
+                    </s-section>
+                </div>
 
             </s-stack>
         </s-query-container>

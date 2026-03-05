@@ -41,6 +41,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
     orderBy: { createdAt: "desc" },
   });
 
+  // Calculate total activity for each store
+  const stats = await prisma.storeDailyStat.groupBy({
+    by: ['storeId'],
+    where: {
+      storeId: { in: stores.map(s => s.id) }
+    },
+    _sum: {
+      uniqueSessions: true,
+      uniqueViewSessions: true,
+      uniqueSearchSessions: true,
+      uniqueDirectionSessions: true,
+      uniqueCallSessions: true,
+      uniqueWebsiteSessions: true
+    }
+  });
+
+  const statsMap = new Map(stats.map(s => [
+    s.storeId,
+    (s._sum.uniqueViewSessions || 0) * 1 +
+    (s._sum.uniqueSearchSessions || 0) * 2 +
+    (s._sum.uniqueWebsiteSessions || 0) * 3 +
+    (s._sum.uniqueCallSessions || 0) * 4 +
+    (s._sum.uniqueDirectionSessions || 0) * 5
+  ]));
+
+  const storesWithStats = stores.map(store => ({
+    ...store,
+    totalActivity: statsMap.get(store.id) || 0
+  }));
+
   const style =
     (await prisma.style.findFirst({ where: { shop } })) || {
       primaryColor: "#000",
@@ -50,7 +80,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       color: "#000",
     };
 
-  return new Response(JSON.stringify({ stores, style }), {
+  return new Response(JSON.stringify({ stores: storesWithStats, style }), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 }

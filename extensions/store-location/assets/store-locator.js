@@ -3,6 +3,18 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
     const res = await fetch("/apps/store-locator");
     const { stores, style } = await res.json();
 
+    // Calculate Activity Ranks for top 3
+    const storesSorted = [...stores]
+      .filter(s => (s.totalActivity || 0) > 0)
+      .sort((a, b) => (b.totalActivity || 0) - (a.totalActivity || 0));
+
+    stores.forEach(s => {
+      const idx = storesSorted.findIndex(sorted => sorted.id === s.id);
+      if (idx >= 0 && idx < 3) {
+        s.activityRank = idx + 1;
+      }
+    });
+
     const storeListLoading = wrapper.querySelector(".store-list-loading");
     const container = wrapper.querySelector(".store-list");
     const searchInput = wrapper.querySelector(".sl-address");
@@ -96,13 +108,22 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
         .map(s => `
           <div class="store-item" data-original-index="${stores.indexOf(s)}">
             <div class="store-item-header">
-              <h4 class="store-item-name">${s.storeName}</h4>
-              ${(() => {
+              <div class="store-item-header-top">
+                <h4 class="store-item-name">${s.storeName}</h4>
+                ${(() => {
             const status = isStoreOpen(s);
             return `<span class="store-status-badge ${status.class}">
-                  <span class="status-dot"></span> ${status.text}
-                </span>`;
+                      <span class="status-dot"></span> ${status.text}
+                    </span>`;
           })()}
+              </div>
+              ${s.activityRank ? `
+                <div class="store-item-header-bottom">
+                  <span class="sl-rank-badge rank-${s.activityRank}">
+                    <i class="fa-solid fa-fire"></i> Rank #${s.activityRank}
+                  </span>
+                </div>
+              ` : ""}
             </div>
 
             <div class="store-item-details">
@@ -143,6 +164,7 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
      * Filter Logic
      ************************************************/
     const openNowFilter = wrapper.querySelector("#sl-open-now-filter");
+    const topStoreFilter = wrapper.querySelector("#sl-top-store-filter");
     const detectLocationBtn = wrapper.querySelector("#sl-detect-location");
     const radiusSelect = wrapper.querySelector("#sl-radius-select");
     let userCoords = null;
@@ -163,9 +185,10 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
     function filterAndRender() {
       const term = searchInput?.value?.toLowerCase().trim() || "";
       const showOpenOnly = openNowFilter?.checked || false;
+      const showTopOnly = topStoreFilter?.checked || false;
       const radius = parseFloat(radiusSelect?.value) || Infinity;
 
-      const filtered = stores.filter(store => {
+      let filtered = stores.filter(store => {
         // Search term filter
         const matchesTerm = !term ||
           store.storeName?.toLowerCase().includes(term) ||
@@ -194,8 +217,13 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
         return matchesTerm && matchesOpen && matchesRadius;
       });
 
-      // Sort by distance if user location is available
-      if (userCoords && radius !== Infinity) {
+      // Sort logic
+      if (showTopOnly) {
+        // Sort by activity descending and limit to top 3
+        filtered.sort((a, b) => (b.totalActivity || 0) - (a.totalActivity || 0));
+        filtered = filtered.slice(0, 3);
+      } else if (userCoords && radius !== Infinity) {
+        // Default: Sort by distance if user location is available
         filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
       }
 
@@ -223,6 +251,10 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
 
     if (openNowFilter) {
       openNowFilter.addEventListener("change", filterAndRender);
+    }
+
+    if (topStoreFilter) {
+      topStoreFilter.addEventListener("change", filterAndRender);
     }
 
     if (detectLocationBtn) {

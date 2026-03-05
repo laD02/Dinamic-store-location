@@ -73,34 +73,143 @@
     width: 0px;
 }
 
-.inforItem {
-    padding: 24px;
-    background-color: #fff;
+.storeItem {
+    position: relative;
+    border: 1px solid #E5E7EB;
+    padding: 16px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    margin-bottom: 0px;
+    cursor: pointer;
+    background-color: #fff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.storeItem:hover {
+    background-color: #F9FAFB;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+    border-color: #D1D5DB;
+}
+
+.storeItem.selected {
+    border-color: #3B82F6;
+    background-color: #F8FAFC;
+    box-shadow: 0 0 0 1px #3B82F6, 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.storeItemHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.storeItemName {
+    margin: 0;
+    font-size: 15px;
+    color: #1F2937;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.storeItemDetails {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.inforItem:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+.storeItemRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
-.inforItem h4 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.3;
+.addressRow {
+    color: #4B5563;
 }
 
-.inforItem p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
-    opacity: 0.9;
+.phoneRow {
+    color: #3B82F6;
+    font-weight: 500;
+}
+
+.storeItemRow i {
+    margin-top: 2px;
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.storeStatusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.statusDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    box-shadow: 0 0 6px currentColor;
+}
+
+.storeStatusBadge.open {
+    background: linear-gradient(135deg, rgba(209, 250, 229, 0.85) 0%, rgba(167, 243, 208, 0.5) 100%);
+    color: #047857;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.15);
+}
+
+.storeStatusBadge.open .statusDot {
+    background-color: #10b981;
+    color: #10b981;
+}
+
+.storeStatusBadge.open .statusDot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background-color: #10b981;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: statusPulseOpen 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes statusPulseOpen {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
+
+    70% {
+        transform: translate(-50%, -50%) scale(3.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(3.5);
+        opacity: 0;
+    }
 }
 
 .click {

@@ -367,33 +367,39 @@ export default function MapDesigners() {
                 gap="small-500"
               >
                 <div
-                  className={styles.inforItem}
+                  className={styles.storeItem}
                   style={{
-                    border: `1px solid ${theme.secondaryColor}`
+                    borderColor: theme.secondaryColor,
                   }}
                 >
-                  <h4 style={{
-                    color: theme.primaryColor,
-                    fontFamily: theme.primaryFont,
-                    whiteSpace: "normal",
-                    wordBreak: "break-word"
-                  }}>
-                    Apple Park
-                  </h4>
-                  <p style={{
-                    color: theme.primaryColor,
-                    fontFamily: theme.secondaryFont
-                  }}>
-                    1 Apple Park Way, Cupertino, CA 95014, USA<br />
-                  </p>
-                  <p style={{
-                    color: theme.secondaryColor,
-                    fontFamily: theme.secondaryFont
-                  }}>
-                    +1 408-996-1010
-                  </p>
-                  <s-stack direction="inline" justifyContent="start" gap="small-500">
-                  </s-stack>
+                  <div className={styles.storeItemHeader}>
+                    <h4 className={styles.storeItemName} style={{
+                      color: theme.primaryColor,
+                      fontFamily: theme.primaryFont,
+                    }}>
+                      Apple Park
+                    </h4>
+                  </div>
+
+                  <div className={styles.storeItemDetails}>
+                    <div className={`${styles.storeItemRow} ${styles.addressRow}`} style={{ color: theme.primaryColor }}>
+                      <i className="fa-solid fa-location-dot"></i>
+                      <span style={{
+                        fontFamily: theme.secondaryFont
+                      }}>
+                        1 Apple Park Way, Cupertino, CA 95014, USA
+                      </span>
+                    </div>
+
+                    <div className={`${styles.storeItemRow} ${styles.phoneRow}`} style={{ color: theme.secondaryColor }}>
+                      <i className="fa-solid fa-phone"></i>
+                      <span style={{
+                        fontFamily: theme.secondaryFont
+                      }}>
+                        +1 408-996-1010
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </s-stack>
             </s-section>

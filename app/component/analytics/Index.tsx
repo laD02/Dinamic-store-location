@@ -62,7 +62,7 @@ function ConversionChart({
 
     return (
         <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
                 <defs>
                     {METRICS.map(m => (
                         <linearGradient key={`grad-conv-${m.key}`} id={`grad-conv-${m.key}`} x1="0" y1="0" x2="0" y2="1">
@@ -78,6 +78,7 @@ function ConversionChart({
                     tickLine={false}
                     axisLine={false}
                     dy={10}
+                    minTickGap={30}
                 />
                 <YAxis
                     tick={{ fontSize: 11, fill: "#6b7280" }}
@@ -538,7 +539,7 @@ export default function Index() {
                     <s-section heading={chartHeading}>
                         {dailyTotals.length > 0 ? (
                             <ResponsiveContainer width="100%" height={250}>
-                                <AreaChart data={dailyTotals} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <AreaChart data={dailyTotals} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                                     <defs>
                                         {METRICS.map(m => (
                                             <linearGradient key={`grad-${m.key}`} id={`grad-${m.key}`} x1="0" y1="0" x2="0" y2="1">
@@ -554,6 +555,7 @@ export default function Index() {
                                         tickLine={false}
                                         axisLine={false}
                                         dy={10}
+                                        minTickGap={20}
                                     />
                                     <YAxis
                                         tick={{ fontSize: 11, fill: "#6b7280" }}
