@@ -59,6 +59,9 @@ export default function App() {
         <s-link href="/app/map-designers">Map Designers</s-link>
         <s-link href="/app/integrations">Integrations</s-link>
         <s-link href="/app/analytics">Analytics</s-link>
+        <s-link href="/app/settings">Settings</s-link>
+        {/* <s-link href="/app/plan">Plan</s-link> */}
+        <div style={{ flex: 1 }} />
       </s-app-nav>
 
       {isLoading ? (

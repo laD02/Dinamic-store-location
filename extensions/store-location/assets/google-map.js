@@ -157,6 +157,15 @@ async function initStoreLocator(wrapper) {
 
             markers.forEach(m => {
                 const isVisible = filteredIds.has(m.store.id);
+
+                // Sync distance data from filtered store to marker store object
+                const filteredStore = filteredStores.find(s => s.id === m.store.id);
+                if (filteredStore && filteredStore.distance !== undefined) {
+                    m.store.distance = filteredStore.distance;
+                } else {
+                    delete m.store.distance;
+                }
+
                 if (useGoogleMaps) {
                     m.marker.setVisible(isVisible);
                 } else {
@@ -230,7 +239,6 @@ async function initStoreLocator(wrapper) {
                     filteredStores.forEach(s => {
                         if (isValidCoordinate(s.lat, s.lng)) {
                             if (userCoords) {
-                                // MIRROR POINT for symmetric bounds centered on user
                                 const mirrorLat = 2 * userCoords.lat - s.lat;
                                 const mirrorLng = 2 * userCoords.lng - s.lng;
                                 bounds.extend({ lat: s.lat, lng: s.lng });
@@ -278,6 +286,21 @@ async function initStoreLocator(wrapper) {
             }
         });
 
+        // REFRESH STATUS LISTENER
+        window.addEventListener('sl:status-refresh', () => {
+            if (currentOverlay && currentOverlay.store) {
+                const overlayContent = currentOverlay.div || currentOverlay._div;
+                if (overlayContent) {
+                    const statusBadge = overlayContent.querySelector(".store-status-badge");
+                    if (statusBadge) {
+                        const status = isStoreOpen(currentOverlay.store);
+                        statusBadge.className = `store-status-badge ${status.class}`;
+                        statusBadge.innerHTML = `<span class="status-dot"></span> ${status.text}`;
+                    }
+                }
+            }
+        });
+
     } catch (err) {
         console.error("Store locator error:", err);
         if (mapLoading) mapLoading.style.display = "none";
@@ -287,122 +310,34 @@ async function initStoreLocator(wrapper) {
      * Show warning for stores without coordinates
      ************************************************/
     function showCoordinateWarning(store) {
-        // Tạo thông báo toast
         const toast = document.createElement('div');
         toast.className = 'sl-toast-notification';
         toast.innerHTML = `
-            <div class="sl-toast-content">
+            <div class="sl-toast-content warning">
                 <i class="fa-solid fa-location-slash"></i>
                 <div class="sl-toast-text">
                     <strong>${store.storeName || 'Store'}</strong>
                     <p>Location not available on map</p>
                 </div>
-                <button class="sl-toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                <button class="sl-toast-close">×</button>
             </div>
         `;
-
-        // Thêm styles inline nếu chưa có
-        if (!document.getElementById('sl-toast-styles')) {
-            const style = document.createElement('style');
-            style.id = 'sl-toast-styles';
-            style.textContent = `
-                .sl-toast-notification {
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    z-index: 10000;
-                    animation: slideInRight 0.3s ease-out;
-                }
-                
-                .sl-toast-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    background: #fff;
-                    border-left: 4px solid #f59e0b;
-                    padding: 16px 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    min-width: 300px;
-                    max-width: 400px;
-                }
-                
-                .sl-toast-content i {
-                    font-size: 24px;
-                    color: #f59e0b;
-                    flex-shrink: 0;
-                }
-                
-                .sl-toast-text {
-                    flex: 1;
-                }
-                
-                .sl-toast-text strong {
-                    display: block;
-                    font-size: 14px;
-                    color: #111827;
-                    margin-bottom: 4px;
-                }
-                
-                .sl-toast-text p {
-                    margin: 0;
-                    font-size: 13px;
-                    color: #6b7280;
-                }
-                
-                .sl-toast-close {
-                    background: none;
-                    border: none;
-                    font-size: 24px;
-                    color: #9ca3af;
-                    cursor: pointer;
-                    padding: 0;
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 4px;
-                    transition: all 0.2s;
-                    flex-shrink: 0;
-                }
-                
-                .sl-toast-close:hover {
-                    background: #f3f4f6;
-                    color: #111827;
-                }
-                
-                @keyframes slideInRight {
-                    from {
-                        transform: translateX(400px);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                
-                @keyframes slideOutRight {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(400px);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
         document.body.appendChild(toast);
+
+        const closeBtn = toast.querySelector('.sl-toast-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                toast.style.animation = 'slideOutRight 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            };
+        }
 
         // Tự động ẩn sau 4 giây
         setTimeout(() => {
-            toast.style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => toast.remove(), 300);
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            }
         }, 4000);
     }
 
@@ -461,6 +396,14 @@ async function initStoreLocator(wrapper) {
 
     function panToStoreGoogle(store, marker) {
         if (!map || !isValidCoordinate(store.lat, store.lng)) return;
+
+        // Marker Bounce Animation
+        if (marker) {
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            setTimeout(() => {
+                marker.setAnimation(null);
+            }, 1400); // approx 2 bounces
+        }
 
         if (currentOverlay) {
             currentOverlay.setMap(null);
@@ -788,6 +731,7 @@ async function initStoreLocator(wrapper) {
 
         // Tạo và thêm overlay
         currentOverlay = new CustomOverlay();
+        currentOverlay.store = store; // QUAN TRỌNG: Lưu lại store để refresh status
         currentOverlay.addTo(map);
 
         // Update vị trí khi map di chuyển
@@ -832,6 +776,10 @@ async function initStoreLocator(wrapper) {
         const closeMinutes = parseTimeToMinutes(closeTime);
 
         if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+            const minutesUntilClose = closeMinutes - currentMinutes;
+            if (minutesUntilClose > 0 && minutesUntilClose <= 60) {
+                return { isOpen: true, text: `Closing Soon (${minutesUntilClose}m)`, class: "closing-soon" };
+            }
             return { isOpen: true, text: "Open Now", class: "open" };
         }
 
@@ -926,6 +874,8 @@ async function initStoreLocator(wrapper) {
             ? `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`
             : '#';
 
+        const fullAddress = [s.address, s.city, s.region, s.code].filter(Boolean).join(', ');
+
         return `
             <button class="map-overlay-close">×</button>
 
@@ -936,11 +886,16 @@ async function initStoreLocator(wrapper) {
             ` : ''}
 
             <div class="map-overlay-content" style="background:${mapStyle.backgroundColor || "#fff"};">
-                <div class="map-overlay-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-right: 32px;">
+                <div class="map-overlay-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-right: 32px; flex-wrap: wrap;">
                     <h3 class="map-overlay-title" style="color:${mapStyle.color}; margin: 0; font-size: 17px;">${s.storeName}</h3>
                     ${s.activityRank ? `
                         <span class="sl-rank-badge rank-${s.activityRank} compact" style="flex-shrink: 0; margin: 0;">
                             <i class="fa-solid fa-fire"></i> #${s.activityRank}
+                        </span>
+                    ` : ""}
+                    ${s.distance ? `
+                        <span class="store-distance-tag" style="margin-left: 0; font-size: 10px; padding: 1px 6px;">
+                            ${s.distance < 1 ? (s.distance * 1000).toFixed(0) + ' m' : s.distance.toFixed(1) + ' km'} away
                         </span>
                     ` : ""}
                 </div>
@@ -956,7 +911,8 @@ async function initStoreLocator(wrapper) {
                 
                 <div class="map-overlay-row">
                     <i class="fa-solid fa-location-dot" style="color:${mapStyle.iconColor};"></i>
-                    <span style="color:${mapStyle.color};">${[s.address, s.city, s.region, s.code].filter(Boolean).join(', ')}</span>
+                    <span style="color:${mapStyle.color}; flex: 1;">${fullAddress}</span>
+
                 </div>
 
                 ${s.phone ? `

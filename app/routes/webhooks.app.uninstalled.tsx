@@ -11,6 +11,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // If this webhook already ran, the session may have been deleted previously.
   if (session) {
     await db.session.deleteMany({ where: { shop } });
+    await db.plan.deleteMany({ where: { shop } });
+    await db.style.deleteMany({ where: { shop } });
+    await db.reportSetting.deleteMany({ where: { shop } });
+    // Keep events for analytics but delete the main store? 
+    // Usually we want to keep some data for 48 hours for GDPR but Shopify expects a clean session.
   }
 
   return new Response();

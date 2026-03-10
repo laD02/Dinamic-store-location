@@ -45,12 +45,11 @@ export async function deleteImageFromCloudinary(imageUrl: string): Promise<boole
     // Bỏ extension (.jpg, .png, etc.)
     const publicId = pathAfterUpload.replace(/\.[^.]+$/, '');
 
-    console.log('Deleting image with public_id:', publicId);
+
 
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result === 'ok') {
-      console.log('Image deleted successfully:', publicId);
       return true;
     } else if (result.result === 'not found') {
       console.warn('Image not found on Cloudinary:', publicId);

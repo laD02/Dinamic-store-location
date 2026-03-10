@@ -411,6 +411,11 @@
   color: #1E293B;
   transition: color 0.3s ease;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Ultra-Premium Ranking Badges */
@@ -637,6 +642,7 @@ p {
   text-transform: uppercase;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  white-space: nowrap;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -1048,4 +1054,210 @@ p {
   100% {
     opacity: 0.6;
   }
+}
+
+/* ========== PREMIUM ADDITIONS ========== */
+
+/* Closing Soon Status - Warm Amber */
+.store-status-badge.closing-soon {
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.85) 0%, rgba(253, 230, 138, 0.5) 100%);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.15);
+}
+
+.store-status-badge.closing-soon .status-dot {
+  background-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.store-status-badge.closing-soon .status-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background-color: #f59e0b;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: status-pulse-open 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+/* Copy Address Button */
+.sl-copy-btn {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.sl-copy-btn:hover {
+  background: #F1F5F9;
+  color: #3B82F6;
+}
+
+/* Distance text */
+.store-distance-tag {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 600;
+  background: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Toast Notification (Relocated from JS) */
+.sl-toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sl-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border-left: 4px solid #3B82F6;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 280px;
+  max-width: 420px;
+}
+
+.sl-toast-content.warning {
+  border-left-color: #f59e0b;
+}
+
+.sl-toast-content.success {
+  border-left-color: #10b981;
+}
+
+.sl-toast-content i {
+  font-size: 20px;
+  color: #3B82F6;
+  flex-shrink: 0;
+}
+
+.sl-toast-content.warning i {
+  color: #f59e0b;
+}
+
+.sl-toast-content.success i {
+  color: #10b981;
+}
+
+.sl-toast-text {
+  flex: 1;
+}
+
+.sl-toast-text strong {
+  display: block;
+  font-size: 14px;
+  color: #1E293B;
+  margin-bottom: 2px;
+}
+
+.sl-toast-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748B;
+}
+
+.sl-toast-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sl-toast-close:hover {
+  background: #F1F5F9;
+  color: #1E293B;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Autocomplete styles for Google Places */
+.pac-container {
+  border-radius: 12px;
+  border: 1px solid #F1F5F9;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  font-family: inherit;
+  z-index: 10001 !important;
+}
+
+.pac-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-top: 1px solid #F1F5F9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pac-item:first-child {
+  border-top: none;
+}
+
+.pac-item:hover {
+  background-color: #F8FAFC;
+}
+
+.pac-icon {
+  margin-top: 0;
+}
+
+.pac-item-query {
+  font-size: 14px;
+  color: #1E293B;
+  padding-right: 0;
+}
+
+.pac-matched {
+  font-weight: 700;
+  color: #3B82F6;
 }

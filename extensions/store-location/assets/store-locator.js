@@ -21,6 +21,58 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
 
     if (!container) return;
 
+    /************************************************
+     * Helpers for Toast & Clipboard
+     ************************************************/
+    function showToast(title, message, type = 'success') {
+      // Remove existing toasts if any
+      document.querySelectorAll('.sl-toast-notification').forEach(t => t.remove());
+
+      const toast = document.createElement('div');
+      toast.className = `sl-toast-notification`;
+      toast.innerHTML = `
+        <div class="sl-toast-content ${type}">
+          <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+          <div class="sl-toast-text">
+            <strong>${title}</strong>
+            <p>${message}</p>
+          </div>
+          <button class="sl-toast-close">×</button>
+        </div>
+      `;
+      document.body.appendChild(toast);
+
+      const closeBtn = toast.querySelector('.sl-toast-close');
+      closeBtn.onclick = () => {
+        toast.style.animation = 'slideOutRight 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+      };
+
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.style.animation = 'slideOutRight 0.3s forwards';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 4000);
+    } async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copied!', 'Address copied to clipboard', 'success');
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showToast('Copied!', 'Address copied to clipboard', 'success');
+        } catch (e) {
+          showToast('Error', 'Could not copy address', 'warning');
+        }
+        document.body.removeChild(textArea);
+      }
+    }
     // Helper for Event Tracking
     window.slSessionId = window.slSessionId || Math.random().toString(36).substring(2, 15);
     window.trackStoreEvent = async function (eventType, data = {}) {
@@ -83,6 +135,10 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
       const closeMinutes = parseTimeToMinutes(closeTime);
 
       if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+        const minutesUntilClose = closeMinutes - currentMinutes;
+        if (minutesUntilClose > 0 && minutesUntilClose <= 60) {
+          return { isOpen: true, text: `Closing Soon (${minutesUntilClose}m)`, class: "closing-soon" };
+        }
         return { isOpen: true, text: "Open Now", class: "open" };
       }
 
@@ -105,42 +161,52 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
       }
 
       container.innerHTML = storesToRender
-        .map(s => `
+        .map(s => {
+          const fullAddress = [s.address, s.city, s.code].filter(Boolean).join(', ');
+          const status = isStoreOpen(s);
+
+          return `
           <div class="store-item" data-original-index="${stores.indexOf(s)}">
             <div class="store-item-header">
               <div class="store-item-header-top">
                 <h4 class="store-item-name">${s.storeName}</h4>
-                ${(() => {
-            const status = isStoreOpen(s);
-            return `<span class="store-status-badge ${status.class}">
-                      <span class="status-dot"></span> ${status.text}
-                    </span>`;
-          })()}
+                <span class="store-status-badge ${status.class}">
+                  <span class="status-dot"></span> ${status.text}
+                </span>
               </div>
-              ${s.activityRank ? `
-                <div class="store-item-header-bottom">
+              <div class="store-item-header-bottom">
+                ${s.activityRank ? `
                   <span class="sl-rank-badge rank-${s.activityRank}">
                     <i class="fa-solid fa-fire"></i> Rank #${s.activityRank}
                   </span>
-                </div>
-              ` : ""}
+                ` : ""}
+                ${s.distance ? `
+                  <span class="store-distance-tag">
+                    <i class="fa-solid fa-person-walking"></i> ${s.distance < 1 ? (s.distance * 1000).toFixed(0) + ' m' : s.distance.toFixed(1) + ' km'} away
+                  </span>
+                ` : ""}
+              </div>
             </div>
 
             <div class="store-item-details">
               <div class="store-item-row address-row">
                 <i class="fa-solid fa-location-dot"></i>
-                <span>${[s.address, s.city, s.code].filter(Boolean).join(', ')}</span>
+                <span>${fullAddress}</span>
+                <button class="sl-copy-btn" title="Copy Address" data-address="${fullAddress}">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
               </div>
 
               ${s.phone ? `
               <div class="store-item-row phone-row">
                 <i class="fa-solid fa-phone"></i>
-                <span>${s.phone}</span>
+                <a href="tel:${s.phone}" style="color: inherit; text-decoration: none;">${s.phone}</a>
               </div>
               ` : ""}
             </div>
           </div>
-        `)
+        `;
+        })
         .join("");
     }
 
@@ -189,6 +255,11 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
       const radius = parseFloat(radiusSelect?.value) || Infinity;
 
       let filtered = stores.filter(store => {
+        // Clear distance if no user location
+        if (!userCoords) {
+          delete store.distance;
+        }
+
         // Search term filter
         const matchesTerm = !term ||
           store.storeName?.toLowerCase().includes(term) ||
@@ -204,12 +275,14 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
 
         // Radius filter
         let matchesRadius = true;
-        if (userCoords && radius !== Infinity) {
+        if (userCoords) {
           if (store.lat && store.lng) {
             const distance = calculateDistance(userCoords.lat, userCoords.lng, store.lat, store.lng);
-            store.distance = distance; // Store distance for possible sorting or display
-            matchesRadius = distance <= radius;
-          } else {
+            store.distance = distance; // Store distance for display
+            if (radius !== Infinity) {
+              matchesRadius = distance <= radius;
+            }
+          } else if (radius !== Infinity) {
             matchesRadius = false;
           }
         }
@@ -222,7 +295,7 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
         // Sort by activity descending and limit to top 3
         filtered.sort((a, b) => (b.totalActivity || 0) - (a.totalActivity || 0));
         filtered = filtered.slice(0, 3);
-      } else if (userCoords && radius !== Infinity) {
+      } else if (userCoords) {
         // Default: Sort by distance if user location is available
         filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
       }
@@ -301,6 +374,14 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
      ************************************************/
     container.addEventListener("click", e => {
       const item = e.target.closest(".store-item");
+      const copyBtn = e.target.closest(".sl-copy-btn");
+
+      if (copyBtn) {
+        e.stopPropagation();
+        const address = copyBtn.dataset.address;
+        copyToClipboard(address);
+        return;
+      }
       if (!item) return;
 
       const originalIndex = Number(item.dataset.originalIndex);
@@ -323,6 +404,47 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
         window.trackStoreEvent("VIEW_STORE", { storeId: clickedStore.id });
       }
     });
+
+    // Initialize Google Places Autocomplete if available
+    if (window.google && window.google.maps && window.google.maps.places && searchInput) {
+      const autocomplete = new google.maps.places.Autocomplete(searchInput, {
+        types: ['geocode', 'establishment'],
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+          searchInput.value = place.formatted_address || place.name;
+          filterAndRender();
+        }
+      });
+
+      // Prevent form submission on enter if within a form
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      });
+    }
+
+    // Periodically refresh statuses every 60 seconds
+    setInterval(() => {
+      const items = container.querySelectorAll(".store-item");
+      items.forEach(item => {
+        const originalIndex = Number(item.dataset.originalIndex);
+        const store = stores[originalIndex];
+        if (store) {
+          const status = isStoreOpen(store);
+          const badge = item.querySelector(".store-status-badge");
+          if (badge) {
+            badge.className = `store-status-badge ${status.class}`;
+            badge.innerHTML = `<span class="status-dot"></span> ${status.text}`;
+          }
+        }
+      });
+      // Notify map to refresh overlays if needed
+      window.dispatchEvent(new CustomEvent('sl:status-refresh'));
+    }, 60000);
 
   } catch (err) {
     console.error("Load stores error:", err);

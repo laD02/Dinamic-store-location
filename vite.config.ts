@@ -51,6 +51,37 @@ export default defineConfig({
   plugins: [
     reactRouter(),
     tsconfigPaths(),
+    {
+      name: "socket-io",
+      async configureServer(server) {
+        if (!server.httpServer || global.__io) return;
+
+        try {
+          const { Server } = await import("socket.io");
+          const io = new Server(server.httpServer, {
+            path: "/socket.io",
+            addTrailingSlash: false,
+            cors: {
+              origin: "*",
+              methods: ["GET", "POST"]
+            }
+          });
+
+          global.__io = io;
+
+          io.on("connection", (socket) => {
+            console.log("[Socket] Client connected:", socket.id);
+            socket.on("disconnect", () => {
+              console.log("[Socket] Client disconnected:", socket.id);
+            });
+          });
+
+          console.log("[Socket] Initialized successfully");
+        } catch (error) {
+          console.error("[Socket] Initialization failed:", error);
+        }
+      },
+    },
   ],
   build: {
     assetsInlineLimit: 0,

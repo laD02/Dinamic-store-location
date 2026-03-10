@@ -1,9 +1,9 @@
 import { useAppBridge } from "@shopify/app-bridge-react"
 
 
-export default function Installation () {
-    const code = `<div class="store-locator-block page-width" data-block-id="embed-locator" data-google-api-key="AIzaSyBmjzIkjmS4_-NRI1eXb2d9QeakFrd5FnM" data-enable-search="true" data-enable-filters="true" data-default-zoom="12" data-shop-domain="my-app-2779073.myshopify.com">...</div>`
+export default function Installation() {
     const shopify = useAppBridge()
+    const code = `<div class="store-locator-block page-width" data-block-id="embed-locator" data-google-api-key="${process.env.GOOGLE_MAP_KEY || ''}" data-enable-search="true" data-enable-filters="true" data-default-zoom="12" data-shop-domain="${shopify.config?.shop}">...</div>`
 
     const handleCopy = () => {
         navigator.clipboard.writeText(code).then(() => {
@@ -39,9 +39,9 @@ export default function Installation () {
                             </s-stack>
 
                             <s-box inlineSize="64%">
-                                In your Shopify account, click ‘Online Store’ on the left side, and then click ‘Customize’ next to the theme where you want to install the map    
+                                In your Shopify account, click ‘Online Store’ on the left side, and then click ‘Customize’ next to the theme where you want to install the map
                             </s-box>
-                        </s-stack>               
+                        </s-stack>
                         <s-divider />
                         <s-stack direction="inline" justifyContent="space-between">
                             <s-stack gap="small" inlineSize="36%">
@@ -52,9 +52,9 @@ export default function Installation () {
                             </s-stack>
 
                             <s-box inlineSize="64%">
-                                In the top bar, click the drop down and go to 'Pages' and find the page where you want to install the locator. If you want to install it on a new page, you'll need to first create the page in your Shopify Admin under 'Pages'. 
+                                In the top bar, click the drop down and go to 'Pages' and find the page where you want to install the locator. If you want to install it on a new page, you'll need to first create the page in your Shopify Admin under 'Pages'.
                             </s-box>
-                        </s-stack>               
+                        </s-stack>
                         <s-divider />
                         <s-stack direction="inline" justifyContent="space-between">
                             <s-stack gap="small">
@@ -65,9 +65,9 @@ export default function Installation () {
                             </s-stack>
 
                             <s-box inlineSize="64%">
-                                Click 'Add Section' on the left side of the CMS tool bar and toggle to the Apps'. Find the 'H1 Dynamic Store Locator' app and click it to add it to the page. 
+                                Click 'Add Section' on the left side of the CMS tool bar and toggle to the Apps'. Find the 'H1 Dynamic Store Locator' app and click it to add it to the page.
                             </s-box>
-                        </s-stack>               
+                        </s-stack>
                         <s-divider />
                         <s-stack direction="inline" justifyContent="space-between">
                             <s-stack gap="small">
@@ -80,7 +80,7 @@ export default function Installation () {
                             <s-box inlineSize="64%">
                                 After that, you can drag and drop your map anywhere on the page, or add in headings and content above or below it.
                             </s-box>
-                        </s-stack>               
+                        </s-stack>
                     </s-stack>
                 </s-stack>
 
@@ -105,15 +105,15 @@ export default function Installation () {
                             </s-stack>
 
                             <s-box inlineSize="64%">
-                                Copy and paste the code snippet below into an HTML block of the page where you wish the store locator to be visible.    
+                                Copy and paste the code snippet below into an HTML block of the page where you wish the store locator to be visible.
                             </s-box>
-                        </s-stack>   
+                        </s-stack>
 
                         <s-stack background="subdued" borderRadius="large" padding="base" direction="inline" justifyContent="space-between" gap="small">
                             <s-stack inlineSize="90%">
-                                <pre style={{ 
-                                    margin: 0, 
-                                    whiteSpace: 'pre-wrap', 
+                                <pre style={{
+                                    margin: 0,
+                                    whiteSpace: 'pre-wrap',
                                     wordBreak: 'break-word',
                                     overflow: 'auto',
                                 }}>
@@ -121,15 +121,15 @@ export default function Installation () {
                                 </pre>
                             </s-stack>
                             <s-stack>
-                                <s-button 
-                                    icon="paste" 
+                                <s-button
+                                    icon="paste"
                                     variant="tertiary"
                                     onClick={() => handleCopy()}
                                 >
                                 </s-button>
                             </s-stack>
                         </s-stack>
-                    </s-stack> 
+                    </s-stack>
                 </s-stack>
             </s-stack>
         </s-page>

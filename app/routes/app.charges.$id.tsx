@@ -11,14 +11,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const plan = params.id; // 🔥 QUAN TRỌNG
 
     // ===== BASIC PLAN (FREE) =====
-    if (plan === "basic") {
-        await prisma.plan.update({
-            where: { shop: session.shop },
-            data: { level: "basic" },
-        });
+    // if (plan === "basic") {
+    //     await prisma.plan.update({
+    //         where: { shop: session.shop },
+    //         data: { level: "basic" },
+    //     });
 
-        return redirect("/app/plan");
-    }
+    //     return redirect("/app/plan");
+    // }
 
     // ===== PAID PLANS =====
     let price: number | null = null;
@@ -52,7 +52,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         {
             variables: {
                 name: `${plan}`,
-                returnUrl: `https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/plan`,
+                returnUrl: `https://${session.shop}/admin/apps/${process.env.SHOPIFY_APP_NAME || 'app-1972'}/app/plan`,
                 lineItems: [
                     {
                         plan: {
@@ -81,7 +81,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     }
 
     const confirmationUrl = data?.confirmationUrl;
-    console.log("Confirmation URL:", confirmationUrl);
 
     if (!confirmationUrl) {
         throw new Error("No confirmation URL returned from Shopify");

@@ -166,3 +166,46 @@ enum StoreEventType {
   CLICK_WEBSITE
 }
 
+model ReportSetting {
+  id          String    @id @default(cuid())
+  shop        String    @unique
+  dayOfWeek   String    @default("Monday")
+  dayOfMonth  Int       @default(1)
+  dailyTime    String    @default("09:00")
+  weeklyTime   String    @default("09:00")
+  monthlyTime  String    @default("09:00")
+
+  // In-app notification settings 
+  inAppDaily   Boolean   @default(false)
+  inAppWeekly  Boolean   @default(false)
+  inAppMonthly Boolean   @default(false)
+
+  lastDailySentAt   DateTime?
+  lastWeeklySentAt  DateTime?
+  lastMonthlySentAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  shop      String
+  title     String
+  message   String
+  type      String   @default("info") // info, success, warning, error
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shop])
+  @@index([isRead])
+}
+
+
+model Plan {
+  id        String   @id @default(cuid())
+  shop      String   @unique
+  level     String   @default("basic") // basic, advanced, plus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

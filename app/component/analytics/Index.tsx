@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 import Conversion from "./conversion";
+import NotificationCenter from "../NotificationCenter";
 import { exportAnalyticsToPDF } from "app/utils/exportAnalyticsPDF";
 import { exportAnalyticsToCSV } from "app/utils/exportAnalyticsCSV";
 import {
@@ -156,9 +157,45 @@ export default function Index() {
         });
     };
 
-    // Group stats by store (tổng hợp tất cả ngày)
+    const targetDates = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (interval === "0") {
+            // Daily: Yesterday
+            const start = new Date(today);
+            start.setDate(today.getDate() - 1);
+            const end = new Date(start);
+            end.setHours(23, 59, 59, 999);
+            return { start, end };
+        } else if (interval === "1") {
+            // Weekly: Last full Monday-Sunday week
+            const dayOfWeek = today.getDay();
+            const offsetToSun = dayOfWeek === 0 ? 7 : dayOfWeek;
+            const end = new Date(today);
+            end.setDate(today.getDate() - offsetToSun);
+            end.setHours(23, 59, 59, 999);
+            const start = new Date(end);
+            start.setDate(end.getDate() - 6);
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        } else {
+            // Monthly: Last full calendar month
+            const end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+            const start = new Date(end.getFullYear(), end.getMonth(), 1, 0, 0, 0, 0);
+            return { start, end };
+        }
+    }, [interval]);
+
+    // Group stats by store (All-Time)
     const groupedStores = useMemo(() => {
+        if (!stats || !Array.isArray(stats)) {
+            return [];
+        }
+
+
         const map: Record<string, any> = {};
+
         for (const stat of stats) {
             const key = stat.storeId ?? stat.shop;
             if (!map[key]) {
@@ -172,13 +209,14 @@ export default function Index() {
                     uniqueWebsiteSessions: 0,
                 };
             }
-            map[key].uniqueViewSessions += stat.uniqueViewSessions;
-            map[key].uniqueSearchSessions += stat.uniqueSearchSessions;
-            map[key].uniqueCallSessions += stat.uniqueCallSessions;
-            map[key].uniqueDirectionSessions += stat.uniqueDirectionSessions;
-            map[key].uniqueWebsiteSessions += stat.uniqueWebsiteSessions;
+            map[key].uniqueViewSessions += (stat.uniqueViewSessions || 0);
+            map[key].uniqueSearchSessions += (stat.uniqueSearchSessions || 0);
+            map[key].uniqueCallSessions += (stat.uniqueCallSessions || 0);
+            map[key].uniqueDirectionSessions += (stat.uniqueDirectionSessions || 0);
+            map[key].uniqueWebsiteSessions += (stat.uniqueWebsiteSessions || 0);
         }
-        return Object.values(map);
+        const result = Object.values(map);
+        return result;
     }, [stats]);
 
     const dailyTotals = useMemo(() => {
@@ -368,10 +406,10 @@ export default function Index() {
             .slice(0, 5);
     }, [groupedStores, activityFilter]);
 
-    // Overall totals
+    // Overall totals (All-Time) - Use all stats instead of filtered groupedStores
     const overallTotals = useMemo(
         () =>
-            groupedStores.reduce(
+            stats.reduce(
                 (acc: any, s: any) => ({
                     uniqueViewSessions: acc.uniqueViewSessions + s.uniqueViewSessions,
                     uniqueSearchSessions: acc.uniqueSearchSessions + s.uniqueSearchSessions,
@@ -387,7 +425,7 @@ export default function Index() {
                     uniqueWebsiteSessions: 0,
                 }
             ),
-        [groupedStores]
+        [stats]
     );
 
     const sortOptions = [
@@ -431,7 +469,10 @@ export default function Index() {
                     <s-icon type="chart-vertical"></s-icon>
                     <h2>Analytics</h2>
                 </s-stack>
-                <s-button commandFor="export-menu" icon="export">Export</s-button>
+                <s-stack direction="inline" gap="small-400" alignItems="center">
+                    <s-button commandFor="export-menu" icon="export">Export</s-button>
+                    <NotificationCenter />
+                </s-stack>
 
                 <s-menu id="export-menu" accessibilityLabel="Customer actions">
                     <s-button onClick={() => {

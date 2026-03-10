@@ -132,6 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
         saveUpdate: "update",
         saveIntegrations: "integrations",
         saveAddMap: "addMap",
+        saveAnalytic: "analytic",
     }
 
     const step = STEP_MAP[actionType]

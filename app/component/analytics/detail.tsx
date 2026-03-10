@@ -351,13 +351,43 @@ export default function Index() {
         });
     };
 
-    const totals: Record<string, number> = {
-        uniqueViewSessions: store.uniqueViewSessions,
-        uniqueSearchSessions: store.uniqueSearchSessions,
-        uniqueCallSessions: store.uniqueCallSessions,
-        uniqueDirectionSessions: store.uniqueDirectionSessions,
-        uniqueWebsiteSessions: store.uniqueWebsiteSessions,
-    };
+    const targetDates = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (interval === "0") {
+            const start = new Date(today);
+            start.setDate(today.getDate() - 1);
+            const end = new Date(start);
+            end.setHours(23, 59, 59, 999);
+            return { start, end };
+        } else if (interval === "1") {
+            const dayOfWeek = today.getDay();
+            const offsetToSun = dayOfWeek === 0 ? 7 : dayOfWeek;
+            const end = new Date(today);
+            end.setDate(today.getDate() - offsetToSun);
+            end.setHours(23, 59, 59, 999);
+            const start = new Date(end);
+            start.setDate(end.getDate() - 6);
+            start.setHours(0, 0, 0, 0);
+            return { start, end };
+        } else {
+            const end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+            const start = new Date(end.getFullYear(), end.getMonth(), 1, 0, 0, 0, 0);
+            return { start, end };
+        }
+    }, [interval]);
+
+    const totals: Record<string, number> = useMemo(() => {
+        // Return all-time totals from store object (loader calculates these)
+        return {
+            uniqueViewSessions: store.uniqueViewSessions,
+            uniqueSearchSessions: store.uniqueSearchSessions,
+            uniqueCallSessions: store.uniqueCallSessions,
+            uniqueDirectionSessions: store.uniqueDirectionSessions,
+            uniqueWebsiteSessions: store.uniqueWebsiteSessions,
+        };
+    }, [store]);
 
     // Compute aggregated trend data for current interval (used for export)
     const dailyTrend = useMemo(() => {
@@ -495,11 +525,11 @@ export default function Index() {
 
                 {/* Conversion Rate */}
                 {(() => {
-                    const views = store.uniqueViewSessions || 0;
+                    const views = totals.uniqueViewSessions || 0;
                     const conversionMetrics = [
-                        { key: 'uniqueCallSessions', label: 'Phone', heading: 'Phone Conversion', icon: '📞', color: '#10b981', value: store.uniqueCallSessions },
-                        { key: 'uniqueDirectionSessions', label: 'Directions', heading: 'Direction Conversion', icon: '🗺', color: '#ef4444', value: store.uniqueDirectionSessions },
-                        { key: 'uniqueWebsiteSessions', label: 'Website', heading: 'Website Conversion', icon: '🌐', color: '#8b5cf6', value: store.uniqueWebsiteSessions },
+                        { key: 'uniqueCallSessions', label: 'Phone', heading: 'Phone Conversion', icon: '📞', color: '#10b981', value: totals.uniqueCallSessions },
+                        { key: 'uniqueDirectionSessions', label: 'Directions', heading: 'Direction Conversion', icon: '🗺', color: '#ef4444', value: totals.uniqueDirectionSessions },
+                        { key: 'uniqueWebsiteSessions', label: 'Website', heading: 'Website Conversion', icon: '🌐', color: '#8b5cf6', value: totals.uniqueWebsiteSessions },
                     ];
 
                     return (
