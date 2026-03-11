@@ -26,8 +26,8 @@ model Session {
 }
 
 model Store {
-  id         String   @id @default(cuid())
-  shop       String   
+  id         String           @id @default(cuid())
+  shop       String
   storeName  String
   region     String?
   address    String
@@ -44,16 +44,15 @@ model Store {
   tags       Json?
   lat        Float?
   lng        Float?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
-
-  events     StoreEvent[] 
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @default(now()) @updatedAt
   dailyStats StoreDailyStat[]
+  events     StoreEvent[]
 }
 
 model Style {
   id              String   @id @default(cuid())
-  shop            String   
+  shop            String
   primaryColor    String
   secondaryColor  String
   primaryFont     String
@@ -69,58 +68,54 @@ model Style {
   cornerRadius    Int
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
+  mapStyle        String?
+  markerIcon      String?
 }
 
 model GeocodeCache {
   id        String   @id @default(cuid())
-  address   String   @unique // Địa chỉ đã normalize
+  address   String   @unique
   lat       Float
   lng       Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  hitCount  Int      @default(0) // Số lần cache được dùng
+  hitCount  Int      @default(0)
 }
 
 model OnBoard {
-  id              String @id @default(cuid())
-  shop            String @unique
-  onBoarding       Json?
+  id         String @id @default(cuid())
+  shop       String @unique
+  onBoarding Json?
 }
 
 model Key {
-  id      String  @id @default(cuid())
-  shop    String  @unique
-  b2bKey  String? @unique
+  id     String  @id @default(cuid())
+  shop   String  @unique
+  b2bKey String? @unique
 }
 
 model ShopConnection {
   id            String   @id @default(cuid())
-
-  sourceShop    String   // shop tạo key
-  targetShop    String   // shop nhập key
-  sourceShopUrl String   // url của shop tạo
+  sourceShop    String
+  targetShop    String
+  sourceShopUrl String
   createdAt     DateTime @default(now())
 
   @@unique([sourceShop, targetShop])
 }
 
 model StoreEvent {
-  id        String   @id @default(cuid())
-
-  shop      String   // shopify domain
-
-  storeId   String?
-  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  sessionId String?  // để group 1 user session
-  eventType StoreEventType
-
+  id            String         @id @default(cuid())
+  shop          String
+  storeId       String?
+  sessionId     String?
+  eventType     StoreEventType
   searchKeyword String?
   country       String?
   city          String?
-  device        String?  // mobile / desktop
-
-  createdAt DateTime @default(now())
+  device        String?
+  createdAt     DateTime       @default(now())
+  store         Store?         @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@index([shop])
   @@index([storeId])
@@ -130,25 +125,23 @@ model StoreEvent {
 
 model StoreDailyStat {
   id                      String   @id @default(cuid())
-
   shop                    String
-  storeId                 String? 
+  storeId                 String?
+  date                    DateTime
+  uniqueSessions          Int
+  uniqueViewSessions      Int      @default(0)
+  uniqueSearchSessions    Int      @default(0)
+  uniqueDirectionSessions Int      @default(0)
+  uniqueCallSessions      Int      @default(0)
+  uniqueWebsiteSessions   Int      @default(0)
   store                   Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  date                    DateTime  // lưu dạng 2026-02-27 00:00:00
-  uniqueSessions          Int 
-  uniqueViewSessions      Int @default(0)
-  uniqueSearchSessions    Int @default(0)
-  uniqueDirectionSessions Int @default(0)
-  uniqueCallSessions      Int @default(0)
-  uniqueWebsiteSessions   Int @default(0)
 
   @@unique([shop, storeId, date])
   @@index([shop, storeId, date])
 }
 
 model StoreSession {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   shop      String
   storeId   String
   sessionId String
@@ -158,33 +151,22 @@ model StoreSession {
   @@index([shop, storeId, date])
 }
 
-enum StoreEventType {
-  SEARCH
-  VIEW_STORE
-  CLICK_DIRECTION
-  CLICK_CALL
-  CLICK_WEBSITE
-}
-
 model ReportSetting {
-  id          String    @id @default(cuid())
-  shop        String    @unique
-  dayOfWeek   String    @default("Monday")
-  dayOfMonth  Int       @default(1)
-  dailyTime    String    @default("09:00")
-  weeklyTime   String    @default("09:00")
-  monthlyTime  String    @default("09:00")
-
-  // In-app notification settings 
-  inAppDaily   Boolean   @default(false)
-  inAppWeekly  Boolean   @default(false)
-  inAppMonthly Boolean   @default(false)
-
+  id                String    @id @default(cuid())
+  shop              String    @unique
+  dayOfWeek         String    @default("Monday")
+  dayOfMonth        Int       @default(1)
+  dailyTime         String    @default("09:00")
+  weeklyTime        String    @default("09:00")
+  monthlyTime       String    @default("09:00")
+  inAppDaily        Boolean   @default(false)
+  inAppWeekly       Boolean   @default(false)
+  inAppMonthly      Boolean   @default(false)
   lastDailySentAt   DateTime?
   lastWeeklySentAt  DateTime?
   lastMonthlySentAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Notification {
@@ -192,7 +174,7 @@ model Notification {
   shop      String
   title     String
   message   String
-  type      String   @default("info") // info, success, warning, error
+  type      String   @default("info")
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -201,11 +183,18 @@ model Notification {
   @@index([isRead])
 }
 
-
 model Plan {
   id        String   @id @default(cuid())
   shop      String   @unique
-  level     String   @default("basic") // basic, advanced, plus
+  level     String   @default("basic")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum StoreEventType {
+  SEARCH
+  VIEW_STORE
+  CLICK_DIRECTION
+  CLICK_CALL
+  CLICK_WEBSITE
 }

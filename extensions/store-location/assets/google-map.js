@@ -345,10 +345,19 @@ async function initStoreLocator(wrapper) {
      * GOOGLE MAPS IMPLEMENTATION
      ************************************************/
     function initGoogleMap(mapEl, stores, mapStyle, mapLoading) {
+        let googleMapStyle = [];
+        try {
+            if (mapStyle.mapStyle) {
+                googleMapStyle = JSON.parse(mapStyle.mapStyle);
+            }
+        } catch (e) {
+            console.error("Failed to parse map style:", e);
+        }
+
         map = new google.maps.Map(mapEl, {
             center: { lat: 0, lng: 0 },
             zoom: 10,
-            styles: Array.isArray(mapStyle) ? mapStyle : [],
+            styles: googleMapStyle,
             gestureHandling: 'greedy',
             disableDefaultUI: false
         });
@@ -362,12 +371,21 @@ async function initStoreLocator(wrapper) {
                 return;
             }
 
-            const marker = new google.maps.Marker({
+            const markerOptions = {
                 position: { lat: store.lat, lng: store.lng },
                 map,
                 title: store.storeName || store.name,
                 animation: null
-            });
+            };
+
+            if (mapStyle.markerIcon) {
+                markerOptions.icon = {
+                    url: mapStyle.markerIcon,
+                    scaledSize: new google.maps.Size(40, 40)
+                };
+            }
+
+            const marker = new google.maps.Marker(markerOptions);
 
             marker.addListener("click", () => {
                 panToStoreGoogle(store, marker);
@@ -433,7 +451,7 @@ async function initStoreLocator(wrapper) {
                 return;
             }
 
-            const offsetY = overlayHeight / 2 + 20;
+            const offsetY = overlayHeight / 2 + 50;
             const latLng = new google.maps.LatLng(store.lat, store.lng);
             const point = projection.fromLatLngToPoint(latLng);
             const scale = Math.pow(2, 16);
@@ -505,7 +523,7 @@ async function initStoreLocator(wrapper) {
 
                 if (this.div) {
                     this.div.style.left = pos.x - this.div.offsetWidth / 2 + "px";
-                    this.div.style.top = pos.y - this.div.offsetHeight - 20 + "px";
+                    this.div.style.top = pos.y - this.div.offsetHeight - 50 + "px";
                 }
             }
 
@@ -535,6 +553,38 @@ async function initStoreLocator(wrapper) {
             return;
         }
 
+        // Determine Theme Name to select appropriate Tile Layer
+        // mapStyle.mapStyle is a JSON string of the Google Maps style array
+        const googleThemes = {
+            'Silver': '[{"elementType":"geometry","stylers":[{"color":"#f5f5f5"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#f5f5f5"}]},{"featureType":"administrative.land_parcel","elementType":"labels.text.fill","stylers":[{"color":"#bdbdbd"}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#eeeeee"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#e5e5e5"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#ffffff"}]},{"featureType":"road.arterial","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#dadada"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"featureType":"road.local","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},{"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#e5e5e5"}]},{"featureType":"transit.station","elementType":"geometry","stylers":[{"color":"#eeeeee"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#c9c9c9"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]}]',
+            'Retro': '[{"elementType":"geometry","stylers":[{"color":"#ebe3cd"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#523735"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#f5f1e6"}]},{"featureType":"administrative","elementType":"geometry.stroke","stylers":[{"color":"#c9b2a6"}]},{"featureType":"administrative.land_parcel","elementType":"geometry.stroke","stylers":[{"color":"#dcd2be"}]},{"featureType":"administrative.land_parcel","elementType":"labels.text.fill","stylers":[{"color":"#ae9e90"}]},{"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#dfd2ae"}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#dfd2ae"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#93817a"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#a5b076"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#447530"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#f5f1e6"}]},{"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#fdfcf8"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#f8c967"}]},{"featureType":"road.highway.controlled_access","elementType":"geometry","stylers":[{"color":"#e98d58"}]},{"featureType":"water","elementType":"geometry.fill","stylers":[{"color":"#b9d3c2"}]}]',
+            'Dark': '[{"elementType":"geometry","stylers":[{"color":"#212121"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#212121"}]},{"featureType":"administrative","elementType":"geometry","stylers":[{"color":"#757575"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#181818"}]},{"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#2c2c2c"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#8a8a8a"}]},{"featureType":"transit","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#000000"}]}]',
+            'Night': '[{"elementType":"geometry","stylers":[{"color":"#242f3e"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#746855"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#242f3e"}]},{"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#263c3f"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#38414e"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#212a37"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#9ca5b3"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#746855"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#1f2835"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#f3d19c"}]},{"featureType":"transit","elementType":"geometry","stylers":[{"color":"#2f3948"}]},{"featureType":"transit.station","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#17263c"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#515c6d"}]},{"featureType":"water","elementType":"labels.text.stroke","stylers":[{"color":"#17263c"}]}]',
+            'Aubergine': '[{"elementType":"geometry","stylers":[{"color":"#1d2c4d"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#8ec3b9"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#1a3646"}]},{"featureType":"administrative.country","elementType":"geometry.stroke","stylers":[{"color":"#4b6878"}]},{"featureType":"administrative.province","elementType":"geometry.stroke","stylers":[{"color":"#4b6878"}]},{"featureType":"landscape.man_made","elementType":"geometry.stroke","stylers":[{"color":"#334e87"}]},{"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#023e58"}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#283d6a"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#6f9ba5"}]},{"featureType":"poi.park","elementType":"geometry.fill","stylers":[{"color":"#023e58"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#304a7d"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#98a5be"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#2c4591"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#b0d5ce"}]},{"featureType":"transit","elementType":"labels.text.fill","stylers":[{"color":"#98a5be"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#0e1626"}]}]'
+        };
+
+        let themeName = 'Standard';
+        for (const [name, styleJson] of Object.entries(googleThemes)) {
+            if (mapStyle.mapStyle === styleJson) {
+                themeName = name;
+                break;
+            }
+        }
+
+        let tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        let tileLayerOptions = {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        };
+
+        if (['Dark', 'Night', 'Aubergine'].includes(themeName)) {
+            tileLayerUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+            tileLayerOptions.attribution = '© OpenStreetMap contributors, © CARTO';
+        } else if (['Silver', 'Retro'].includes(themeName)) {
+            tileLayerUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            tileLayerOptions.attribution = '© OpenStreetMap contributors, © CARTO';
+        }
+
         // Tạo map với center mặc định
         map = L.map(mapEl, {
             center: [0, 0],
@@ -542,35 +592,41 @@ async function initStoreLocator(wrapper) {
             scrollWheelZoom: true
         });
 
-        // Thêm tile layer (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
+        // Thêm tile layer
+        L.tileLayer(tileLayerUrl, tileLayerOptions).addTo(map);
 
         // Tạo bounds để fit tất cả markers
         const bounds = L.latLngBounds();
 
         // Tạo custom icon
-        const customIcon = L.icon({
-            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-        });
+        let osmIcon;
+        if (mapStyle.markerIcon) {
+            osmIcon = L.icon({
+                iconUrl: mapStyle.markerIcon,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
+        } else {
+            osmIcon = L.icon({
+                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+        }
 
         // Thêm markers
         stores.forEach((store) => {
             // Kiểm tra lại tọa độ trước khi tạo marker
             if (!isValidCoordinate(store.lat, store.lng)) {
-                console.warn(`Skipping store "${store.storeName}" - invalid coordinates`);
                 return;
             }
 
-            const marker = L.marker([store.lat, store.lng], { icon: customIcon })
+            const marker = L.marker([store.lat, store.lng], { icon: osmIcon })
                 .addTo(map);
 
             marker.on('click', () => {
@@ -628,7 +684,7 @@ async function initStoreLocator(wrapper) {
             document.body.removeChild(tempDiv);
 
             // Tính offset pixel
-            const offsetPixels = overlayHeight / 2 + 20;
+            const offsetPixels = overlayHeight / 2 + 50;
 
             // Chuyển đổi pixel offset sang lat/lng offset
             const zoom = 16;
@@ -725,7 +781,7 @@ async function initStoreLocator(wrapper) {
 
                 // Vị trí overlay phía trên marker, căn giữa theo chiều ngang
                 this._div.style.left = (pos.x - actualWidth / 2) + 'px';
-                this._div.style.top = (pos.y - actualHeight - 20) + 'px';
+                this._div.style.top = (pos.y - actualHeight - 50) + 'px';
             }
         });
 

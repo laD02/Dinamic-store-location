@@ -8,6 +8,7 @@ import MapGoogle from "../component/map";
 import MapDesigner from "../component/mapDesigner";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -31,26 +32,64 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const theme = JSON.parse(formData.get("theme") as string);
   const popup = JSON.parse(formData.get("popup") as string);
+  const branding = JSON.parse(formData.get("branding") as string);
 
-  const exist = await prisma.style.findFirst();
+  const exist = await prisma.style.findFirst({
+    where: { shop }
+  }) as any;
+
+  let markerIconUrl = branding.markerIcon;
+  if (markerIconUrl && markerIconUrl.startsWith("data:image")) {
+    // Check if it's a premium marker (has data-style attribute in SVG)
+    let isPremiumMarker = false;
+    if (markerIconUrl.includes("data:image/svg+xml")) {
+      if (markerIconUrl.includes("base64,")) {
+        try {
+          const base64Data = markerIconUrl.split("base64,")[1];
+          const decoded = Buffer.from(base64Data, 'base64').toString();
+          isPremiumMarker = decoded.includes("data-style=");
+        } catch (e) {
+          console.error("Error decoding SVG for premium check:", e);
+        }
+      } else {
+        isPremiumMarker = markerIconUrl.includes("data-style=");
+      }
+    }
+    
+    if (!isPremiumMarker) {
+      // New custom icon uploaded (base64)
+      if (exist?.markerIcon && exist.markerIcon.includes("cloudinary")) {
+        await deleteImageFromCloudinary(exist.markerIcon);
+      }
+      const uploadedUrl = await uploadImageToCloudinary(markerIconUrl);
+      markerIconUrl = uploadedUrl ?? "";
+    }
+    // If it is premium marker, we keep it as the data URI to preserve metadata
+  }
+
+  const data = {
+    primaryColor: theme.primaryColor,
+    secondaryColor: theme.secondaryColor,
+    primaryFont: theme.primaryFont,
+    secondaryFont: theme.secondaryFont,
+    backgroundColor: popup.backgroundColor,
+    color: popup.color,
+    iconColor: popup.iconColor,
+    shadowColor: popup.shadowColor,
+    transparency: popup.transparency,
+    blur: popup.blur,
+    anchorx: popup.anchorx,
+    anchory: popup.anchory,
+    cornerRadius: popup.cornerRadius,
+    markerIcon: markerIconUrl,
+    mapStyle: branding.mapStyle,
+  };
 
   if (!exist) {
     await prisma.style.create({
       data: {
         shop,
-        primaryColor: theme.primaryColor,
-        secondaryColor: theme.secondaryColor,
-        primaryFont: theme.primaryFont,
-        secondaryFont: theme.secondaryFont,
-        backgroundColor: popup.backgroundColor,
-        color: popup.color,
-        iconColor: popup.iconColor,
-        shadowColor: popup.shadowColor,
-        transparency: popup.transparency,
-        blur: popup.blur,
-        anchorx: popup.anchorx,
-        anchory: popup.anchory,
-        cornerRadius: popup.cornerRadius,
+        ...data
       },
     });
   } else {
@@ -58,21 +97,7 @@ export async function action({ request }: ActionFunctionArgs) {
       where: {
         id: exist.id,
       },
-      data: {
-        primaryColor: theme.primaryColor,
-        secondaryColor: theme.secondaryColor,
-        primaryFont: theme.primaryFont,
-        secondaryFont: theme.secondaryFont,
-        backgroundColor: popup.backgroundColor,
-        color: popup.color,
-        iconColor: popup.iconColor,
-        shadowColor: popup.shadowColor,
-        transparency: popup.transparency,
-        blur: popup.blur,
-        anchorx: popup.anchorx,
-        anchory: popup.anchory,
-        cornerRadius: popup.cornerRadius,
-      },
+      data,
     });
   }
 
@@ -112,12 +137,19 @@ export default function MapDesigners() {
     cornerRadius: 3
   };
 
+  const defaultBranding = {
+    markerIcon: null,
+    mapStyle: "[]"
+  };
+
   const [theme, setTheme] = useState(defaultTheme);
   const [popup, setPopup] = useState(defaultPopup);
+  const [branding, setBranding] = useState(defaultBranding);
 
   const savedConfigRef = useRef({
     theme: defaultTheme,
-    popup: defaultPopup
+    popup: defaultPopup,
+    branding: defaultBranding
   });
 
   // Detect screen size
@@ -149,38 +181,47 @@ export default function MapDesigners() {
       savedConfigRef.current = {
         theme,
         popup,
+        branding,
       };
     }
   }, [fetcher.data]);
 
   useEffect(() => {
     if (config) {
+      const cfg = config as any;
       const loadedTheme = {
-        primaryColor: config.primaryColor,
-        secondaryColor: config.secondaryColor,
-        primaryFont: config.primaryFont,
-        secondaryFont: config.secondaryFont,
+        primaryColor: cfg.primaryColor,
+        secondaryColor: cfg.secondaryColor,
+        primaryFont: cfg.primaryFont,
+        secondaryFont: cfg.secondaryFont,
       };
 
       const loadedPopup = {
-        backgroundColor: config.backgroundColor,
-        color: config.color,
-        iconColor: config.iconColor,
-        shadowColor: config.shadowColor,
-        transparency: config.transparency,
-        blur: config.blur,
-        anchorx: config.anchorx,
-        anchory: config.anchory,
-        cornerRadius: config.cornerRadius,
+        backgroundColor: cfg.backgroundColor,
+        color: cfg.color,
+        iconColor: cfg.iconColor,
+        shadowColor: cfg.shadowColor,
+        transparency: cfg.transparency,
+        blur: cfg.blur,
+        anchorx: cfg.anchorx,
+        anchory: cfg.anchory,
+        cornerRadius: cfg.cornerRadius,
+      };
+
+      const loadedBranding = {
+        markerIcon: cfg.markerIcon,
+        mapStyle: cfg.mapStyle || "[]",
       };
 
       savedConfigRef.current = {
         theme: loadedTheme,
-        popup: loadedPopup
+        popup: loadedPopup,
+        branding: loadedBranding
       };
 
       setTheme(loadedTheme);
       setPopup(loadedPopup);
+      setBranding(loadedBranding);
     }
   }, [config]);
 
@@ -234,6 +275,7 @@ export default function MapDesigners() {
       {
         theme: JSON.stringify(theme),
         popup: JSON.stringify(popup),
+        branding: JSON.stringify(branding),
       },
       { method: "post" }
     );
@@ -243,16 +285,19 @@ export default function MapDesigners() {
     setClosePickerTrigger(prev => !prev);
     setTheme(savedConfigRef.current.theme);
     setPopup(savedConfigRef.current.popup);
+    setBranding(savedConfigRef.current.branding);
     shopify.saveBar.hide(SAVE_BAR_ID);
   };
 
   const isConfigChanged = (
     nextTheme: typeof theme,
-    nextPopup: typeof popup
+    nextPopup: typeof popup,
+    nextBranding: typeof branding
   ) => {
     return (
       JSON.stringify(nextTheme) !== JSON.stringify(savedConfigRef.current.theme) ||
-      JSON.stringify(nextPopup) !== JSON.stringify(savedConfigRef.current.popup)
+      JSON.stringify(nextPopup) !== JSON.stringify(savedConfigRef.current.popup) ||
+      JSON.stringify(nextBranding) !== JSON.stringify(savedConfigRef.current.branding)
     );
   };
 
@@ -299,11 +344,11 @@ export default function MapDesigners() {
           }}
         >
           <MapDesigner
-            config={{ theme, popup }}
+            config={{ theme, popup, branding }}
             onClosePickerRequest={closePickerTrigger}
             onThemeChange={(v) => {
               setTheme(v);
-              if (isConfigChanged(v, popup)) {
+              if (isConfigChanged(v, popup, branding)) {
                 shopify.saveBar.show(SAVE_BAR_ID);
               } else {
                 shopify.saveBar.hide(SAVE_BAR_ID);
@@ -311,7 +356,15 @@ export default function MapDesigners() {
             }}
             onPopupChange={(v) => {
               setPopup(v);
-              if (isConfigChanged(theme, v)) {
+              if (isConfigChanged(theme, v, branding)) {
+                shopify.saveBar.show(SAVE_BAR_ID);
+              } else {
+                shopify.saveBar.hide(SAVE_BAR_ID);
+              }
+            }}
+            onBrandingChange={(v) => {
+              setBranding(v);
+              if (isConfigChanged(theme, popup, v)) {
                 shopify.saveBar.show(SAVE_BAR_ID);
               } else {
                 shopify.saveBar.hide(SAVE_BAR_ID);
@@ -321,6 +374,7 @@ export default function MapDesigners() {
 
           <input type="hidden" name="theme" value={JSON.stringify(theme)} />
           <input type="hidden" name="popup" value={JSON.stringify(popup)} />
+          <input type="hidden" name="branding" value={JSON.stringify(branding)} />
         </div>
 
         {/* Resize Handle - Desktop Only */}
@@ -420,6 +474,8 @@ export default function MapDesigners() {
               selectedIndex={selectedIndex}
               searchAddress={searchAddress}
               popupStyle={popup}
+              mapStyle={branding.mapStyle}
+              markerIcon={branding.markerIcon}
             />
           </div>
         </div>

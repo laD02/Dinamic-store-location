@@ -1,5 +1,5 @@
-import { GoogleMap, Marker, OverlayView, useJsApiLoader } from "@react-google-maps/api";
-import { useState, useEffect, useRef } from "react";
+import { GoogleMap, OverlayView, useJsApiLoader, MarkerF } from "@react-google-maps/api";
+import { useState, useEffect, useRef, useMemo } from "react";
 import styles from "../css/mapDesigner.module.css"
 import { useLoaderData } from "react-router";
 
@@ -38,22 +38,47 @@ interface PopupStyle {
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export default function xMapGoogle({
+// Mock store for preview
+const previewStore: Store = {
+  id: "mock-apple-park",
+  storeName: "Apple Park",
+  address: "1 Apple Park Way, Cupertino, CA 95014, USA",
+  city: "Cupertino",
+  state: "CA",
+  code: "95014",
+  phone: "+1 408-996-1010",
+  lat: 37.3346,
+  lng: -122.0090,
+  image: null,
+  time: null,
+};
+
+export default function MapGoogle({
   stores,
   selectedIndex,
   searchAddress,
   popupStyle,
+  mapStyle,
+  markerIcon
 }: {
   stores: Store[];
   selectedIndex: number | null;
   searchAddress: string;
   popupStyle: PopupStyle;
+  mapStyle?: string;
+  markerIcon?: string | null;
 }) {
   const [selected, setSelected] = useState<Store | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  const currentStores = useMemo(() => {
+    const validStores = stores?.filter(s => s.lat != null && s.lng != null) ?? [];
+    return validStores.length > 0 ? validStores : [previewStore];
+  }, [stores]);
+
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
-    lat: stores[0]?.lat ?? 10.762622,
-    lng: stores[0]?.lng ?? 106.660172,
+    lat: currentStores[0]?.lat ?? 37.3346,
+    lng: currentStores[0]?.lng ?? -122.0090,
   });
 
   const { googleMapsApiKey } = useLoaderData()
@@ -76,33 +101,69 @@ export default function xMapGoogle({
     setMapLoaded(true)
   };
 
+  const panToStoreWithOffset = (lat: number, lng: number, zoom?: number) => {
+    if (!mapRef.current) return;
+
+    const map = mapRef.current;
+    const center = new google.maps.LatLng(lat, lng);
+
+    // We want the popup (roughly 300-400px high) to be centered.
+    // So we pan to a point slightly below the marker.
+    // At zoom 16, a good offset is about -200px (upwards shift of the camera).
+
+    if (zoom) map.setZoom(zoom);
+
+    // Perform initial pan to marker
+    map.panTo(center);
+
+    // After a short delay (or immediately if possible), adjust for popup height
+    // Since we are using react-google-maps/api, we can use the map object directly.
+    setTimeout(() => {
+      const projection = map.getProjection();
+      if (projection) {
+        const markerPixel = projection.fromLatLngToPoint(center);
+        if (markerPixel) {
+          const scale = Math.pow(2, map.getZoom()!);
+          // Shift the camera "up" by moving the target point "down" in pixel space
+          // The popup is ~400px tall and offset 44px above the marker.
+          // Center of popup is roughly (400/2) + 44 = 244px above the marker.
+          // Adjusting to 220px for a more balanced visual center.
+          const offsetPx = 220 / scale;
+          const targetPoint = new google.maps.Point(
+            markerPixel.x,
+            markerPixel.y - offsetPx
+          );
+          const targetLatLng = projection.fromPointToLatLng(targetPoint);
+          if (targetLatLng) {
+            map.panTo(targetLatLng);
+            setCenter({ lat: targetLatLng.lat(), lng: targetLatLng.lng() });
+          }
+        }
+      }
+    }, 100);
+  };
+
   useEffect(() => {
-    if (mapLoaded && stores[0]?.lat != null && stores[0]?.lng != null) {
-      const firstStore = stores[0];
-      const newCenter = { lat: firstStore.lat!, lng: firstStore.lng! };
-      mapRef.current?.panTo(newCenter);
-      mapRef.current?.setZoom(16);
-      setCenter(newCenter);
+    if (mapLoaded && currentStores[0]?.lat != null && currentStores[0]?.lng != null) {
+      const firstStore = currentStores[0];
+      panToStoreWithOffset(firstStore.lat!, firstStore.lng!, 16);
       setSelected(firstStore); // InfoWindow hiển thị
     }
-  }, [mapLoaded, stores]);
+  }, [mapLoaded, currentStores]);
 
   // Khi click store trong danh sách → pan tới store đó
   useEffect(() => {
     if (
       selectedIndex !== null &&
-      stores[selectedIndex]?.lat != null &&
-      stores[selectedIndex]?.lng != null &&
+      currentStores[selectedIndex]?.lat != null &&
+      currentStores[selectedIndex]?.lng != null &&
       mapRef.current
     ) {
-      const s = stores[selectedIndex];
-      const newCenter = { lat: s.lat!, lng: s.lng! };
-      mapRef.current.panTo(newCenter);
-      mapRef.current.setZoom(16);
-      setCenter(newCenter);
+      const s = currentStores[selectedIndex];
+      panToStoreWithOffset(s.lat!, s.lng!, 16);
       setSelected(s);
     }
-  }, [selectedIndex, stores]);
+  }, [selectedIndex, currentStores]);
 
   useEffect(() => {
     if (!mapLoaded || !searchAddress.trim()) return;
@@ -121,6 +182,7 @@ export default function xMapGoogle({
   }, [searchAddress, mapLoaded]);
 
 
+
   if (loadError) return <p>❌ Lỗi khi tải Google Maps API</p>;
   if (!isLoaded) return <p>⏳ Đang tải bản đồ...</p>;
 
@@ -131,28 +193,24 @@ export default function xMapGoogle({
         center={center}
         zoom={16}
         onLoad={onLoad}
+        options={{
+          styles: mapStyle ? JSON.parse(mapStyle) : []
+        }}
       >
-        {stores.map((store) => {
-          if (!store.lat || !store.lng) return null;
-          const lat = Number(store.lat);
-          const lng = Number(store.lng);
-          if (isNaN(lat) || isNaN(lng)) return null;
-
-          return (
-            <Marker
-              key={store.id}
-              position={{ lat, lng }}
-              onClick={() => {
-                setSelected(store);
-                if (store.lat && store.lng) {
-                  const newCenter = { lat: store.lat, lng: store.lng };
-                  setCenter(newCenter);
-                  mapRef.current?.panTo(newCenter);
-                }
-              }}
-            />
-          );
-        })}
+        {currentStores.map((store) => (
+          <MarkerF
+            key={`${store.id}-${markerIcon || 'default'}`}
+            position={{ lat: Number(store.lat), lng: Number(store.lng) }}
+            icon={markerIcon && typeof markerIcon === 'string' && markerIcon.trim().length > 0 ? {
+              url: markerIcon,
+              scaledSize: new google.maps.Size(40, 40)
+            } : undefined}
+            onClick={() => {
+              setSelected(store);
+              panToStoreWithOffset(Number(store.lat), Number(store.lng));
+            }}
+          />
+        ))}
 
         {selected && selected.lat && selected.lng && (
           <OverlayView
@@ -166,8 +224,7 @@ export default function xMapGoogle({
                 color: popupStyle.color,
                 borderRadius: popupStyle.cornerRadius,
                 boxShadow: `${popupStyle.anchorx}px ${popupStyle.anchory}px ${popupStyle.blur}px ${hexToRgba(popupStyle.shadowColor, popupStyle.transparency / 100)}`,
-                transform: 'translate(-50%, -50%)'
-
+                transform: 'translate(-50%, calc(-100% - 44px))'
               }}
             >
               <div className={styles.overlayImageContainer}>

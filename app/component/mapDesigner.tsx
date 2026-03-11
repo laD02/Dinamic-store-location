@@ -3,15 +3,18 @@ import styles from "../css/mapDesignerChilrent.module.css"
 import { useState } from "react";
 import ThemeSetUp from "./themeSetup";
 import PopupStyle from "./popupStyle";
+import MarkerBranding from "./markerBranding";
 
 export default function MapDesigner({
     onThemeChange,
     onPopupChange,
+    onBrandingChange,
     config,
     onClosePickerRequest
 }: {
     onThemeChange: (theme: any) => void;
     onPopupChange: (popup: any) => void;
+    onBrandingChange: (branding: any) => void;
     config: any,
     onClosePickerRequest?: boolean;
 }) {
@@ -25,53 +28,33 @@ export default function MapDesigner({
 
     return (
         <s-stack gap="base">
+
             <s-section>
                 <s-stack alignItems="center" >
-                    {/* <s-box></s-box> */}
-                    {/* <s-box> */}
                     <s-heading>Theme Setup</s-heading>
-                    {/* </s-box> */}
-                    {/* <s-button icon="sort" commandFor="sort-popover"></s-button>
-                    <s-popover id="sort-popover">
-                        <s-stack gap="none" direction="block">
-                                <s-button 
-                                    variant="tertiary"
-                                    onClick={() => handleSwap()}
-                                >
-                                    {selected === 0 ? 'Popup Style' : 'Theme Setup'}
-                                </s-button>
-                        </s-stack>   
-                    </s-popover> */}
                 </s-stack>
 
                 <div className={styles.body}>
                     <ThemeSetUp onChange={onThemeChange} config={config.theme} onClosePickerRequest={onClosePickerRequest} />
-                    {/* <PopupStyle onChange={onPopupChange} config={config.popup}/> */}
                 </div>
             </s-section>
 
             <s-section>
                 <s-stack alignItems="center">
-                    {/* <s-box></s-box> */}
-                    {/* <s-box> */}
                     <s-heading>Popup Style</s-heading>
-                    {/* </s-box> */}
-                    {/* <s-button icon="sort" commandFor="sort-popover"></s-button>
-                    <s-popover id="sort-popover">
-                        <s-stack gap="none" direction="block">
-                                <s-button 
-                                    variant="tertiary"
-                                    onClick={() => handleSwap()}
-                                >
-                                    {selected === 0 ? 'Popup Style' : 'Theme Setup'}
-                                </s-button>
-                        </s-stack>   
-                    </s-popover> */}
                 </s-stack>
 
                 <div className={styles.body}>
-                    {/* <ThemeSetUp onChange={onThemeChange} config={config.theme}/> */}
                     <PopupStyle onChange={onPopupChange} config={config.popup} onClosePickerRequest={onClosePickerRequest} />
+                </div>
+            </s-section>
+
+            <s-section>
+                <s-stack alignItems="center" >
+                    <s-heading>Marker & Map Branding</s-heading>
+                </s-stack>
+                <div className={styles.body}>
+                    <MarkerBranding onChange={onBrandingChange} config={config.branding} onClosePickerRequest={onClosePickerRequest} />
                 </div>
             </s-section>
         </s-stack>

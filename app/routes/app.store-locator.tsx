@@ -78,6 +78,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       primaryFont: "Roboto",
       secondaryFont: "Open Sans",
       color: "#000",
+      markerIcon: null,
+      mapStyle: "[]",
     };
 
   return new Response(JSON.stringify({ stores: storesWithStats, style }), {
