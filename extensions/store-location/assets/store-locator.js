@@ -444,7 +444,7 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
       });
       // Notify map to refresh overlays if needed
       window.dispatchEvent(new CustomEvent('sl:status-refresh'));
-    }, 60000);
+    }, 5000);
 
   } catch (err) {
     console.error("Load stores error:", err);

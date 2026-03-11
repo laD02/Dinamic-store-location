@@ -894,9 +894,10 @@ async function initStoreLocator(wrapper) {
                         </span>
                     ` : ""}
                     ${s.distance ? `
-                        <span class="store-distance-tag" style="margin-left: 0; font-size: 10px; padding: 1px 6px;">
-                            ${s.distance < 1 ? (s.distance * 1000).toFixed(0) + ' m' : s.distance.toFixed(1) + ' km'} away
-                        </span>
+                        <div style="display: inline-flex; align-items: center; gap: 5px; background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 11.5px; margin-left: auto; border: 1px solid #bfdbfe; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05);">
+                            <i class="fa-solid fa-location-arrow" style="font-size: 10px; color: #3b82f6;"></i>
+                            <span>${s.distance < 1 ? (s.distance * 1000).toFixed(0) + ' m' : s.distance.toFixed(1) + ' km'}</span>
+                        </div>
                     ` : ""}
                 </div>
                 
