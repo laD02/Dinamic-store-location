@@ -1,7 +1,6 @@
-// app/routes/app.help-center.tsx
+// app/routes/app.allLocations.tsx
 import {
   ActionFunctionArgs,
-  Link,
   LoaderFunctionArgs,
   useFetcher,
   useLoaderData,
@@ -13,8 +12,12 @@ import { exportStoresToCSV } from "../utils/exportCSV";
 import { useAppBridge } from '@shopify/app-bridge-react';
 import { authenticate } from "../shopify.server";
 import { deleteImageFromCloudinary } from "../utils/upload.server";
-import Import from "app/component/allLocation/Import";
 import { getCoordinatesFromAddress } from "../utils/Geocoding";
+import { UIStore } from "app/component/allLocation/types";
+import LocationPageHeader from "app/component/allLocation/LocationPageHeader";
+import LocationTableFilters from "app/component/allLocation/LocationTableFilters";
+import LocationTableHeader from "app/component/allLocation/LocationTableHeader";
+import LocationTableRow from "app/component/allLocation/LocationTableRow";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -140,9 +143,6 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
 
-      const dataLines = lines.slice(1);
-      let successCount = 0;
-
       const isValidTimeFormat = (time: string): boolean => {
         const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
         return timeRegex.test(time);
@@ -156,10 +156,35 @@ export async function action({ request }: ActionFunctionArgs) {
         return minutes1 < minutes2;
       };
 
+      const parseTimeSlot = (timeStr: string, dayName: string) => {
+        if (!timeStr || timeStr.trim().toLowerCase() === 'close') {
+          return { open: "close", close: "close" };
+        }
+        const parts = timeStr.split('-').map(t => t.trim());
+        if (parts.length !== 2) {
+          throw new Error(`${dayName} must be in the format "HH:MM - HH:MM" or "Close"`);
+        }
+        const [open, close] = parts;
+        if (!isValidTimeFormat(open)) {
+          throw new Error(`${dayName} opening hours "${open}" are invalid. Must be in HH:MM format (e.g., 09:00)`);
+        }
+        if (!isValidTimeFormat(close)) {
+          throw new Error(`${dayName} closing hours "${close}" are invalid. Must be in HH:MM format (e.g., 17:00)`);
+        }
+        if (!isTimeBefore(open, close)) {
+          throw new Error(`${dayName} opening hours "${open}" must be before closing hours "${close}"`);
+        }
+        return { open, close };
+      };
+
+      let successCount = 0;
+      const storesToCreate: any[] = [];
+      const dataLines = lines.slice(1).filter(line => line.trim());
+      
+      // Parse all lines first to validate structure and data types
+      const validatedRows: any[] = [];
       for (let i = 0; i < dataLines.length; i++) {
         const line = dataLines[i];
-        if (!line.trim()) continue;
-
         // Parse CSV line
         const values: string[] = [];
         let current = '';
@@ -181,9 +206,7 @@ export async function action({ request }: ActionFunctionArgs) {
         values.push(current.trim());
 
         if (values.length < requiredHeaders.length) {
-          return {
-            error: `The file is not in the correct format. Please download the template and use the correct format.`
-          };
+          return { error: `Row ${i + 1} does not have enough columns.` };
         }
 
         const storeName = values[0] || "";
@@ -193,104 +216,86 @@ export async function action({ request }: ActionFunctionArgs) {
         const country = values[4] || "";
         const phone = values[5] || "";
         const website = values[6] || "";
-        const visibility = values[7] || "hidden";
+        const visibility = (values[7] || "hidden").toLowerCase() === "visible" ? "visible" : "hidden";
 
-        // BƯỚC 1: Check từng required field, gặp lỗi đầu tiên là dừng luôn
-        if (!storeName.trim()) return { error: `Store Name is required` };
-        if (!address.trim()) return { error: `Address is required` };
-        if (!city.trim()) return { error: `City is required` };
-        if (!country.trim()) return { error: `Country is required` };
-        if (!phone.trim()) return { error: `Phone is required` };
+        if (!storeName.trim()) return { error: `Store Name is required at row ${i+1}` };
+        if (!address.trim()) return { error: `Address is required at row ${i+1}` };
+        if (!city.trim()) return { error: `City is required at row ${i+1}` };
+        if (!country.trim()) return { error: `Country is required at row ${i+1}` };
 
-        const parseTimeSlot = (timeStr: string, dayName: string) => {
-          if (!timeStr || timeStr.trim().toLowerCase() === 'close') {
-            return { open: "close", close: "close" };
-          }
-          const parts = timeStr.split('-').map(t => t.trim());
-          if (parts.length !== 2) {
-            throw new Error(`${dayName} must be in the format "HH:MM - HH:MM" or "Close"`);
-          }
-          const [open, close] = parts;
-          if (!isValidTimeFormat(open)) {
-            throw new Error(`${dayName} opening hours "${open}" are invalid. Must be in HH:MM format (e.g., 09:00)`);
-          }
-          if (!isValidTimeFormat(close)) {
-            throw new Error(`${dayName} closing hours "${close}" are invalid. Must be in HH:MM format (e.g., 17:00)`);
-          }
-          if (!isTimeBefore(open, close)) {
-            throw new Error(`${dayName} opening hours "${open}" must be before closing hours "${close}"`);
-          }
-          return { open, close };
-        };
-
-        // BƯỚC 2: Check từng ngày, gặp lỗi đầu tiên là dừng luôn
-        let monday, tuesday, wednesday, thursday, friday, saturday, sunday;
+        let schedule: any = {};
         try {
-          monday = parseTimeSlot(values[8] || "", "Monday");
-          tuesday = parseTimeSlot(values[9] || "", "Tuesday");
-          wednesday = parseTimeSlot(values[10] || "", "Wednesday");
-          thursday = parseTimeSlot(values[11] || "", "Thursday");
-          friday = parseTimeSlot(values[12] || "", "Friday");
-          saturday = parseTimeSlot(values[13] || "", "Saturday");
-          sunday = parseTimeSlot(values[14] || "", "Sunday");
+          schedule.monday = parseTimeSlot(values[8] || "", "Monday");
+          schedule.tuesday = parseTimeSlot(values[9] || "", "Tuesday");
+          schedule.wednesday = parseTimeSlot(values[10] || "", "Wednesday");
+          schedule.thursday = parseTimeSlot(values[11] || "", "Thursday");
+          schedule.friday = parseTimeSlot(values[12] || "", "Friday");
+          schedule.saturday = parseTimeSlot(values[13] || "", "Saturday");
+          schedule.sunday = parseTimeSlot(values[14] || "", "Sunday");
         } catch (timeError: any) {
-          return { error: `${timeError.message}` };
+          return { error: `Row ${i + 1}: ${timeError.message}` };
         }
 
-        // BƯỚC 3: Geocode & tạo store
-        const coordinates = await getCoordinatesFromAddress(
-          address.trim(),
-          city.trim(),
-          country.trim(),
-          code.trim() || undefined
-        );
+        validatedRows.push({
+          storeName, address, city, code, country, phone, website, visibility, schedule
+        });
+      }
 
-        if (!coordinates) {
-          console.warn(`Could not geocode address for ${storeName}`);
-        }
+      // Process geocoding in chunks to optimize speed while respecting rate limits
+      const CHUNK_SIZE = 5;
+      for (let i = 0; i < validatedRows.length; i += CHUNK_SIZE) {
+        const chunk = validatedRows.slice(i, i + CHUNK_SIZE);
+        await Promise.all(chunk.map(async (row) => {
+          const coordinates = await getCoordinatesFromAddress(
+            row.address.trim(),
+            row.city.trim(),
+            row.country.trim(),
+            row.code.trim() || undefined
+          );
 
-        const timeData = {
-          mondayOpen: monday.open,
-          mondayClose: monday.close,
-          tuesdayOpen: tuesday.open,
-          tuesdayClose: tuesday.close,
-          wednesdayOpen: wednesday.open,
-          wednesdayClose: wednesday.close,
-          thursdayOpen: thursday.open,
-          thursdayClose: thursday.close,
-          fridayOpen: friday.open,
-          fridayClose: friday.close,
-          saturdayOpen: saturday.open,
-          saturdayClose: saturday.close,
-          sundayOpen: sunday.open,
-          sundayClose: sunday.close,
-        };
+          const timeData = {
+            mondayOpen: row.schedule.monday.open,
+            mondayClose: row.schedule.monday.close,
+            tuesdayOpen: row.schedule.tuesday.open,
+            tuesdayClose: row.schedule.tuesday.close,
+            wednesdayOpen: row.schedule.wednesday.open,
+            wednesdayClose: row.schedule.wednesday.close,
+            thursdayOpen: row.schedule.thursday.open,
+            thursdayClose: row.schedule.thursday.close,
+            fridayOpen: row.schedule.friday.open,
+            fridayClose: row.schedule.friday.close,
+            saturdayOpen: row.schedule.saturday.open,
+            saturdayClose: row.schedule.saturday.close,
+            sundayOpen: row.schedule.sunday.open,
+            sundayClose: row.schedule.sunday.close,
+          };
 
-        await prisma.store.create({
-          data: {
+          storesToCreate.push({
             shop: shop || "",
-            storeName: storeName.trim(),
-            address: address.trim(),
-            city: city.trim(),
+            storeName: row.storeName.trim(),
+            address: row.address.trim(),
+            city: row.city.trim(),
             state: "",
-            code: code.trim(),
-            region: country.trim(),
-            phone: phone.trim(),
+            code: row.code.trim(),
+            region: row.country.trim(),
+            phone: row.phone.trim(),
             image: "",
-            url: website.trim(),
+            url: row.website.trim(),
             directions: "",
-            visibility: visibility.toLowerCase() === "visible" ? "visible" : "hidden",
+            visibility: row.visibility,
             lat: coordinates?.lat || null,
             lng: coordinates?.lng || null,
             time: timeData,
-          }
+          });
+        }));
+      }
+
+      // Bulk insert all stores
+      if (storesToCreate.length > 0) {
+        await prisma.store.createMany({
+          data: storesToCreate
         });
-
-        successCount++;
-
-        if (i < dataLines.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
+        successCount = storesToCreate.length;
       }
 
       if (successCount === 0) {
@@ -339,11 +344,7 @@ export async function action({ request }: ActionFunctionArgs) {
   return { error: "Unknown action" };
 }
 
-type UIStore = Omit<Store, "createdAt" | "updatedAt"> & {
-  type: string;
-  createdAt: string;
-  updatedAt: string;
-};
+
 
 export default function AllLocation() {
   const storesData = useLoaderData<UIStore[]>();
@@ -467,182 +468,42 @@ export default function AllLocation() {
 
   return (
     <s-page heading="Store Locator">
-      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-        <s-stack direction="inline" alignItems="center" gap="small-400">
-          <s-icon type="catalog-product"></s-icon>
-          <h2>All Locations</h2>
-        </s-stack>
-        {windowWidth > 768 ? (
-          <s-stack direction="inline" gap="base">
-            <Import />
-            <Link to="/app/addLocation">
-              <s-button variant="primary" icon="plus-circle">Add Location</s-button>
-            </Link>
-          </s-stack>
-        ) : (
-          <s-stack direction="inline" justifyContent="end" gap="base">
-            <Import />
-            <Link to="/app/addLocation">
-              <s-button variant="primary" icon="plus-circle"></s-button>
-            </Link>
-          </s-stack>
-        )}
-      </s-stack>
+      <LocationPageHeader windowWidth={windowWidth} />
 
       <s-section padding="none">
         <s-table>
-          <s-grid slot="filters" gap="small-200">
-            <s-stack direction="inline" gap="small-200" justifyContent={hasChecked ? "space-between" : undefined}>
-              {hasChecked && !showSearch && (
-                <s-stack direction="inline" gap="base" justifyContent="space-between" alignItems="center">
-                  <s-stack direction="inline" gap="small-200" justifyContent="start">
-                    <s-button onClick={() => updateVisibility("visible")}>Set As Visible</s-button>
-                    <s-button onClick={() => updateVisibility("hidden")}>Set As Hidden</s-button>
-                    <s-button commandFor="customer-menu" icon="menu-horizontal"></s-button>
-                    <s-popover id="customer-menu">
-                      <s-stack direction="block">
-                        <s-button variant="tertiary" onClick={handleExport}>Export CSV</s-button>
-                        <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical">Delete all stores</s-button>
-                      </s-stack>
-                    </s-popover>
-                    <s-modal id="deleteTrash-modal" heading="Delete Location">
-                      <s-text>Are you sure you want to delete {selectedIds.size} stores? This action cannot be undone.</s-text>
-                      <s-button slot="secondary-actions" variant="secondary" commandFor="deleteTrash-modal" command="--hide">Cancel</s-button>
-                      <s-button slot="primary-action" variant="primary" tone="critical" commandFor="deleteTrash-modal" command="--hide" onClick={() => handleDelete()}>Delete</s-button>
-                    </s-modal>
-                  </s-stack>
-                </s-stack>
-              )}
-              <div style={{ flex: 1 }}>
-                <s-stack direction="inline" gap="small-200" justifyContent={showSearch ? "space-between" : 'end'}>
-                  {showSearch ? (
-                    <div style={{ flex: 1, gap: 8, display: "flex", height: 28 }}>
-                      <s-search-field
-                        placeholder="Search by name, city, or address"
-                        value={searchTerm}
-                        onInput={(event) => { const target = event.target as any; setSearchTerm(target.value); }}
-                      />
-                      <s-button variant="tertiary" onClick={() => { setShowSearch(false); setSearchTerm(""); }}>Cancel</s-button>
-                    </div>
-                  ) : (
-                    <s-button icon="search" onClick={() => setShowSearch(true)}></s-button>
-                  )}
-                  <s-button icon="sort" variant="secondary" accessibilityLabel="Sort" interestFor="sort-tooltip" commandFor="sort-actions" />
-                  <s-tooltip id="sort-tooltip"><s-text>Sort</s-text></s-tooltip>
-                  <s-popover id="sort-actions">
-                    <s-stack gap="none">
-                      <s-box padding="small">
-                        Source
-                        <s-checkbox
-                          label="Manual"
-                          checked={selectedSources.includes("Manual")}
-                          onChange={(e: any) => {
-                            const checked = e.currentTarget.checked;
-                            setSelectedSources(prev =>
-                              checked ? [...prev, "Manual"] : prev.filter(s => s !== "Manual")
-                            );
-                          }}
-                        />
-                        <s-checkbox
-                          label="Shopify B2B"
-                          checked={selectedSources.includes("Shopify B2B")}
-                          onChange={(e: any) => {
-                            const checked = e.currentTarget.checked;
-                            setSelectedSources(prev =>
-                              checked ? [...prev, "Shopify B2B"] : prev.filter(s => s !== "Shopify B2B")
-                            );
-                          }}
-                        />
-                      </s-box>
-                      <s-divider />
-                      <s-box padding="small">
-                        <s-choice-list
-                          label="Visibility"
-                          name="visi"
-                          values={selectedVisibility ? [selectedVisibility] : []}
-                          onChange={(e) => { const target = e.currentTarget.values; setSelectedVisibility(target ? target[0] : ""); }}
-                        >
-                          <s-choice value="visible">Visible</s-choice>
-                          <s-choice value="hidden">Hidden</s-choice>
-                        </s-choice-list>
-                        <s-button variant="tertiary" onClick={() => setSelectedVisibility("")}>Clear</s-button>
-                      </s-box>
-                    </s-stack>
-                  </s-popover>
-                </s-stack>
-              </div>
-            </s-stack>
-          </s-grid>
+          <LocationTableFilters
+            hasChecked={hasChecked}
+            showSearch={showSearch}
+            searchTerm={searchTerm}
+            selectedSources={selectedSources}
+            selectedVisibility={selectedVisibility}
+            selectedIds={selectedIds}
+            onUpdateVisibility={updateVisibility}
+            onExport={handleExport}
+            onDelete={handleDelete}
+            onSearchToggle={setShowSearch}
+            onSearchChange={setSearchTerm}
+            onSourceChange={setSelectedSources}
+            onVisibilityChange={setSelectedVisibility}
+          />
           {filteredStores.length !== 0 ? (
             <>
-              {!hasChecked ? (
-                <s-table-header-row>
-                  <s-table-header listSlot="primary">
-                    <s-stack direction="inline" gap="base">
-                      <s-checkbox checked={allVisibleSelected} onChange={selectAllVisible} />
-                      StoreName
-                    </s-stack>
-                  </s-table-header>
-                  <s-table-header listSlot="labeled">Source</s-table-header>
-                  <s-table-header listSlot="labeled">Visibility</s-table-header>
-                  <s-table-header listSlot="labeled">Created</s-table-header>
-                  <s-table-header listSlot="labeled">Update</s-table-header>
-                  <s-table-header listSlot="labeled">Actions</s-table-header>
-                </s-table-header-row>
-              ) : (
-                <s-table-header-row>
-                  <s-table-header listSlot="primary">
-                    <s-stack direction="inline" gap="base">
-                      <s-checkbox checked={allVisibleSelected} onChange={selectAllVisible} />
-                      {checkedRowCount} selected
-                    </s-stack>
-                  </s-table-header>
-                  <s-table-header listSlot="labeled"></s-table-header>
-                  <s-table-header listSlot="labeled"></s-table-header>
-                  <s-table-header listSlot="labeled"></s-table-header>
-                  <s-table-header listSlot="labeled"></s-table-header>
-                  <s-table-header listSlot="labeled"></s-table-header>
-                </s-table-header-row>
-              )}
+              <LocationTableHeader
+                hasChecked={hasChecked}
+                allVisibleSelected={allVisibleSelected}
+                checkedRowCount={checkedRowCount}
+                onSelectAll={selectAllVisible}
+              />
               <s-table-body>
                 {currentStores.map((store) => (
-                  <s-table-row key={store.id}>
-                    <s-table-cell>
-                      <s-stack direction="inline" alignItems="center" gap="base">
-                        <s-checkbox checked={selectedIds.has(store.id)} onChange={() => toggleSelect(store.id)} />
-                        <s-thumbnail src={store.image || ''} size="small" />
-                        <s-link href={`/app/editLocation/${store.id}`}>
-                          <s-box><span style={{ fontWeight: '700', fontSize: '14px', color: '#1a1a1a' }}>{store.storeName}</span></s-box>
-                          <s-box>{store.address}, {store.city}, {store.region}{store.code ? `, ${store.code}` : ''}</s-box>
-                        </s-link>
-                      </s-stack>
-                    </s-table-cell>
-                    <s-table-cell>
-                      <s-badge tone={store.type === "Manual" ? "info" : "caution"}>{store.type}</s-badge>
-                    </s-table-cell>
-                    <s-table-cell>
-                      <s-badge tone={store.visibility === "visible" ? "success" : "auto"}>
-                        <s-text>{store.visibility === "visible" ? "Visible" : "Hidden"}</s-text>
-                      </s-badge>
-                    </s-table-cell>
-                    <s-table-cell>{new Date(store.createdAt).toISOString().split("T")[0]}</s-table-cell>
-                    <s-table-cell>{new Date(store.updatedAt).toISOString().split("T")[0]}</s-table-cell>
-                    <s-table-cell>
-                      <s-stack direction="inline" alignItems="center" gap="small">
-                        <s-tooltip id="deleteId">Delete</s-tooltip>
-                        <s-button variant="tertiary" icon="delete" commandFor={`deleteId-modal-${store.id}`} interestFor="deleteId"></s-button>
-                        <s-modal id={`deleteId-modal-${store.id}`} heading="Delete Location">
-                          <s-text>Are you sure you want to delete this store? This action cannot be undone.</s-text>
-                          <s-button slot="secondary-actions" variant="secondary" commandFor={`deleteId-modal-${store.id}`} command="--hide">Cancel</s-button>
-                          <s-button slot="primary-action" variant="primary" tone="critical" commandFor={`deleteId-modal-${store.id}`} command="--hide" onClick={e => { e.stopPropagation(); handleDeleteTrash(store.id); }}>Delete</s-button>
-                        </s-modal>
-                        <s-link href={`/app/editLocation/${store.id}`}>
-                          <s-tooltip id="editId">Edit</s-tooltip>
-                          <s-button variant="tertiary" icon="edit" interestFor="editId"></s-button>
-                        </s-link>
-                      </s-stack>
-                    </s-table-cell>
-                  </s-table-row>
+                  <LocationTableRow
+                    key={store.id}
+                    store={store}
+                    isSelected={selectedIds.has(store.id)}
+                    onToggleSelect={toggleSelect}
+                    onDelete={handleDeleteTrash}
+                  />
                 ))}
               </s-table-body>
             </>

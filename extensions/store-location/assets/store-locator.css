@@ -418,6 +418,59 @@
   min-width: 0;
 }
 
+/* Ultra-Premium Tags Design (Minimalist) */
+.sl-tags-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  width: 100%;
+}
+
+.sl-tags-icon-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 20px;
+  color: #94A3B8;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.sl-tags-icon {
+  font-size: 13px;
+}
+
+.sl-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.sl-tag-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  background: #F1F5F9;
+  color: #475569;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sl-tag-badge:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
 /* Ultra-Premium Ranking Badges */
 .sl-rank-badge {
   display: inline-flex;

@@ -62,7 +62,17 @@
       "type": "text",
       "id": "search_placeholder_text",
       "label": "Search Placeholder Text",
-      "default": "Enter name, address, zip code"
+      "default": "Enter name, address, zip code or tags"
+    },
+    {
+      "type": "range",
+      "id": "width_sidebar",
+      "label": "Width Sidebar",
+      "min": 200,
+      "max": 600,
+      "step": 10,
+      "unit": "px",
+      "default": 300
     },
 
     {
@@ -105,7 +115,7 @@
   <div class="sl-container">
 
     {% if block.settings.show_sidebar %}
-      <div class="sl-left" style="border-right: 1px solid {{ block.settings.border_color }}; background-color: {{ block.settings.background_color }}">
+      <div class="sl-left" style="flex: 0 0 {{ block.settings.width_sidebar }}px; border-right: 1px solid {{ block.settings.border_color }}; background-color: {{ block.settings.background_color }}">
         {% if block.settings.enable_location_search %}
           <div class="sl-filter-hub">
             <div class="sl-search-wrapper">

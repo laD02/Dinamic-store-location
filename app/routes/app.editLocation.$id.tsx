@@ -3,12 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
-import styles from "../css/addLocation.module.css";
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
-import { daysList, hourClose, hourOpen } from "app/utils/hourOfOperating";
 import { validatePhoneNumber } from "app/utils/phoneValidation";
-import { AddressAutocomplete } from "app/component/addressAutocomplete";
+import EditLocationHeader from "app/component/addLocation/EditLocationHeader";
+import LocationInfoSection from "app/component/addLocation/LocationInfoSection";
+import TagsSection from "app/component/addLocation/TagsSection";
+import HoursOfOperationSection from "app/component/addLocation/HoursOfOperationSection";
+import SocialMediaSection from "app/component/addLocation/SocialMediaSection";
+import LocationSidebar from "app/component/addLocation/LocationSidebar";
 
 export async function loader({ params }: LoaderFunctionArgs) {
     const { id } = params;
@@ -150,7 +153,7 @@ type HourSchedule = {
 
 export default function EditLocation() {
     const fetcher = useFetcher()
-    const { store, filter, googleMapsApiKey } = useLoaderData()
+    const { store, googleMapsApiKey } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const shopify = useAppBridge()
     const [visibility, setVisibility] = useState("visible");
@@ -158,12 +161,14 @@ export default function EditLocation() {
     const [socialResetKey, setSocialResetKey] = useState(0);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
+    const [tags, setTags] = useState<string[]>([]);
     const initialFormRef = useRef<FormData | null>(null);
     const initialSocialRef = useRef<SocialMedia[]>([]);
     const isDiscardingRef = useRef(false);
     const initialHoursRef = useRef<typeof dayStatus | null>(null);
     const initialVisibilityRef = useRef<string>("visible");
     const initialImageRef = useRef<string | null>(null);
+    const initialTagsRef = useRef<string[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
     const [phoneError, setPhoneError] = useState<string>("");
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -180,8 +185,11 @@ export default function EditLocation() {
         phone: "",
         city: "",
         region: "",
+        state: "",
         code: "",
         url: "",
+        lat: "",
+        lon: ""
     });
     const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
 
@@ -214,6 +222,7 @@ export default function EditLocation() {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const lastProcessedDataRef = useRef<any>(null);
 
     // Convert hour schedules to dayStatus format
     useEffect(() => {
@@ -276,6 +285,8 @@ export default function EditLocation() {
                 state: store.state || "",
                 code: store.code || "",
                 url: store.url || "",
+                lat: store.lat?.toString() || "",
+                lon: store.lng?.toString() || "",
             };
 
             setPreviewData(initialData);
@@ -284,8 +295,9 @@ export default function EditLocation() {
             // Load hours
             const loadedDayStatus = days.reduce((acc, day) => {
                 const key = day.toLowerCase();
-                const openValue = store.time?.[`${key}Open`] || "";
-                const closeValue = store.time?.[`${key}Close`] || "";
+                const time = (store.time as any) || {};
+                const openValue = time[`${key}Open`] || "";
+                const closeValue = time[`${key}Close`] || "";
 
                 acc[day] = {
                     valueOpen: openValue === "close" ? "" : (openValue || "09:00"),
@@ -388,10 +400,12 @@ export default function EditLocation() {
             initialSocialRef.current = JSON.parse(JSON.stringify(existingSocials));
             initialVisibilityRef.current = store.visibility || "visible";
             initialImageRef.current = store.image || null;
-            setCoordinates({
-                lat: store.lat?.toString() || "",
-                lon: store.lng?.toString() || ""
-            });
+            const loadedTags = store.tags
+                ? (Array.isArray(store.tags) ? store.tags as string[] : JSON.parse(store.tags as string))
+                : [];
+            const filteredTags = loadedTags.filter((t: string) => t && t.trim() !== "");
+            setTags(filteredTags);
+            initialTagsRef.current = [...filteredTags];
 
             setDataLoaded(true);
         }
@@ -405,6 +419,10 @@ export default function EditLocation() {
             if (formRef.current) {
                 initialFormRef.current = new FormData(formRef.current);
                 initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
+
+                // Coordinates may not be in form elements, they are in hidden inputs updated by state
+                // But tags are in a hidden input too.
+
                 setIsInitialized(true);
             }
         });
@@ -424,7 +442,7 @@ export default function EditLocation() {
             // Check form fields
             const current = new FormData(formRef.current);
             for (const [key, value] of current.entries()) {
-                if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract") continue;
+                if (key.endsWith("-open") || key.endsWith("-close") || key === "image" || key === "contract" || key === "tags") continue;
                 const initialValue = initialFormRef.current.get(key);
                 if (String(value).trim() !== String(initialValue ?? "").trim()) {
                     dirty = true;
@@ -462,6 +480,13 @@ export default function EditLocation() {
                 }
             }
 
+            // Check tags
+            if (!dirty) {
+                if (JSON.stringify(tags) !== JSON.stringify(initialTagsRef.current)) {
+                    dirty = true;
+                }
+            }
+
             if (dirty) {
                 shopify.saveBar.show("location-edit-bar");
             } else {
@@ -473,16 +498,18 @@ export default function EditLocation() {
     useEffect(() => {
         if (!isInitialized) return;
         checkDirty();
-    }, [hourSchedules, imageBase64, countSocial, visibility, isInitialized]);
+    }, [hourSchedules, imageBase64, countSocial, visibility, tags, isInitialized]);
 
     // Save success
     useEffect(() => {
-        if (fetcher.data?.ok && formRef.current) {
+        if (fetcher.data?.ok && fetcher.data !== lastProcessedDataRef.current && formRef.current) {
+            lastProcessedDataRef.current = fetcher.data;
             initialFormRef.current = new FormData(formRef.current);
             initialHoursRef.current = JSON.parse(JSON.stringify(dayStatus));
             initialSocialRef.current = JSON.parse(JSON.stringify(countSocial));
             initialVisibilityRef.current = visibility;
             initialImageRef.current = imageBase64;
+            initialTagsRef.current = [...tags];
             initialHourSchedulesRef.current = JSON.parse(JSON.stringify(hourSchedules));
             setHourErrors({});
             setPhoneError("");
@@ -490,7 +517,7 @@ export default function EditLocation() {
             shopify.toast.show('Store updated successfully!')
             shopify.saveBar.hide("location-edit-bar");
         }
-    }, [fetcher.data]);
+    }, [fetcher.data, dayStatus, countSocial, visibility, imageBase64, tags, hourSchedules]);
 
     const handleAddHourSchedule = () => {
         setHourSchedules([...hourSchedules, {
@@ -683,8 +710,8 @@ export default function EditLocation() {
         }
 
         setCoordinates({
-            lat: store.lat?.toString() || "",
-            lon: store.lng?.toString() || ""
+            lat: store?.lat?.toString() || "",
+            lon: store?.lng?.toString() || ""
         });
 
         setPreview(initialImageRef.current);
@@ -693,6 +720,7 @@ export default function EditLocation() {
         setCountSocial(JSON.parse(JSON.stringify(initialSocialRef.current)));
         setSocialResetKey(prev => prev + 1);
         setHourSchedules(JSON.parse(JSON.stringify(initialHourSchedulesRef.current)));
+        setTags([...initialTagsRef.current]);
 
         if (initialHoursRef.current) {
             setDayStatus(JSON.parse(JSON.stringify(initialHoursRef.current)));
@@ -736,87 +764,21 @@ export default function EditLocation() {
                 >
                     Save
                 </button>
-
-                <button
-                    onClick={() => {
-                        handleDiscard()
-                    }}
-                    disabled={isSaving}
-                >
+                <button onClick={() => handleDiscard()} disabled={isSaving}>
                     Discard
                 </button>
             </SaveBar>
-            <s-stack direction="inline" justifyContent="space-between" paddingBlock="large">
-                <s-stack direction="inline" gap="small-100" alignItems="center">
-                    <s-box>
-                        <s-button
-                            variant="tertiary"
-                            onClick={() => {
-                                handleDiscard();
-                                requestAnimationFrame(() => {
-                                    navigate('/app/allLocations');
-                                });
-                            }}
-                            icon="arrow-left"
-                        >
-                        </s-button>
-                    </s-box>
-                    <text style={{ fontSize: 16, fontWeight: 600 }}>{store.storeName}</text>
-                    <s-box>
-                        <s-box>
-                            {
-                                visibility === "visible" ?
-                                    <s-badge tone="success">
-                                        <s-stack direction="inline" alignItems="center">
-                                            <s-icon type="eye-check-mark" />
-                                            Visible
-                                        </s-stack>
-                                    </s-badge>
-                                    :
-                                    <s-badge>
-                                        <s-stack direction="inline" alignItems="center">
-                                            <s-icon type="hide" tone="info" />
-                                            Hidden
-                                        </s-stack>
-                                    </s-badge>
-                            }
-                        </s-box>
-                    </s-box>
-                </s-stack>
-                <s-stack direction="inline" justifyContent="space-between" gap="small-300">
-                    <s-button
-                        tone="critical"
-                        commandFor="deleteTrash-modal"
-                    >
-                        Delete
-                    </s-button>
-                    <s-modal id="deleteTrash-modal" heading="Delete Location">
-                        <s-text>
-                            Are you sure you want to delete this store? This action cannot be undone.
-                        </s-text>
 
-                        <s-button
-                            slot="secondary-actions"
-                            variant="secondary"
-                            commandFor="deleteTrash-modal"
-                            command="--hide"
-                        >
-                            Cancel
-                        </s-button>
-
-                        <s-button
-                            slot="primary-action"
-                            variant="primary"
-                            tone="critical"
-                            commandFor="deleteTrash-modal"
-                            command="--hide"
-                            onClick={() => handleDelete(store.id)}
-                        >
-                            Delete
-                        </s-button>
-                    </s-modal>
-                </s-stack>
-            </s-stack>
+            <EditLocationHeader
+                storeName={store.storeName}
+                storeId={store.id}
+                visibility={visibility}
+                onBack={() => {
+                    handleDiscard();
+                    requestAnimationFrame(() => navigate('/app/allLocations'));
+                }}
+                onDelete={handleDelete}
+            />
 
             <Form method="post" ref={formRef}>
                 {days.map(day => (
@@ -825,9 +787,9 @@ export default function EditLocation() {
                         <input type="hidden" name={`${day}-close`} value={dayStatus[day].valueClose} />
                     </div>
                 ))}
-
                 <input type="hidden" name="lat" value={coordinates.lat} />
                 <input type="hidden" name="lon" value={coordinates.lon} />
+                <input type="hidden" name="tags" value={JSON.stringify(tags.filter(t => t.trim() !== ""))} />
 
                 <s-query-container>
                     <s-grid
@@ -836,620 +798,82 @@ export default function EditLocation() {
                     >
                         <s-grid-item>
                             <s-stack>
-                                <input
-                                    type="hidden"
-                                    name="visibility"
-                                    value={visibility}
-                                />
+                                <input type="hidden" name="visibility" value={visibility} />
                                 <s-stack gap="base">
-                                    <s-section>
-                                        <s-stack>
-                                            <s-stack direction="inline" justifyContent="space-between">
-                                                <s-heading>Location Information</s-heading>
-                                                <s-badge tone="info">Manual</s-badge>
-                                            </s-stack>
-                                        </s-stack>
-                                        <s-stack paddingBlockStart="small-200" gap="small-200">
-                                            <s-box>
-                                                <s-text-field
-                                                    label="Location Name"
-                                                    name="storeName"
-                                                    error={fieldErrors.storeName}
-                                                    required
-                                                    defaultValue={store.storeName || ""}
-                                                    onInput={(e: any) => {
-                                                        const value = e.target.value;
-                                                        setPreviewData(prev => ({ ...prev, storeName: value }));
+                                    <LocationInfoSection
+                                        googleMapsApiKey={googleMapsApiKey}
+                                        fieldErrors={fieldErrors}
+                                        phoneError={phoneError}
+                                        websiteError={websiteError}
+                                        formRef={formRef}
+                                        previewData={previewData}
+                                        defaultValues={{
+                                            storeName: store.storeName || "",
+                                            address: store.address || "",
+                                            city: store.city || "",
+                                            region: store.region || "",
+                                            code: store.code || "",
+                                            phone: store.phone || "",
+                                            url: store.url || "",
+                                        }}
+                                        onPreviewChange={(data) => setPreviewData(prev => ({ ...prev, ...data }))}
+                                        onClearFieldError={(field) => setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next; })}
+                                        onPhoneErrorChange={setPhoneError}
+                                        onWebsiteErrorChange={setWebsiteError}
+                                        onAddressValidChange={setIsAddressValid}
+                                        onAddressChanged={() => setIsAddressChanged(true)}
+                                        onCoordinatesChange={(lat, lon) => setCoordinates({ lat, lon })}
+                                        checkDirty={checkDirty}
+                                    />
 
-                                                        if (value.trim()) {
-                                                            setFieldErrors(prev => {
-                                                                const next = { ...prev };
-                                                                delete next.storeName;
-                                                                return next;
-                                                            });
-                                                        }
-                                                        checkDirty()
-                                                    }}
-                                                />
-                                            </s-box>
-                                            <s-box>
-                                                <AddressAutocomplete
-                                                    defaultValue={store.address || ""}
-                                                    error={fieldErrors.address}
-                                                    checkDirty={checkDirty}
-                                                    googleMapsApiKey={googleMapsApiKey}
-                                                    onValidationChange={(isValid) => {
-                                                        setIsAddressValid(isValid); // CẬP NHẬT TRẠNG THÁI
-                                                        setIsAddressChanged(true);
-
-                                                        // XÓA LỖI NẾU HỢP LỆ
-                                                        if (isValid) {
-                                                            setFieldErrors(prev => {
-                                                                const next = { ...prev };
-                                                                delete next.address;
-                                                                return next;
-                                                            });
-                                                        }
-                                                    }}
-                                                    onAddressChange={(value) => {
-                                                        setPreviewData(prev => ({ ...prev, address: value }));
-                                                        setIsAddressChanged(true);
-
-                                                        if (value.trim()) {
-                                                            setFieldErrors(prev => {
-                                                                const next = { ...prev };
-                                                                delete next.address;
-                                                                return next;
-                                                            });
-                                                        }
-                                                        checkDirty();
-                                                    }}
-                                                    onSelect={(data) => {
-                                                        setIsAddressChanged(true);
-                                                        // Update form fields
-                                                        setCoordinates({
-                                                            lat: data.lat,
-                                                            lon: data.lon
-                                                        });
-                                                        if (formRef.current) {
-                                                            // KHÔNG CẬP NHẬT addressField nữa, để AddressAutocomplete tự quản lý
-                                                            // const addressField = formRef.current.elements.namedItem('address') as HTMLInputElement;
-                                                            const cityField = formRef.current.elements.namedItem('city') as HTMLInputElement;
-                                                            const codeField = formRef.current.elements.namedItem('code') as HTMLInputElement;
-                                                            const regionField = formRef.current.elements.namedItem('region') as HTMLInputElement;
-                                                            const latField = formRef.current.elements.namedItem('lat') as HTMLInputElement;
-                                                            const lonField = formRef.current.elements.namedItem('lon') as HTMLInputElement;
-
-                                                            // if (addressField) addressField.value = data.address; // BỎ DÒNG NÀY
-                                                            if (cityField) cityField.value = data.city;
-                                                            if (codeField) codeField.value = data.code;
-                                                            if (regionField) regionField.value = data.region;
-                                                            if (latField) latField.value = data.lat;
-                                                            if (lonField) lonField.value = data.lon;
-
-                                                            // Update preview với address từ input hiện tại
-                                                            setPreviewData(prev => ({
-                                                                ...prev,
-                                                                // address sẽ được cập nhật qua onAddressChange
-                                                                address: data.address,
-                                                                city: data.city,
-                                                                code: data.code,
-                                                                region: data.region,
-                                                            }));
-
-                                                            // Clear errors
-                                                            setFieldErrors(prev => {
-                                                                const next = { ...prev };
-                                                                delete next.address;
-                                                                delete next.city;
-                                                                delete next.region;
-                                                                return next;
-                                                            });
-                                                        }
-                                                    }}
-                                                />
-                                            </s-box>
-                                            <s-grid
-                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr 1fr, 1fr"
-                                                gap="base"
-                                            >
-                                                <s-grid-item>
-                                                    <s-text-field
-                                                        label="City"
-                                                        name="city"
-                                                        error={fieldErrors.city}
-                                                        required
-                                                        defaultValue={store.city || ""}
-                                                        onInput={(e: any) => {
-                                                            const value = e.target.value;
-                                                            setPreviewData(prev => ({ ...prev, city: value }));
-
-                                                            if (value.trim()) {
-                                                                setFieldErrors(prev => {
-                                                                    const next = { ...prev };
-                                                                    delete next.city;
-                                                                    return next;
-                                                                });
-                                                            }
-                                                            checkDirty()
-                                                        }}
-                                                    />
-                                                </s-grid-item>
-
-                                                <s-grid-item>
-                                                    <s-text-field
-                                                        label="Country"
-                                                        name="region"
-                                                        error={fieldErrors.region}
-                                                        required
-                                                        defaultValue={store.region || ""}
-                                                        onInput={(e: any) => {
-                                                            const value = e.target.value;
-                                                            setPreviewData(prev => ({ ...prev, region: value }));
-
-                                                            if (value.trim()) {
-                                                                setFieldErrors(prev => {
-                                                                    const next = { ...prev };
-                                                                    delete next.region;
-                                                                    return next;
-                                                                });
-                                                            }
-                                                            checkDirty()
-                                                        }}
-                                                    />
-                                                </s-grid-item>
-
-                                                <s-grid-item>
-                                                    <s-text-field
-                                                        label="Zip Code"
-                                                        name="code"
-                                                        defaultValue={store.code || ""}
-                                                        onInput={(e: any) => {
-                                                            const value = e.target.value;
-                                                            setPreviewData(prev => ({ ...prev, code: value }));
-                                                            checkDirty()
-                                                        }}
-                                                    />
-                                                </s-grid-item>
-                                            </s-grid>
-
-                                            <s-grid
-                                                gridTemplateColumns="@container (inline-size > 768px) 1fr 1fr, 1fr"
-                                                gap="base"
-                                            >
-                                                <s-grid-item>
-                                                    <s-text-field
-                                                        label="Phone Number"
-                                                        name="phone"
-                                                        required
-                                                        defaultValue={store.phone || ""}
-                                                        error={fieldErrors.phone || phoneError}
-                                                        onInput={(e: any) => {
-                                                            const value = e.target.value;
-                                                            setPreviewData(prev => ({
-                                                                ...prev,
-                                                                phone: value
-                                                            }));
-                                                            checkDirty();
-
-                                                            // Clear both required and format errors
-                                                            if (value.trim()) {
-                                                                setFieldErrors(prev => {
-                                                                    const next = { ...prev };
-                                                                    delete next.phone;
-                                                                    return next;
-                                                                });
-
-                                                                const validation = validatePhoneNumber(value);
-                                                                if (validation.isValid) {
-                                                                    setPhoneError("");
-                                                                }
-                                                            } else {
-                                                                setPhoneError("");
-                                                            }
-                                                        }}
-                                                    />
-                                                </s-grid-item>
-
-                                                <s-grid-item>
-                                                    <s-text-field
-                                                        label="Website"
-                                                        name="url"
-                                                        placeholder="http://example.com/"
-                                                        defaultValue={store.url || ""}
-                                                        error={websiteError}
-                                                        onInput={(e: any) => {
-                                                            const value = e.target.value;
-                                                            checkDirty();
-                                                            setPreviewData(prev => ({
-                                                                ...prev,
-                                                                url: value
-                                                            }));
-
-                                                            // Clear error when user types
-                                                            if (!value.trim()) {
-                                                                setWebsiteError("");
-                                                                return;
-                                                            }
-
-                                                            const validation = validateWebsiteUrl(value);
-                                                            if (validation.isValid) {
-                                                                setWebsiteError("");
-                                                            }
-                                                        }}
-                                                    />
-                                                </s-grid-item>
-                                            </s-grid>
-                                        </s-stack>
-                                    </s-section>
-
-                                    <s-section>
-                                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                                            <s-heading>Hours of Operation</s-heading>
-                                            <s-button icon="plus-circle" onClick={handleAddHourSchedule}>
-                                                Add Hours
-                                            </s-button>
-                                        </s-stack>
-                                        <s-stack paddingBlockStart="small-200" gap="small-400">
-                                            {hourSchedules.map((schedule, index) => (
-                                                <s-stack key={index}>
-                                                    <s-stack
-                                                        direction="inline"
-                                                        justifyContent="space-between"
-                                                        alignItems="center"
-                                                        gap="small-200"
-                                                    >
-                                                        <div style={{ width: "29%" }}>
-                                                            <s-select
-                                                                value={schedule.day}
-                                                                onChange={(e: any) => {
-                                                                    handleUpdateHourSchedule(index, 'day', e.target.value);
-                                                                }}
-                                                            >
-                                                                {daysList.map((item) => (
-                                                                    <s-option key={item} value={item}>{item}</s-option>
-                                                                ))}
-                                                            </s-select>
-                                                        </div>
-                                                        <div style={{ width: "29%" }}>
-                                                            <s-select
-                                                                value={schedule.openTime}
-                                                                onChange={(e: any) => {
-                                                                    const newValue = e.target.value;
-                                                                    handleUpdateHourSchedule(index, 'openTime', newValue);
-
-                                                                    // Clear error if fixed
-                                                                    const updatedSchedule = { ...schedule, openTime: newValue };
-                                                                    if (updatedSchedule.openTime && updatedSchedule.closeTime &&
-                                                                        updatedSchedule.openTime !== "close" && updatedSchedule.closeTime !== "close") {
-                                                                        if (updatedSchedule.openTime < updatedSchedule.closeTime) {
-                                                                            setHourErrors(prev => {
-                                                                                const next = { ...prev };
-                                                                                delete next[index];
-                                                                                return next;
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {hourOpen.map((item) => (
-                                                                    <s-option key={item} value={item}>{item}</s-option>
-                                                                ))}
-                                                            </s-select>
-                                                        </div>
-                                                        <span>to</span>
-                                                        <div style={{ width: "29%" }}>
-                                                            <s-select
-                                                                value={schedule.closeTime}
-                                                                onChange={(e: any) => {
-                                                                    const newValue = e.target.value;
-                                                                    handleUpdateHourSchedule(index, 'closeTime', newValue);
-
-                                                                    // THÊM LOGIC KIỂM TRA GIỐNG OPENTIME
-                                                                    const updatedSchedule = { ...schedule, closeTime: newValue };
-                                                                    if (updatedSchedule.openTime && updatedSchedule.closeTime &&
-                                                                        updatedSchedule.openTime !== "close" && updatedSchedule.closeTime !== "close") {
-                                                                        if (updatedSchedule.openTime < updatedSchedule.closeTime) {
-                                                                            setHourErrors(prev => {
-                                                                                const next = { ...prev };
-                                                                                delete next[index];
-                                                                                return next;
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {hourClose.map((item) => (
-                                                                    <s-option key={item} value={item}>{item}</s-option>
-                                                                ))}
-                                                            </s-select>
-                                                        </div>
-                                                        <div style={{ marginTop: 2 }}>
-                                                            <s-button
-                                                                icon="delete"
-                                                                onClick={() => handleRemoveHourSchedule(index)}
-                                                            />
-                                                        </div>
-                                                    </s-stack>
-                                                    <div>
-                                                        {hourErrors[index] && (
-                                                            <s-text tone="critical">{hourErrors[index]}</s-text>
-                                                        )}
-                                                    </div>
-                                                </s-stack>
-                                            ))}
-                                        </s-stack>
-                                    </s-section>
-
-                                    <s-section>
-                                        <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                                            <s-stack>
-                                                <s-heading>Social Media</s-heading>
-                                            </s-stack>
-                                            <s-button icon="plus-circle" onClick={() => handleAdd()}>Add Social Media</s-button>
-                                        </s-stack>
-                                        <s-stack paddingBlockStart="small" gap="small-200">
-                                            {
-                                                countSocial.map((item) => (
-                                                    <s-stack
-                                                        direction="inline"
-                                                        justifyContent="start"
-                                                        gap="small-200"
-                                                        alignItems="start"
-                                                        key={`${socialResetKey}-${item.id}`}
-                                                    >
-                                                        <div style={{ width: "20%", marginTop: -4 }}>
-                                                            <s-select
-                                                                value={item.platform}
-                                                                onChange={(e: any) => {
-                                                                    setCountSocial(prev =>
-                                                                        prev.map(social =>
-                                                                            social.id === item.id
-                                                                                ? { ...social, platform: e.target.value }
-                                                                                : social
-                                                                        )
-                                                                    );
-                                                                    if (item.url.trim()) {
-                                                                        validateSocialMedia(item.id, item.url, e.target.value as SocialPlatform);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <s-option value="linkedin">LinkedIn</s-option>
-                                                                <s-option value="youtube">Youtube</s-option>
-                                                                <s-option value="facebook">Facebook</s-option>
-                                                                <s-option value="instagram">Instagram</s-option>
-                                                                <s-option value="x">X</s-option>
-                                                                <s-option value="pinterest">Pinterest</s-option>
-                                                                <s-option value="tiktok">Tiktok</s-option>
-                                                            </s-select>
-                                                        </div>
-                                                        <div style={{ flex: 1 }}>
-                                                            <s-text-field
-                                                                name="contract"
-                                                                value={item.url}
-                                                                placeholder={`https://www.${item.platform}.com/`}
-                                                                error={socialErrors[item.id]}
-                                                                onInput={(e: any) => {
-                                                                    const value = e.target.value;
-                                                                    setCountSocial(prev =>
-                                                                        prev.map(social =>
-                                                                            social.id === item.id
-                                                                                ? { ...social, url: value }
-                                                                                : social
-                                                                        )
-                                                                    );
-                                                                    if (value.trim()) {
-                                                                        const validation = validateSocialUrl(value, item.platform as SocialPlatform);
-                                                                        if (validation.isValid) {
-                                                                            // Nếu hợp lệ thì xóa lỗi ngay
-                                                                            setSocialErrors(prev => {
-                                                                                const next = { ...prev };
-                                                                                delete next[item.id];
-                                                                                return next;
-                                                                            });
-                                                                        }
-                                                                    } else {
-                                                                        // Nếu xóa trống thì cũng xóa lỗi
-                                                                        setSocialErrors(prev => {
-                                                                            const next = { ...prev };
-                                                                            delete next[item.id];
-                                                                            return next;
-                                                                        });
-                                                                    }
-                                                                }}
-                                                            // onBlur={(e: any) => {
-                                                            //     const url = e.target.value;
-                                                            //     if (url.trim()) {
-                                                            //         validateSocialMedia(item.id, url, item.platform as SocialPlatform);
-                                                            //     }
-                                                            // }}
-                                                            />
-                                                        </div>
-                                                        <div style={{ marginTop: 2 }}>
-                                                            <s-button
-                                                                icon="delete"
-                                                                onClick={() => handleRemove(item.id)}
-                                                            />
-                                                        </div>
-                                                    </s-stack>
-                                                ))
-                                            }
-                                        </s-stack>
-                                    </s-section>
+                                    <HoursOfOperationSection
+                                        hourSchedules={hourSchedules}
+                                        hourErrors={hourErrors}
+                                        onAdd={handleAddHourSchedule}
+                                        onRemove={handleRemoveHourSchedule}
+                                        onUpdate={handleUpdateHourSchedule}
+                                        onClearError={(index) => setHourErrors(prev => { const next = { ...prev }; delete next[index]; return next; })}
+                                    />
+                                    <SocialMediaSection
+                                        countSocial={countSocial}
+                                        socialErrors={socialErrors}
+                                        socialResetKey={socialResetKey}
+                                        onAdd={handleAdd}
+                                        onRemove={handleRemove}
+                                        onChange={(id, field, value) => {
+                                            setCountSocial(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+                                        }}
+                                        onClearError={(id) => setSocialErrors(prev => { const next = { ...prev }; delete next[id]; return next; })}
+                                        onValidatePlatform={validateSocialMedia}
+                                        setSocialErrors={setSocialErrors}
+                                    />
+                                    <TagsSection
+                                        tags={tags}
+                                        onTagsChange={setTags}
+                                        checkDirty={checkDirty}
+                                    />
                                 </s-stack>
                             </s-stack>
                         </s-grid-item>
 
                         <s-grid-item>
-                            <s-grid
-                                gridTemplateColumns="@container (inline-size > 768px) 1fr, 1fr 1fr"
-                                gap="base"
-                            >
-                                <s-grid-item>
-                                    <s-stack gap="base">
-                                        <s-section heading="Visibility">
-                                            <s-select
-                                                value={visibility}
-                                                onChange={(e: any) => {
-                                                    setVisibility(e.target.value);
-                                                }}
-                                            >
-                                                <s-option value="hidden">Hidden</s-option>
-                                                <s-option value="visible">Visible</s-option>
-                                            </s-select>
-                                        </s-section>
-                                        <s-section>
-                                            <s-box>
-                                                <s-heading>Add a logo for this location</s-heading>
-                                            </s-box>
-                                            <s-stack direction="inline" justifyContent="space-between" paddingBlockStart="small-200" alignItems="center">
-                                                <s-stack background="subdued" paddingInline="large-500" borderStyle="dashed" borderWidth="small" borderRadius="large" paddingBlock="large-300" alignItems="center" justifyContent="center" direction="block" inlineSize="100%">
-                                                    {preview ? (
-                                                        <s-stack justifyContent="center" alignItems="center">
-                                                            <s-box inlineSize="60px" blockSize="60px">
-                                                                <s-image
-                                                                    src={preview}
-                                                                    alt="preview"
-                                                                    objectFit="cover"
-                                                                    loading="lazy"
-                                                                />
-                                                            </s-box>
-                                                            <s-box>
-                                                                <s-clickable
-                                                                    onClick={(e: any) => {
-                                                                        e.stopPropagation?.();
-                                                                        setPreview(null)
-                                                                        setImageBase64(null);
-                                                                    }}
-                                                                >
-                                                                    <s-icon type="x" />
-                                                                </s-clickable>
-                                                            </s-box>
-                                                        </s-stack>
-                                                    ) : (
-                                                        <s-stack alignItems="center">
-                                                            <s-button onClick={() => handleClick()}>Add file</s-button>
-                                                            <s-paragraph>Accepts .gif, .jpg, .png and .svg</s-paragraph>
-                                                        </s-stack>
-                                                    )}
-                                                </s-stack>
-                                                <input
-                                                    ref={fileInputRef}
-                                                    id="upload-file"
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                    style={{ display: "none" }}
-                                                />
-                                                <input type="hidden" name="image" value={imageBase64 ?? ""} />
-                                            </s-stack>
-                                        </s-section>
-                                    </s-stack>
-                                </s-grid-item>
-
-                                <s-grid-item>
-                                    <div className={styles.boxOverlay}>
-                                        <div className={styles.overlayImageContainer}>
-                                            <img src={preview || '/shop.png'} alt="Store" />
-                                        </div>
-
-                                        <div className={styles.storeInfo}>
-                                            <h3 className={styles.storeName}>{previewData.storeName || ''}</h3>
-                                            <div className={styles.contactRow}>
-                                                <i className="fa-solid fa-location-dot"></i>
-                                                <span className={styles.storeAddress}> {previewData.address || ''}, {previewData.city || ''}, {previewData.region || ''}{previewData.code !== '' ? ', ' + previewData.code : ''}</span>
-                                            </div>
-                                            <div className={styles.contactRow}>
-                                                <i className="fa-solid fa-phone"></i>
-                                                <a
-                                                    onClick={() => callPhone(previewData.phone)}
-                                                    style={{
-                                                        cursor: "pointer",
-                                                        textDecoration: "none"
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.textDecoration = "underline";
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.textDecoration = "none";
-                                                    }}
-                                                >
-                                                    {previewData.phone || ""}
-                                                </a>
-                                            </div>
-
-                                            <div className={styles.contactRow}>
-                                                <i className="fa-solid fa-earth-americas"></i>
-                                                <s-link href={previewData.url}><text style={{ color: '#303030' }}>{previewData.url || 'http://example.com/'}</text></s-link>
-                                            </div>
-
-                                            <div className={styles.contactRow}>
-                                                <i className="fa-solid fa-clock"></i>
-                                                <table>
-                                                    <tbody>
-                                                        {days.map(day => {
-                                                            const status = dayStatus[day];
-                                                            if (
-                                                                !status.valueOpen ||
-                                                                !status.valueClose ||
-                                                                status.valueOpen === "close" ||
-                                                                status.valueClose === "close") {
-                                                                return (
-                                                                    <tr key={day}>
-                                                                        <td>{day}</td>
-                                                                        <td>Close</td>
-                                                                    </tr>
-                                                                );
-                                                            }
-
-                                                            return (
-                                                                <tr key={day}>
-                                                                    <td>{day}</td>
-                                                                    <td>{status.valueOpen} - {status.valueClose}</td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-
-                                            <div className={styles.socialIcons}>
-                                                {countSocial
-                                                    .map(item => {
-                                                        const iconClass = socialIcons[item.platform];
-                                                        return (
-                                                            <a
-                                                                href={item.url}
-                                                                target="_blank"
-                                                                key={item.id}
-                                                                className={styles[item.platform]}
-                                                            >
-                                                                <i
-                                                                    className={`fa-brands ${iconClass}`}
-                                                                />
-                                                            </a>
-                                                        );
-                                                    })
-                                                }
-                                            </div>
-
-                                            <a
-                                                href={`https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat || ''},${coordinates.lon || ''}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className={styles.directionButton}
-                                                style={{
-                                                    backgroundColor: 'blue',
-                                                    color: '#ffffff'
-                                                }}
-                                            >
-                                                <i className="fa-solid fa-diamond-turn-right"></i>
-                                                Get Direction
-                                            </a>
-                                        </div>
-                                    </div>
-                                </s-grid-item>
-                            </s-grid>
+                            <LocationSidebar
+                                visibility={visibility}
+                                onVisibilityChange={setVisibility}
+                                preview={preview}
+                                imageBase64={imageBase64}
+                                onImageChange={(base64, previewUrl) => {
+                                    setImageBase64(base64);
+                                    setPreview(previewUrl);
+                                }}
+                                previewData={previewData}
+                                countSocial={countSocial}
+                                dayStatus={dayStatus}
+                                days={days}
+                                coordinates={coordinates}
+                                onCallPhone={callPhone}
+                                tags={tags}
+                            />
                         </s-grid-item>
                     </s-grid>
                 </s-query-container>

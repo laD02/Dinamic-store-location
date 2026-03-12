@@ -44,7 +44,8 @@ button {
 }
 
 .listItem {
-    flex: 1; /* Makes the 3 titles exactly equal width */
+    flex: 1;
+    /* Makes the 3 titles exactly equal width */
     text-align: center;
     cursor: pointer;
     font-size: 14px;
@@ -58,7 +59,8 @@ button {
 
 .listItem:hover {
     color: #202223;
-    border-bottom-color: #e1e3e5; /* Subtle hover effect line */
+    border-bottom-color: #e1e3e5;
+    /* Subtle hover effect line */
 }
 
 .active {

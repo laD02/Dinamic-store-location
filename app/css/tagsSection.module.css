@@ -1,0 +1,104 @@
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tagPill {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f1f2f4;
+  border: 1px solid #e1e3e5;
+  border-radius: 20px;
+  padding: 4px 6px 4px 12px;
+  font-size: 13px;
+  color: #202223;
+  gap: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tagPill:hover {
+  background-color: #e4e6e7;
+  border-color: #c9cccf;
+}
+
+.removeBtn {
+  display: block;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  color: #6d7175;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.removeBtn i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+}
+
+.removeBtn:hover {
+  background-color: #d2d5d8;
+  color: #1a1a1a;
+}
+
+.suggestedSection {
+  margin-top: 12px;
+}
+
+.suggestedTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6d7175;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.suggestedTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.suggestedTag {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px dashed #d2d5d8;
+  border-radius: 16px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #616161;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggestedTag:hover {
+  border-style: solid;
+  border-color: #008060;
+  color: #008060;
+  background-color: #f1f8f5;
+  transform: translateY(-1px);
+}
+
+.inputWrapper {
+  flex: 1;
+  min-width: 200px;
+}
+
+.emptyState {
+  color: #8c9196;
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 8px;
+}

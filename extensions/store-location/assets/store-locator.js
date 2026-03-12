@@ -165,6 +165,30 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
           const fullAddress = [s.address, s.city, s.code].filter(Boolean).join(', ');
           const status = isStoreOpen(s);
 
+          let tagsHtml = "";
+          if (s.tags) {
+            try {
+              const tagsArray = typeof s.tags === 'string' ? JSON.parse(s.tags) : s.tags;
+              if (Array.isArray(tagsArray)) {
+                const validTags = tagsArray.filter(tag => tag && tag.trim() !== "");
+                if (validTags.length > 0) {
+                  tagsHtml = `
+                    <div class="sl-tags-wrapper">
+                      <div class="sl-tags-icon-container">
+                        <i class="fa-solid fa-tags sl-tags-icon"></i>
+                      </div>
+                      <div class="sl-tags-list">
+                        ${validTags.map(tag => `<span class="sl-tag-badge">${tag}</span>`).join('')}
+                      </div>
+                    </div>
+                  `;
+                }
+              }
+            } catch (e) {
+              console.error("Error parsing tags:", e);
+            }
+          }
+
           return `
           <div class="store-item" data-original-index="${stores.indexOf(s)}">
             <div class="store-item-header">
@@ -203,6 +227,7 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
                 <span>${s.phone}</span>
               </div>
               ` : ""}
+              ${tagsHtml}
             </div>
           </div>
         `;
@@ -261,10 +286,21 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
         }
 
         // Search term filter
+        let tagsString = "";
+        if (store.tags) {
+          if (typeof store.tags === 'string') {
+            tagsString = store.tags;
+          } else {
+            try { tagsString = JSON.stringify(store.tags); } catch (e) { }
+          }
+        }
+
         const matchesTerm = !term ||
           store.storeName?.toLowerCase().includes(term) ||
           store.address?.toLowerCase().includes(term) ||
-          store.code?.toLowerCase().includes(term);
+          store.code?.toLowerCase().includes(term) ||
+          tagsString.toLowerCase().includes(term);
+
 
         // Open status filter
         let matchesOpen = true;
