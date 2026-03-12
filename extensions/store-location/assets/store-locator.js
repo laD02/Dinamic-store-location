@@ -200,7 +200,7 @@ async function loadStores(wrapper, onSelectStore, onFilter) {
               ${s.phone ? `
               <div class="store-item-row phone-row">
                 <i class="fa-solid fa-phone"></i>
-                <a href="tel:${s.phone}" style="color: inherit; text-decoration: none;">${s.phone}</a>
+                <span>${s.phone}</span>
               </div>
               ` : ""}
             </div>

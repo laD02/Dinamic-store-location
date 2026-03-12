@@ -26,27 +26,43 @@ button {
 .body {
     display: flex;
     justify-content: space-between;
-    /* height: 332px; */
     width: 100%;
 }
 
-.list {
-    margin-left: 8px;
+.tabContainer {
     display: flex;
-    justify-content: flex-start;
+    border-bottom: 1px solid #e1e3e5;
+    margin-bottom: 24px;
+}
+
+.list {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .listItem {
-    padding: 4px 12px;
-    margin-right: 12px;
-    border-radius: 8px;
+    flex: 1; /* Makes the 3 titles exactly equal width */
+    text-align: center;
     cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6d7175;
+    padding-bottom: 12px;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 
 .listItem:hover {
-    background-color: rgb(210, 207, 207);
+    color: #202223;
+    border-bottom-color: #e1e3e5; /* Subtle hover effect line */
 }
 
 .active {
-    background-color: rgb(210, 207, 207);
+    color: #000000;
+    border-bottom: 2px solid #000000;
+    font-weight: 600;
 }

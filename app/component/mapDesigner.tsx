@@ -19,42 +19,41 @@ export default function MapDesigner({
     onClosePickerRequest?: boolean;
 }) {
 
-    const [selected, setSeleceted] = useState<number>(0)
+    const [activeTab, setActiveTab] = useState<number>(0);
 
-    const handleSwap = () => {
-        const index = selected === 0 ? 1 : 0
-        setSeleceted(index)
-    }
+    const tabs = [
+        { id: 0, label: "Theme Setup" },
+        { id: 1, label: "Popup Style" },
+        { id: 2, label: "Marker Branding" }
+    ];
 
     return (
         <s-stack gap="base">
-
             <s-section>
-                <s-stack alignItems="center" >
-                    <s-heading>Theme Setup</s-heading>
-                </s-stack>
-
-                <div className={styles.body}>
-                    <ThemeSetUp onChange={onThemeChange} config={config.theme} onClosePickerRequest={onClosePickerRequest} />
+                <div className={styles.tabContainer}>
+                    <ul className={styles.list}>
+                        {tabs.map((tab) => (
+                            <li
+                                key={tab.id}
+                                className={`${styles.listItem} ${activeTab === tab.id ? styles.active : ''}`}
+                                onClick={() => setActiveTab(tab.id)}
+                            >
+                                {tab.label}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
-            </s-section>
-
-            <s-section>
-                <s-stack alignItems="center">
-                    <s-heading>Popup Style</s-heading>
-                </s-stack>
 
                 <div className={styles.body}>
-                    <PopupStyle onChange={onPopupChange} config={config.popup} onClosePickerRequest={onClosePickerRequest} />
-                </div>
-            </s-section>
-
-            <s-section>
-                <s-stack alignItems="center" >
-                    <s-heading>Marker & Map Branding</s-heading>
-                </s-stack>
-                <div className={styles.body}>
-                    <MarkerBranding onChange={onBrandingChange} config={config.branding} onClosePickerRequest={onClosePickerRequest} />
+                    {activeTab === 0 && (
+                        <ThemeSetUp onChange={onThemeChange} config={config.theme} onClosePickerRequest={onClosePickerRequest} />
+                    )}
+                    {activeTab === 1 && (
+                        <PopupStyle onChange={onPopupChange} config={config.popup} onClosePickerRequest={onClosePickerRequest} />
+                    )}
+                    {activeTab === 2 && (
+                        <MarkerBranding onChange={onBrandingChange} config={config.branding} onClosePickerRequest={onClosePickerRequest} />
+                    )}
                 </div>
             </s-section>
         </s-stack>

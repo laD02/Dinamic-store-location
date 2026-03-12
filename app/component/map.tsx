@@ -125,10 +125,10 @@ export default function MapGoogle({
         if (markerPixel) {
           const scale = Math.pow(2, map.getZoom()!);
           // Shift the camera "up" by moving the target point "down" in pixel space
-          // The popup is ~400px tall and offset 44px above the marker.
-          // Center of popup is roughly (400/2) + 44 = 244px above the marker.
-          // Adjusting to 220px for a more balanced visual center.
-          const offsetPx = 220 / scale;
+          // The overlay is ~400px tall and offset 44px above the marker.
+          // To put the OVERLAY perfectly in the middle of a 750px tall map container,
+          // the camera needs to shift up by approximately 340 pixels.
+          const offsetPx = 340 / scale;
           const targetPoint = new google.maps.Point(
             markerPixel.x,
             markerPixel.y - offsetPx

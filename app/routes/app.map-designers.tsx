@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
         isPremiumMarker = markerIconUrl.includes("data-style=");
       }
     }
-    
+
     if (!isPremiumMarker) {
       // New custom icon uploaded (base64)
       if (exist?.markerIcon && exist.markerIcon.includes("cloudinary")) {
@@ -461,8 +461,8 @@ export default function MapDesigners() {
 
           {/* Map - Below info item */}
           <div style={{
-            height: isMobile ? '450px' : '500px',
-            minHeight: isMobile ? '450px' : '500px',
+            height: isMobile ? '600px' : '750px',
+            minHeight: isMobile ? '600px' : '750px',
             flex: isMobile ? '0 0 auto' : 1,
             width: '100%',
             position: 'relative',
