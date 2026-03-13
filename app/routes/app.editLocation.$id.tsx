@@ -290,6 +290,10 @@ export default function EditLocation() {
             };
 
             setPreviewData(initialData);
+            setCoordinates({
+                lat: initialData.lat,
+                lon: initialData.lon
+            });
             initialPreviewRef.current = initialData;
 
             // Load hours

@@ -51,8 +51,8 @@ export default function PremiumMarkerSection({
             </div>
 
             <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: '6px',
                 padding: '6px',
                 background: '#fcfcfc',
@@ -69,7 +69,7 @@ export default function PremiumMarkerSection({
                             onClick={() => onStyleSelect(style.id, style.color)}
                             style={{
                                 cursor: 'pointer',
-                                padding: '4px 8px',
+                                padding: '4px 6px',
                                 borderRadius: '6px',
                                 border: isSelected ? '1px solid #008060' : '1px solid transparent',
                                 background: isSelected ? '#f6fdf9' : '#ffffff',
@@ -78,6 +78,8 @@ export default function PremiumMarkerSection({
                                 gap: '6px',
                                 transition: 'all 150ms ease',
                                 boxShadow: isSelected ? '0 1px 4px rgba(0,128,96,0.1)' : '0 1px 2px rgba(0,0,0,0.04)',
+                                height: '100%',
+                                boxSizing: 'border-box'
                             }}
                         >
                             <div style={{
@@ -88,14 +90,21 @@ export default function PremiumMarkerSection({
                                 justifyContent: 'center',
                                 background: style.id === 'glass' || style.id === 'executive' ? '#202223' : 'transparent',
                                 borderRadius: '4px',
-                                padding: '2px'
+                                padding: '2px',
+                                flexShrink: 0
                             }}>
                                 <img src={previewSvg} alt={style.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                             </div>
                             <div style={{
-                                fontSize: '12px',
+                                fontSize: '11px',
                                 color: isSelected ? '#008060' : '#4a5568',
                                 fontWeight: isSelected ? '600' : '500',
+                                lineHeight: '1.2',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
                             }}>{style.name}</div>
                         </div>
                     );

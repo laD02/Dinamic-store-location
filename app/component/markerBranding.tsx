@@ -43,7 +43,7 @@ export default function MarkerBranding({
 
         const currentTheme = mapThemes.find(t => JSON.stringify(t.style) === config.mapStyle);
         setMapStyleName(currentTheme?.name ?? "Standard");
-        
+
         setTimeout(() => { isSyncingRef.current = false; }, 0);
     }, [config]);
 

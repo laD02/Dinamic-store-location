@@ -9,6 +9,7 @@ import MapDesigner from "../component/mapDesigner";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
+import { getOpenStatus } from "app/utils/timeUtils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -103,6 +104,34 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return { ok: true };
 }
+const previewStore = {
+  id: "mock-apple-park",
+  storeName: "Apple Park",
+  address: "1 Apple Park Way, Cupertino, CA 95014, USA",
+  city: "Cupertino",
+  state: "CA",
+  code: "95014",
+  phone: "+1 408-996-1010",
+  lat: 37.3346,
+  lng: -122.0090,
+  image: null,
+  time: {
+    mondayOpen: "09:00",
+    mondayClose: "17:00",
+    tuesdayOpen: "09:00",
+    tuesdayClose: "17:00",
+    wednesdayOpen: "09:00",
+    wednesdayClose: "17:00",
+    thursdayOpen: "09:00",
+    thursdayClose: "17:00",
+    fridayOpen: "09:00",
+    fridayClose: "17:00",
+    saturdayOpen: "10:00",
+    saturdayClose: "16:00",
+    sundayOpen: "close",
+    sundayClose: "close",
+  },
+};
 
 export default function MapDesigners() {
   const fetcher = useFetcher()

@@ -2,6 +2,7 @@ import { GoogleMap, OverlayView, useJsApiLoader, MarkerF } from "@react-google-m
 import { useState, useEffect, useRef, useMemo } from "react";
 import styles from "../css/mapDesigner.module.css"
 import { useLoaderData } from "react-router";
+import { getOpenStatus } from "app/utils/timeUtils";
 
 type Store = {
   id: string;
@@ -73,7 +74,7 @@ export default function MapGoogle({
 
   const currentStores = useMemo(() => {
     const validStores = stores?.filter(s => s.lat != null && s.lng != null) ?? [];
-    return validStores.length > 0 ? validStores : [previewStore];
+    return [previewStore, ...validStores];
   }, [stores]);
 
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
@@ -107,10 +108,6 @@ export default function MapGoogle({
     const map = mapRef.current;
     const center = new google.maps.LatLng(lat, lng);
 
-    // We want the popup (roughly 300-400px high) to be centered.
-    // So we pan to a point slightly below the marker.
-    // At zoom 16, a good offset is about -200px (upwards shift of the camera).
-
     if (zoom) map.setZoom(zoom);
 
     // Perform initial pan to marker
@@ -124,11 +121,10 @@ export default function MapGoogle({
         const markerPixel = projection.fromLatLngToPoint(center);
         if (markerPixel) {
           const scale = Math.pow(2, map.getZoom()!);
-          // Shift the camera "up" by moving the target point "down" in pixel space
           // The overlay is ~400px tall and offset 44px above the marker.
           // To put the OVERLAY perfectly in the middle of a 750px tall map container,
-          // the camera needs to shift up by approximately 340 pixels.
-          const offsetPx = 340 / scale;
+          // the camera needs to shift up by approximately 300 pixels.
+          const offsetPx = 300 / scale;
           const targetPoint = new google.maps.Point(
             markerPixel.x,
             markerPixel.y - offsetPx
@@ -140,7 +136,7 @@ export default function MapGoogle({
           }
         }
       }
-    }, 100);
+    }, 200);
   };
 
   useEffect(() => {
@@ -232,10 +228,12 @@ export default function MapGoogle({
               </div>
 
               <div className={styles.storeInfo}>
-                <h3 className={styles.storeName}>Downtown Store</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <h3 className={styles.storeName} style={{ margin: 0 }}>Apple Park</h3>
+                </div>
                 <div className={styles.contactRow}>
                   <i className="fa-solid fa-location-dot" style={{ color: popupStyle.iconColor }}></i>
-                  <span className={styles.storeAddress}> 123 Main Street, New York, United States, 10001</span>
+                  <span className={styles.storeAddress}>1 Apple Park Way, Cupertino, CA 95014, USA</span>
                 </div>
                 <div className={styles.contactRow}>
                   <i className="fa-solid fa-phone" style={{ color: popupStyle.iconColor }}></i>
