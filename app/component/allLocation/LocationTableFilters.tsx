@@ -12,6 +12,7 @@ interface LocationTableFiltersProps {
   onSearchChange: (term: string) => void;
   onSourceChange: (sources: string[]) => void;
   onVisibilityChange: (v: string) => void;
+  level: string;
 }
 
 export default function LocationTableFilters({
@@ -28,6 +29,7 @@ export default function LocationTableFilters({
   onSearchChange,
   onSourceChange,
   onVisibilityChange,
+  level,
 }: LocationTableFiltersProps) {
   return (
     <s-grid slot="filters" gap="small-200">
@@ -40,7 +42,7 @@ export default function LocationTableFilters({
               <s-button commandFor="customer-menu" icon="menu-horizontal"></s-button>
               <s-popover id="customer-menu">
                 <s-stack direction="block">
-                  <s-button variant="tertiary" onClick={onExport}>Export CSV</s-button>
+                  {level !== 'basic' && <s-button variant="tertiary" onClick={onExport}>Export CSV</s-button>}
                   <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical">Delete all stores</s-button>
                 </s-stack>
               </s-popover>

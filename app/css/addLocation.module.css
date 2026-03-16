@@ -31,7 +31,8 @@ p {
 .btnVisible {
     margin-left: 4px;
     border-radius: 8px;
-    background-color: aquamarine;
+    background-color: #e6f1fe;
+    color: #005bd3;
     border: none;
     padding: 4px;
 }
@@ -268,7 +269,7 @@ table {
 }
 
 .search:focus-within {
-    border: 1px solid blue;
+    border: 1px solid #005bd3;
 }
 
 .search {

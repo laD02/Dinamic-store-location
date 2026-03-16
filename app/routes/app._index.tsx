@@ -9,6 +9,7 @@ import Update from 'app/component/onboarding/update'
 import { hasStoreLocatorEmbedEnabled } from 'app/utils/embedStore'
 import Integrations from 'app/component/onboarding/integrations'
 import Analytic from 'app/component/onboarding/analytic'
+import { getEffectiveLevel } from 'app/utils/plan.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
@@ -81,8 +82,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })
 
     const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
+    const level = await getEffectiveLevel(shop)
 
-    return { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount }
+    return { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount, level }
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -188,7 +190,9 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Onboarding() {
     const [index, setIndex] = useState<number>(1)
     const [count, setCount] = useState(0)
-    const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount } = useLoaderData()
+    const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount, level } = useLoaderData()
+
+    const locationLimit = level === 'plus' ? 'Unlimited' : (level === 'advanced' ? '500' : '10')
 
     const designFetcher = useFetcher()
     const reviewFetcher = useFetcher()
@@ -269,15 +273,19 @@ export default function Onboarding() {
 
                     <s-stack>
                         <s-grid
-                            gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr, 1fr'
+                            gridTemplateColumns='@container (inline-size > 600px) 1fr 1fr, 1fr'
                             gap='base'
                         >
+                            <s-section heading='Current Plan'>
+                                <h1 style={{ marginBlock: 0 }}>{level.charAt(0).toUpperCase() + level.slice(1)}</h1>
+                            </s-section>
+                            <s-section heading='Location Limit'>
+                                <h1 style={{ marginBlock: 0 }}>{locationLimit}</h1>
+                            </s-section>
                             <s-section heading='Stores Visible'>
-                                {/* <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Stores Visible</h3> */}
                                 <h1 style={{ marginBlock: 0 }}>{visibleCount}</h1>
                             </s-section>
                             <s-section heading='Stores Hidden'>
-                                {/* <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Stores Hidden</h3> */}
                                 <h1 style={{ marginBlock: 0 }}>{hiddenCount}</h1>
                             </s-section>
                         </s-grid>

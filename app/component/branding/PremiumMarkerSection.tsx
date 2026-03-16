@@ -9,6 +9,7 @@ interface PremiumMarkerSectionProps {
     onRemove: () => void;
     showColorPicker: boolean;
     setShowColorPicker: (show: boolean) => void;
+    level: string;
 }
 
 export default function PremiumMarkerSection({
@@ -18,9 +19,11 @@ export default function PremiumMarkerSection({
     onColorChange,
     onRemove,
     showColorPicker,
-    setShowColorPicker
+    setShowColorPicker,
+    level
 }: PremiumMarkerSectionProps) {
     const colorPickerRef = useRef<HTMLDivElement | null>(null);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -61,25 +64,35 @@ export default function PremiumMarkerSection({
             }}>
                 {markerStyles.map((style) => {
                     const isSelected = selectedStyleId === style.id;
+                    const isHovered = hoveredId === style.id;
                     const previewSvg = getMarkerSvg(style.id, isSelected ? markerColor : style.color);
 
                     return (
                         <div
                             key={style.id}
-                            onClick={() => onStyleSelect(style.id, style.color)}
+                            onMouseEnter={() => level !== 'basic' && setHoveredId(style.id)}
+                            onMouseLeave={() => setHoveredId(null)}
+                            onClick={() => {
+                                if (level === 'basic') return;
+                                onStyleSelect(style.id, style.color);
+                            }}
                             style={{
-                                cursor: 'pointer',
+                                cursor: level === 'basic' ? 'not-allowed' : 'pointer',
                                 padding: '4px 6px',
                                 borderRadius: '6px',
-                                border: isSelected ? '1px solid #008060' : '1px solid transparent',
-                                background: isSelected ? '#f6fdf9' : '#ffffff',
+                                border: isSelected ? '1px solid #005bd3' : (isHovered ? '1px solid #b3d1ff' : '1px solid transparent'),
+                                background: isSelected ? '#f1f7ff' : (isHovered ? '#f9fbff' : '#ffffff'),
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                transition: 'all 150ms ease',
-                                boxShadow: isSelected ? '0 1px 4px rgba(0,128,96,0.1)' : '0 1px 2px rgba(0,0,0,0.04)',
+                                transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: isSelected ? '0 2px 6px rgba(0,91,211,0.15)' : (isHovered ? '0 2px 4px rgba(0,0,0,0.06)' : '0 1px 2px rgba(0,0,0,0.04)'),
+                                transform: isHovered ? 'translateY(-1px) scale(1.02)' : 'translateY(0) scale(1)',
                                 height: '100%',
-                                boxSizing: 'border-box'
+                                boxSizing: 'border-box',
+                                filter: level === 'basic' ? 'grayscale(1)' : 'none',
+                                opacity: level === 'basic' ? 0.6 : 1,
+                                zIndex: isHovered ? 1 : 0
                             }}
                         >
                             <div style={{
@@ -91,20 +104,23 @@ export default function PremiumMarkerSection({
                                 background: style.id === 'glass' || style.id === 'executive' ? '#202223' : 'transparent',
                                 borderRadius: '4px',
                                 padding: '2px',
-                                flexShrink: 0
+                                flexShrink: 0,
+                                transition: 'transform 200ms ease',
+                                transform: isHovered ? 'scale(1.1)' : 'scale(1)'
                             }}>
                                 <img src={previewSvg} alt={style.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                             </div>
                             <div style={{
                                 fontSize: '11px',
-                                color: isSelected ? '#008060' : '#4a5568',
-                                fontWeight: isSelected ? '600' : '500',
+                                color: isSelected || isHovered ? '#005bd3' : '#4a5568',
+                                fontWeight: isSelected || isHovered ? '600' : '500',
                                 lineHeight: '1.2',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
                                 overflow: 'hidden',
-                                textOverflow: 'ellipsis'
+                                textOverflow: 'ellipsis',
+                                transition: 'color 200ms ease'
                             }}>{style.name}</div>
                         </div>
                     );

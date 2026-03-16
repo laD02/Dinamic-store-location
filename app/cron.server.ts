@@ -143,9 +143,16 @@ export function startCron() {
                 }
             }
 
-            // 4️⃣ Check for automated notifications
+            // 4️⃣ Check for automated notifications for Plus plans only
+            const plusPlans = await prisma.plan.findMany({
+                where: { level: "plus" },
+                select: { shop: true }
+            });
+            const plusShops = plusPlans.map(p => p.shop);
+
             const settings = await prisma.reportSetting.findMany({
                 where: {
+                    shop: { in: plusShops },
                     OR: [
                         { inAppDaily: true, dailyTime: currentHrMin },
                         { inAppWeekly: true, dayOfWeek: currentDayName, weeklyTime: currentHrMin },

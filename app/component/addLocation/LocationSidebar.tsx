@@ -238,7 +238,7 @@ export default function LocationSidebar({
               {countSocial.map(item => {
                 const iconClass = socialIcons[item.platform];
                 return (
-                  <a href={item.url} target="_blank" key={item.id} className={styles[item.platform]}>
+                  <a href={item.url} target="_blank" key={item.id} className={styles[item.platform]} rel="noreferrer">
                     <i className={`fa-brands ${iconClass}`} />
                   </a>
                 );

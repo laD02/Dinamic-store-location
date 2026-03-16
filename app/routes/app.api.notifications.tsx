@@ -1,5 +1,6 @@
 import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
+import prisma from "app/db.server";
 import { getNotifications, getUnreadCount, markAsRead, markAllAsRead, getDailyReportStats, getWeeklyReportStats, getMonthlyReportStats } from "../notifications.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -7,6 +8,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const shop = session.shop;
     const url = new URL(request.url);
     const intent = url.searchParams.get("intent");
+
+    const plan = await prisma.plan.findUnique({ where: { shop } });
+    if (!plan || plan.level !== 'plus') {
+        if (intent === "unreadCount") return { unreadCount: 0 };
+        return { notifications: [], unreadCount: 0 };
+    }
 
     if (intent === "dailyReport") {
         const dateParam = url.searchParams.get("date");
@@ -44,6 +51,11 @@ export async function action({ request }: ActionFunctionArgs) {
     const shop = session.shop;
     const formData = await request.formData();
     const intent = formData.get("intent");
+
+    const plan = await prisma.plan.findUnique({ where: { shop } });
+    if (!plan || plan.level !== 'plus') {
+        return { ok: false, message: "Only available on Business Plus plan" };
+    }
 
     if (intent === "markAsRead") {
         const id = formData.get("id")?.toString();

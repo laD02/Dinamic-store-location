@@ -4,18 +4,23 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { createApp } from '@shopify/app-bridge';
 import { authenticate } from "../shopify.server";
+import prisma from "app/db.server";
 import { useEffect, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { getEffectiveLevel } from "../utils/plan.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-
+  const { session } = await authenticate.admin(request);
+  const level = await getEffectiveLevel(session.shop);
   // eslint-disable-next-line no-undef
-  return { apiKey: process.env.SHOPIFY_API_KEY || "20d7d45fc96ed3baec84f8232a6cf110" };
+  return {
+    apiKey: process.env.SHOPIFY_API_KEY || "",
+    level: level
+  };
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, level } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const shopify = useAppBridge();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -57,10 +62,10 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app/allLocations">All Locations</s-link>
         <s-link href="/app/map-designers">Map Designers</s-link>
-        <s-link href="/app/integrations">Integrations</s-link>
-        <s-link href="/app/analytics">Analytics</s-link>
-        <s-link href="/app/settings">Settings</s-link>
-        {/* <s-link href="/app/plan">Plan</s-link> */}
+        {level === 'plus' && <s-link href="/app/integrations">Integrations</s-link>}
+        {level !== 'basic' && <s-link href="/app/analytics">Analytics</s-link>}
+        {level === 'plus' && <s-link href="/app/settings">Settings</s-link>}
+        <s-link href="/app/plan">Pricings</s-link>
         <div style={{ flex: 1 }} />
       </s-app-nav>
 

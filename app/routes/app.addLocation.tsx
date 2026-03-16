@@ -2,7 +2,9 @@ import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useLoaderData
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
+import { useMemo } from "react";
 import { authenticate } from "../shopify.server";
+import { getEffectiveLevel } from "../utils/plan.server";
 import { uploadImageToCloudinary } from "app/utils/upload.server";
 import { SocialPlatform, validateSocialUrl } from "app/utils/socialValidation";
 import { validateWebsiteUrl } from "app/utils/websiteValidation";
@@ -15,8 +17,24 @@ import SocialMediaSection from "app/component/addLocation/SocialMediaSection";
 import LocationSidebar from "app/component/addLocation/LocationSidebar";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
+
+    const level = await getEffectiveLevel(shop);
+    const [locationCount] = await Promise.all([
+        prisma.store.count({ where: { shop } })
+    ]);
+    let limit = 10;
+    if (level === 'advanced') limit = 500;
+    if (level === 'plus') limit = 1000000;
+
     const googleMapsApiKey = process.env.GOOGLE_MAP_KEY || "";
-    return { googleMapsApiKey };
+    return {
+        googleMapsApiKey,
+        limitReached: locationCount >= limit,
+        currentLimit: limit,
+        currentLevel: level
+    };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -28,6 +46,20 @@ export async function action({ request }: ActionFunctionArgs) {
     const tags = tagsString ? JSON.parse(tagsString) : [];
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
+
+    const [plan, locationCount] = await Promise.all([
+        prisma.plan.findUnique({ where: { shop } }),
+        prisma.store.count({ where: { shop } })
+    ]);
+
+    const level = plan?.level || 'basic';
+    let limit = 10;
+    if (level === 'advanced') limit = 500;
+    if (level === 'plus') limit = 1000000; // Unlimited practically
+
+    if (locationCount >= limit) {
+        return { errors: { limit: `Your current plan (${level.toUpperCase()}) only allows up to ${limit === 1000000 ? 'unlimited' : limit} locations. Please upgrade your plan.` } };
+    }
 
     const region = formData.get("region")?.toString() ?? "";
     const lat = formData.get("lat")?.toString() ?? "";
@@ -117,8 +149,7 @@ type HourSchedule = {
 };
 
 export default function AddLocation() {
-    const loaderData = useLoaderData<typeof loader>();
-    const googleMapsApiKey = loaderData.googleMapsApiKey;
+    const { googleMapsApiKey, limitReached, currentLimit, currentLevel } = useLoaderData<typeof loader>();
     const fetcher = useFetcher()
     const navigate = useNavigate();
     const shopify = useAppBridge()
@@ -432,6 +463,7 @@ export default function AddLocation() {
 
     const handleSubmit = () => {
         if (!formRef.current) return;
+        if (limitReached) return;
 
         const newErrors: Record<string, string> = {};
         const requiredFields = ["storeName", "address", "city", "region", "phone"];
@@ -582,6 +614,7 @@ export default function AddLocation() {
                     variant="primary"
                     onClick={() => handleSubmit()}
                     loading={isSaving ? "true" : undefined}
+                    disabled={limitReached}
                 >
                     Save
                 </button>
@@ -599,6 +632,16 @@ export default function AddLocation() {
             />
 
             <Form method="post" ref={formRef}>
+                {(limitReached || fetcher.data?.errors?.limit) && (
+                    <div style={{ marginBottom: '20px' }}>
+                        <s-banner tone="warning" heading="Plan Limit Reached">
+                            <s-paragraph>
+                                {fetcher.data?.errors?.limit || `Your current plan (${currentLevel.toUpperCase()}) only allows up to ${currentLimit === 1000000 ? 'unlimited' : currentLimit} locations. Please upgrade your plan to add more.`}
+                            </s-paragraph>
+                            <s-button variant="tertiary" onClick={() => navigate('/app/plan')}>Upgrade Plan</s-button>
+                        </s-banner>
+                    </div>
+                )}
                 {/* Hidden inputs for hours */}
                 {days.map(day => (
                     <div key={day}>

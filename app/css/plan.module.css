@@ -93,7 +93,7 @@
     top: -14px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #008060, #00a07a);
+    background: linear-gradient(135deg, #2c6ecb, #005bd3);
     color: white;
     padding: 4px 14px;
     border-radius: 20px;
@@ -101,7 +101,7 @@
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(0, 128, 96, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 91, 211, 0.3);
     z-index: 2;
 }
 
@@ -151,7 +151,8 @@
     margin-bottom: 24px;
     min-height: 36px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: flex-start;
     width: 100%;
 }
 
@@ -179,7 +180,7 @@
 }
 
 .checkIcon {
-    color: #008060;
+    color: #005bd3;
     font-size: 14px;
     margin-top: 3px;
     flex-shrink: 0;
@@ -198,4 +199,45 @@
     .popularCard:hover {
         transform: translateY(-4px);
     }
+}
+
+.currentBadge {
+    background: linear-gradient(135deg, #2c6ecb, #005bd3);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 91, 211, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.currentBadge i {
+    font-size: 10px;
+}
+
+.currentStatus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #2c6ecb, #005bd3);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 91, 211, 0.2);
+    cursor: default;
+    gap: 6px;
+    border: none;
+}
+
+.currentStatus i {
+    font-size: 12px;
 }

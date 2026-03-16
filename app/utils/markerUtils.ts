@@ -18,7 +18,7 @@ export const markerStyles = [
 
 export const getMarkerSvg = (style: string, color: string = "#EA4335") => {
     let content = "";
-    let viewBox = "0 0 40 40";
+    const viewBox = "0 0 40 40";
 
     switch (style) {
         case "neon":

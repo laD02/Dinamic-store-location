@@ -8,10 +8,12 @@ import MapThemeSection from "./branding/MapThemeSection";
 export default function MarkerBranding({
     onChange,
     config,
+    level,
     onClosePickerRequest
 }: {
     onChange: (branding: { markerIcon: string | null, mapStyle: string | null }) => void,
     config: { markerIcon: string | null, mapStyle: string | null },
+    level: string,
     onClosePickerRequest?: boolean
 }) {
     const [markerIcon, setMarkerIcon] = useState<string | null>(config?.markerIcon ?? null);
@@ -104,6 +106,7 @@ export default function MarkerBranding({
                 onRemove={handleRemovePremium}
                 showColorPicker={showColorPicker}
                 setShowColorPicker={setShowColorPicker}
+                level={level}
             />
 
             <div style={{ height: '1px', background: '#f4f6f8', width: '100%', margin: '4px 0' }} />
@@ -113,6 +116,7 @@ export default function MarkerBranding({
                 selectedStyleId={selectedStyleId}
                 onFileChange={handleFileChange}
                 onRemove={handleRemoveCustom}
+                level={level}
             />
 
             <div style={{ height: '1px', background: '#f4f6f8', width: '100%', margin: '4px 0' }} />
@@ -120,6 +124,7 @@ export default function MarkerBranding({
             <MapThemeSection
                 mapStyleName={mapStyleName}
                 onThemeChange={setMapStyleName}
+                level={level}
             />
         </s-stack>
     );

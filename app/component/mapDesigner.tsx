@@ -10,16 +10,20 @@ export default function MapDesigner({
     onPopupChange,
     onBrandingChange,
     config,
-    onClosePickerRequest
+    level,
+    onClosePickerRequest,
+    activeTab,
+    onTabChange
 }: {
     onThemeChange: (theme: any) => void;
     onPopupChange: (popup: any) => void;
     onBrandingChange: (branding: any) => void;
     config: any,
+    level: string;
     onClosePickerRequest?: boolean;
+    activeTab: number;
+    onTabChange: (tab: number) => void;
 }) {
-
-    const [activeTab, setActiveTab] = useState<number>(0);
 
     const tabs = [
         { id: 0, label: "Theme Setup" },
@@ -36,7 +40,7 @@ export default function MapDesigner({
                             <li
                                 key={tab.id}
                                 className={`${styles.listItem} ${activeTab === tab.id ? styles.active : ''}`}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => onTabChange(tab.id)}
                             >
                                 {tab.label}
                             </li>
@@ -52,7 +56,7 @@ export default function MapDesigner({
                         <PopupStyle onChange={onPopupChange} config={config.popup} onClosePickerRequest={onClosePickerRequest} />
                     )}
                     {activeTab === 2 && (
-                        <MarkerBranding onChange={onBrandingChange} config={config.branding} onClosePickerRequest={onClosePickerRequest} />
+                        <MarkerBranding onChange={onBrandingChange} config={config.branding} level={level} onClosePickerRequest={onClosePickerRequest} />
                     )}
                 </div>
             </s-section>

@@ -13,6 +13,7 @@ import { useAppBridge } from '@shopify/app-bridge-react';
 import { authenticate } from "../shopify.server";
 import { deleteImageFromCloudinary } from "../utils/upload.server";
 import { getCoordinatesFromAddress } from "../utils/Geocoding";
+import { getEffectiveLevel } from "../utils/plan.server";
 import { UIStore } from "app/component/allLocation/types";
 import LocationPageHeader from "app/component/allLocation/LocationPageHeader";
 import LocationTableFilters from "app/component/allLocation/LocationTableFilters";
@@ -22,11 +23,11 @@ import LocationTableRow from "app/component/allLocation/LocationTableRow";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session?.shop;
-  const connections = await prisma.shopConnection.findMany({
-    where: {
-      targetShop: shop
-    }
-  })
+
+  const level = await getEffectiveLevel(shop);
+  const [connections] = await Promise.all([
+    prisma.shopConnection.findMany({ where: { targetShop: shop } })
+  ]);
 
   const sourceShops = connections.map(c => c.sourceShop)
 
@@ -42,12 +43,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
   })
 
-  return stores.map((s: any) => ({
-    ...s,
-    type: s.shop === shop ? "Manual" : "Shopify B2B",
-    createdAt: s.createdAt.toISOString(),
-    updatedAt: s.updatedAt.toISOString(),
-  }));
+  return {
+    stores: stores.map((s: any) => ({
+      ...s,
+      type: s.shop === shop ? "Manual" : "Shopify B2B",
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    })),
+    level: level
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -57,6 +61,15 @@ export async function action({ request }: ActionFunctionArgs) {
   if (actionType === "import") {
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
+
+    const level = await getEffectiveLevel(shop);
+    const [locationCount] = await Promise.all([
+      prisma.store.count({ where: { shop } })
+    ]);
+    let limit = 10;
+    if (level === 'advanced') limit = 500;
+    if (level === 'plus') limit = 1000000;
+
     const file = formData.get("file");
 
     if (!file) return { error: "No files uploaded." };
@@ -180,7 +193,7 @@ export async function action({ request }: ActionFunctionArgs) {
       let successCount = 0;
       const storesToCreate: any[] = [];
       const dataLines = lines.slice(1).filter(line => line.trim());
-      
+
       // Parse all lines first to validate structure and data types
       const validatedRows: any[] = [];
       for (let i = 0; i < dataLines.length; i++) {
@@ -218,12 +231,12 @@ export async function action({ request }: ActionFunctionArgs) {
         const website = values[6] || "";
         const visibility = (values[7] || "hidden").toLowerCase() === "visible" ? "visible" : "hidden";
 
-        if (!storeName.trim()) return { error: `Store Name is required at row ${i+1}` };
-        if (!address.trim()) return { error: `Address is required at row ${i+1}` };
-        if (!city.trim()) return { error: `City is required at row ${i+1}` };
-        if (!country.trim()) return { error: `Country is required at row ${i+1}` };
+        if (!storeName.trim()) return { error: `Store Name is required at row ${i + 1}` };
+        if (!address.trim()) return { error: `Address is required at row ${i + 1}` };
+        if (!city.trim()) return { error: `City is required at row ${i + 1}` };
+        if (!country.trim()) return { error: `Country is required at row ${i + 1}` };
 
-        let schedule: any = {};
+        const schedule: any = {};
         try {
           schedule.monday = parseTimeSlot(values[8] || "", "Monday");
           schedule.tuesday = parseTimeSlot(values[9] || "", "Tuesday");
@@ -292,6 +305,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // Bulk insert all stores
       if (storesToCreate.length > 0) {
+        if (locationCount + storesToCreate.length > limit) {
+          return { error: `Your current plan (${level.toUpperCase()}) only allows up to ${limit === 1000000 ? 'unlimited' : limit} locations. Importing ${storesToCreate.length} locations would exceed this limit. Please upgrade.` };
+        }
         await prisma.store.createMany({
           data: storesToCreate
         });
@@ -347,7 +363,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 
 export default function AllLocation() {
-  const storesData = useLoaderData<UIStore[]>();
+  const { stores: storesData, level } = useLoaderData() as { stores: UIStore[], level: string };
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [stores, setStores] = useState<UIStore[]>([]);
@@ -468,7 +484,7 @@ export default function AllLocation() {
 
   return (
     <s-page heading="Store Locator">
-      <LocationPageHeader windowWidth={windowWidth} />
+      <LocationPageHeader windowWidth={windowWidth} level={level} />
 
       <s-section padding="none">
         <s-table>
@@ -486,6 +502,7 @@ export default function AllLocation() {
             onSearchChange={setSearchTerm}
             onSourceChange={setSelectedSources}
             onVisibilityChange={setSelectedVisibility}
+            level={level}
           />
           {filteredStores.length !== 0 ? (
             <>

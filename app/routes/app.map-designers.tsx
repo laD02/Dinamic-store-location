@@ -1,5 +1,5 @@
 // app/routes/app.help-center.tsx
-import { ActionFunctionArgs, Form, LoaderFunctionArgs, useActionData, useFetcher, useLoaderData } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useNavigate } from "react-router";
 import styles from "../css/mapDesigner.module.css"
 import { useEffect, useMemo, useRef, useState } from "react";
 import prisma from "app/db.server";
@@ -10,6 +10,7 @@ import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
 import { getOpenStatus } from "app/utils/timeUtils";
+import { getEffectiveLevel } from "../utils/plan.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -23,8 +24,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     where: { shop }
   })
   const googleMapsApiKey = process.env.GOOGLE_MAP_KEY
-
-  return { stores, config, googleMapsApiKey };
+  const level = await getEffectiveLevel(session.shop);
+  return { stores, config, googleMapsApiKey, level };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -34,12 +35,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const theme = JSON.parse(formData.get("theme") as string);
   const popup = JSON.parse(formData.get("popup") as string);
   const branding = JSON.parse(formData.get("branding") as string);
+  const level = await getEffectiveLevel(session.shop);
 
   const exist = await prisma.style.findFirst({
     where: { shop }
   }) as any;
 
   let markerIconUrl = branding.markerIcon;
+
+  // Gating for Basic plan
+  if (level === 'basic') {
+    // Only standard map style allowed
+    branding.mapStyle = "[]";
+    // Only default marker allowed (null)
+    markerIconUrl = null;
+  }
+
   if (markerIconUrl && markerIconUrl.startsWith("data:image")) {
     // Check if it's a premium marker (has data-style attribute in SVG)
     let isPremiumMarker = false;
@@ -135,8 +146,10 @@ const previewStore = {
 
 export default function MapDesigners() {
   const fetcher = useFetcher()
+  const navigate = useNavigate();
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const { stores, config } = useLoaderData<typeof loader>();
+  const [activeTab, setActiveTab] = useState<number>(0);
+  const { stores, config, level } = useLoaderData<typeof loader>();
   const [searchAddress, setSearchAddress] = useState<string>("");
   const shopify = useAppBridge()
   const [leftWidth, setLeftWidth] = useState<number>(49);
@@ -331,7 +344,7 @@ export default function MapDesigners() {
   };
 
   return (
-    <s-page heading="Store Locator" >
+    <s-page heading="Map Designers">
       <SaveBar id={SAVE_BAR_ID}>
         <button
           variant="primary"
@@ -350,6 +363,17 @@ export default function MapDesigners() {
         <s-icon type="theme-edit"></s-icon>
         <h2>Map Designer</h2>
       </s-stack>
+
+      {level === 'basic' && activeTab === 2 && (
+        <div style={{ marginBottom: '20px', marginTop: '10px' }}>
+          <s-banner tone="warning" heading="Unlock Premium Features">
+            <s-paragraph>
+              Upgrade your plan to unlock <b>Premium Markers</b>, <b>Custom Icons</b>, and <b>Advanced Map Themes</b>.
+            </s-paragraph>
+            <s-button variant="tertiary" onClick={() => navigate('/app/plan')}>Upgrade Plan</s-button>
+          </s-banner>
+        </div>
+      )}
 
       <div
         ref={containerRef}
@@ -374,6 +398,9 @@ export default function MapDesigners() {
         >
           <MapDesigner
             config={{ theme, popup, branding }}
+            level={level}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             onClosePickerRequest={closePickerTrigger}
             onThemeChange={(v) => {
               setTheme(v);

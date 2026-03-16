@@ -7,10 +7,17 @@ import ShopifyB2B from "app/component/shopifyB2B";
 import prisma from "app/db.server";
 import { authenticate } from "app/shopify.server";
 import { randomUUID } from "crypto";
+import { getEffectiveLevel } from "../utils/plan.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session.shop
+
+  const level = await getEffectiveLevel(shop);
+  if (level !== 'plus') {
+    throw new Response(null, { status: 302, headers: { Location: "/app/plan" } });
+  }
+
   const exitkey = await prisma.key.findFirst({
     where: { shop }
   })

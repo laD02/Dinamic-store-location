@@ -7,6 +7,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
 
+    const plan = await prisma.plan.findUnique({ where: { shop } });
+    if (!plan || plan.level === 'basic') {
+        throw new Response(null, { status: 302, headers: { Location: "/app/plan" } });
+    }
+
     const connections = await prisma.shopConnection.findMany({
         where: { targetShop: shop }
     });
@@ -82,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             },
         }));
 
-    return { stats: [...stats, ...zeroStats] };
+    return { stats: [...stats, ...zeroStats], level: plan.level };
 }
 
 export async function action({ request }: ActionFunctionArgs) {

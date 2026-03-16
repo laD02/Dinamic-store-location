@@ -122,7 +122,8 @@ function ConversionChart({
     );
 }
 export default function Index() {
-    const { stats } = useLoaderData();
+    const { stats, level } = useLoaderData();
+    const navigate = useNavigate();
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [showSearch, setShowSearch] = useState(false);
@@ -471,36 +472,36 @@ export default function Index() {
                 </s-stack>
                 <s-stack direction="inline" gap="small-400" alignItems="center">
                     <s-button commandFor="export-menu" icon="export">Export</s-button>
-                    <NotificationCenter />
+                    {level === 'plus' && <NotificationCenter />}
                 </s-stack>
-
-                <s-menu id="export-menu" accessibilityLabel="Customer actions">
-                    <s-button onClick={() => {
-                        const ok = exportAnalyticsToPDF(filteredStores, {
-                            overallTotals,
-                            chartHeadings: {
-                                trend: chartHeading,
-                                conversion: conversionChartHeading,
-                                topStores: `Top Stores by ${activityLabel}`,
-                            },
-                            dailyTotals,
-                            conversionTotals: conversionDailyTotals,
-                            top5Stores,
-                        });
-                        if (!ok) alert("No data to export.");
-                    }}>PDF</s-button>
-                    <s-button onClick={() => {
-                        const ok = exportAnalyticsToCSV(filteredStores, {
-                            overallTotals,
-                            dailyTotals,
-                            conversionTotals: conversionDailyTotals,
-                            top5Stores,
-                        });
-                        if (!ok) alert("No data to export.");
-                    }}>CSV</s-button>
-                </s-menu>
-
             </s-stack>
+
+            <s-menu id="export-menu" accessibilityLabel="Customer actions">
+                <s-button onClick={() => {
+                    const ok = exportAnalyticsToPDF(filteredStores, {
+                        overallTotals,
+                        chartHeadings: {
+                            trend: chartHeading,
+                            conversion: conversionChartHeading,
+                            topStores: `Top Stores by ${activityLabel}`,
+                        },
+                        dailyTotals,
+                        conversionTotals: conversionDailyTotals,
+                        top5Stores,
+                    });
+                    if (!ok) alert("No data to export.");
+                }}>PDF</s-button>
+                <s-button onClick={() => {
+                    const ok = exportAnalyticsToCSV(filteredStores, {
+                        overallTotals,
+                        dailyTotals,
+                        conversionTotals: conversionDailyTotals,
+                        top5Stores,
+                    });
+                    if (!ok) alert("No data to export.");
+                }}>CSV</s-button>
+            </s-menu>
+
             <s-stack gap="base">
                 <s-banner tone="info" heading="Store Performance Analytics" dismissible>
                     This dashboard provides detailed information about your store's location performance, including store views, phone number clicks, directions requests, and store search activity.

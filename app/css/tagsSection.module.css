@@ -85,9 +85,9 @@
 
 .suggestedTag:hover {
   border-style: solid;
-  border-color: #008060;
-  color: #008060;
-  background-color: #f1f8f5;
+  border-color: #005bd3;
+  color: #005bd3;
+  background-color: #f1f7ff;
   transform: translateY(-1px);
 }
 

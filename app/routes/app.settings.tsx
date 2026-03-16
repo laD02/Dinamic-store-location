@@ -1,23 +1,32 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData, useNavigate } from "react-router";
 import Index from "app/component/settings/Index";
 import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
 import { createNotification } from "app/notifications.server";
+import { getEffectiveLevel } from "../utils/plan.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
 
+  const level = await getEffectiveLevel(session.shop);
+  const isPlus = level === 'plus';
+
   const setting = await prisma.reportSetting.findUnique({
     where: { shop }
   });
 
-  return { setting };
+  return { setting, isPlus };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
+
+  const level = await getEffectiveLevel(session.shop);
+  if (level !== 'plus') {
+    return { ok: false, message: "Only available on Business Plus plan" };
+  }
   const formData = await request.formData();
 
   // Handle test notification action
@@ -81,11 +90,24 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Settings() {
-  const { setting } = useLoaderData<typeof loader>();
+  const { setting, isPlus } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
 
   return (
     <s-page heading="Store Locator">
-      <Index setting={setting} />
+      {!isPlus && (
+        <div style={{ marginBottom: '20px' }}>
+          <s-banner tone="warning" heading="Business Plus Feature">
+            <s-paragraph>
+              Store settings and notification reports are only available on the <b>Business Plus</b> plan.
+            </s-paragraph>
+            <s-button variant="tertiary" onClick={() => navigate('/app/plan')}>Upgrade Plan</s-button>
+          </s-banner>
+        </div>
+      )}
+      <div style={{ opacity: isPlus ? 1 : 0.5, pointerEvents: isPlus ? 'auto' : 'none' }}>
+        <Index setting={setting} />
+      </div>
 
       <s-stack alignItems="center" paddingBlock="large-200">
         <s-text>
