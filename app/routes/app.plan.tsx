@@ -4,11 +4,15 @@ import prisma from "app/db.server"
 import { authenticate } from "../shopify.server"
 import { useAppBridge } from "@shopify/app-bridge-react"
 import { useEffect } from "react"
+import { syncPlanWithShopify } from "../utils/plan.server"
 
 export async function loader({ request }: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
 
-    // Fetch active subscriptions from Shopify
+    // Sync and get the actual level from Shopify/DB
+    const actualLevel = await syncPlanWithShopify(admin, session.shop);
+
+    // Fetch active subscriptions again to get trial/period end info for the UI
     const response = await admin.graphql(
         `#graphql
         query {
@@ -26,55 +30,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const json = await response.json();
     const subscriptions = json.data?.appInstallation?.activeSubscriptions || [];
+    const activeSub = subscriptions.find((sub: any) => sub.status === 'ACTIVE');
+
+    const existingPlan = await prisma.plan.findUnique({ where: { shop: session.shop } });
 
     let currentLevel = 'basic';
     let expiresAt: Date | null = null;
     let trialInfo: { name: string, days: number } | null = null;
     let isGracePeriod = false;
-    let actualLevel = 'basic'; // The level they have access to
 
-    // 1. Check for an ACTIVE subscription from Shopify
-    const activeSub = subscriptions.find((sub: any) => sub.status === 'ACTIVE');
     if (activeSub) {
-        actualLevel = activeSub.name.toLowerCase();
-        currentLevel = actualLevel;
-        // If it's in trial, set expiresAt to the end of the period
+        currentLevel = activeSub.name.toLowerCase();
         if (activeSub.trialDays > 0) {
             expiresAt = new Date(activeSub.currentPeriodEnd);
             trialInfo = { name: activeSub.name.toLowerCase(), days: activeSub.trialDays };
-        } else {
-            expiresAt = null; // Recurring paid period
         }
-    }
-    // 2. If no ACTIVE sub, check our database for a grace period (expiresAt in the future)
-    else {
-        const dbPlan = await prisma.plan.findUnique({ where: { shop: session.shop } });
-        if (dbPlan && dbPlan.expiresAt && new Date(dbPlan.expiresAt) > new Date()) {
-            actualLevel = dbPlan.level;
-            currentLevel = 'basic'; // For UI logic, they have moved to basic (cancelled)
-            expiresAt = new Date(dbPlan.expiresAt);
-            isGracePeriod = true;
-        } else {
-            actualLevel = 'basic';
-            currentLevel = 'basic';
-            expiresAt = null;
-        }
-    }
-
-    // 3. Update local database ONLY if changed to avoid race conditions/redundant writes
-    const existingPlan = await prisma.plan.findUnique({ where: { shop: session.shop } });
-
-    // Convert to ISO string for comparison if not null
-    const newExpiresAt = expiresAt ? expiresAt.toISOString() : null;
-    const oldExpiresAt = existingPlan?.expiresAt ? existingPlan.expiresAt.toISOString() : null;
-
-    // Note: In DB, we store the 'actualLevel' (entitlement) to ensure feature gating works
-    if (!existingPlan || existingPlan.level !== actualLevel || oldExpiresAt !== newExpiresAt) {
-        await prisma.plan.upsert({
-            where: { shop: session.shop },
-            update: { level: actualLevel, expiresAt: expiresAt },
-            create: { shop: session.shop, level: actualLevel, expiresAt: expiresAt },
-        });
+    } else if (existingPlan && existingPlan.expiresAt && new Date(existingPlan.expiresAt) > new Date()) {
+        currentLevel = 'basic'; // They are back to basic conceptually if sub is cancelled
+        expiresAt = new Date(existingPlan.expiresAt);
+        isGracePeriod = true;
     }
 
     return { currentLevel, actualLevel, isGracePeriod, expiresAt: expiresAt?.toISOString() || null, trialInfo };

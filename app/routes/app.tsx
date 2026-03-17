@@ -7,12 +7,12 @@ import { authenticate } from "../shopify.server";
 import prisma from "app/db.server";
 import { useEffect, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { getEffectiveLevel } from "../utils/plan.server";
+import { syncPlanWithShopify } from "../utils/plan.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const level = await getEffectiveLevel(session.shop);
-  // eslint-disable-next-line no-undef
+  const { admin, session } = await authenticate.admin(request);
+  const level = await syncPlanWithShopify(admin, session.shop);
+  
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     level: level

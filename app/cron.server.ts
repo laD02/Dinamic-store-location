@@ -76,12 +76,10 @@ declare global {
 export function startCron() {
     // Clear existing interval to handle HMR (Hot Module Replacement)
     if (global.__cronInterval) {
-        console.log("[Cron] Clearing existing interval for HMR...");
+
         clearInterval(global.__cronInterval);
         global.__cronInterval = undefined;
     }
-
-    console.log("[Cron] Starting background jobs (runs every 1 minute)...");
 
     global.__cronInterval = setInterval(async () => {
         try {

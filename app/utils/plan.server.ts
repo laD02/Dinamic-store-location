@@ -29,3 +29,65 @@ export async function getEffectiveLevel(shop: string): Promise<string> {
 
     return plan.level;
 }
+
+/**
+ * Đồng bộ hóa thông tin gói cước từ Shopify GraphQL API vào Database.
+ * Thường dùng khi người dùng truy cập app lần đầu hoặc cài đặt lại.
+ */
+export async function syncPlanWithShopify(admin: any, shop: string) {
+    const response = await admin.graphql(
+        `#graphql
+        query {
+            appInstallation {
+                activeSubscriptions {
+                    id
+                    name
+                    status
+                    currentPeriodEnd
+                    trialDays
+                }
+            }
+        }`
+    );
+
+    const json = await response.json();
+    const subscriptions = json.data?.appInstallation?.activeSubscriptions || [];
+
+    let actualLevel = 'basic';
+    let expiresAt: Date | null = null;
+
+    const activeSub = subscriptions.find((sub: any) => sub.status === 'ACTIVE');
+    const existingPlan = await prisma.plan.findUnique({ where: { shop } });
+
+    if (activeSub) {
+        actualLevel = activeSub.name.toLowerCase();
+        // Nếu là trial, chúng ta lưu ngày hết hạn của kỳ hiện tại
+        if (activeSub.trialDays > 0) {
+            expiresAt = new Date(activeSub.currentPeriodEnd);
+        } else {
+            expiresAt = null; // Gói trả phí định kỳ, không để ngày hết hạn để getEffectiveLevel không hạ cấp nhầm
+        }
+    } else {
+        // Nếu không có sub ACTIVE, kiểm tra xem DB hiện tại có còn trong grace period không
+        if (existingPlan && existingPlan.expiresAt && new Date(existingPlan.expiresAt) > new Date()) {
+            actualLevel = existingPlan.level;
+            expiresAt = new Date(existingPlan.expiresAt);
+        } else {
+            actualLevel = 'basic';
+            expiresAt = null;
+        }
+    }
+
+    const newExpiresAt = expiresAt ? expiresAt.toISOString() : null;
+    const oldExpiresAt = existingPlan?.expiresAt ? existingPlan.expiresAt.toISOString() : null;
+
+    if (!existingPlan || existingPlan.level !== actualLevel || oldExpiresAt !== newExpiresAt) {
+        await prisma.plan.upsert({
+            where: { shop },
+            update: { level: actualLevel, expiresAt: expiresAt },
+            create: { shop, level: actualLevel, expiresAt: expiresAt },
+        });
+    }
+
+    return actualLevel;
+}
