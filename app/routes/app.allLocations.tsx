@@ -19,15 +19,16 @@ import LocationPageHeader from "app/component/allLocation/LocationPageHeader";
 import LocationTableFilters from "app/component/allLocation/LocationTableFilters";
 import LocationTableHeader from "app/component/allLocation/LocationTableHeader";
 import LocationTableRow from "app/component/allLocation/LocationTableRow";
+import BannerUpgrade from "app/component/BannerUpgrade";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session?.shop;
 
   const level = await getEffectiveLevel(shop);
-  const [connections] = await Promise.all([
-    prisma.shopConnection.findMany({ where: { targetShop: shop } })
-  ]);
+  const connections = level === 'plus'
+    ? await prisma.shopConnection.findMany({ where: { targetShop: shop } })
+    : [];
 
   const sourceShops = connections.map(c => c.sourceShop)
 
@@ -37,6 +38,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
         { shop },
         { shop: { in: sourceShops } }
       ]
+    },
+    select: {
+      id: true,
+      shop: true,
+      storeName: true,
+      region: true,
+      address: true,
+      city: true,
+      state: true,
+      code: true,
+      phone: true,
+      image: true,
+      url: true,
+      visibility: true,
+      createdAt: true,
+      updatedAt: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -485,6 +502,9 @@ export default function AllLocation() {
   return (
     <s-page heading="Store Locator">
       <LocationPageHeader windowWidth={windowWidth} level={level} />
+      {level === 'basic' && (
+        <BannerUpgrade currentLevel={level} requiredLevel="advanced" featureName="Import/Export CSV" />
+      )}
 
       <s-section padding="none">
         <s-table>

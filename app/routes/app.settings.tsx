@@ -4,6 +4,7 @@ import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
 import { createNotification } from "app/notifications.server";
 import { getEffectiveLevel } from "../utils/plan.server";
+import BannerUpgrade from "app/component/BannerUpgrade";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -12,11 +13,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const level = await getEffectiveLevel(session.shop);
   const isPlus = level === 'plus';
 
+  if (!isPlus) {
+    return { setting: null, isPlus, level };
+  }
+
   const setting = await prisma.reportSetting.findUnique({
     where: { shop }
   });
 
-  return { setting, isPlus };
+  return { setting, isPlus, level };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -90,20 +95,20 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Settings() {
-  const { setting, isPlus } = useLoaderData<typeof loader>();
+  const { setting, isPlus, level } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
     <s-page heading="Store Locator">
+      <s-stack direction="inline" justifyContent="space-between" alignItems="center" gap="small-400">
+        <s-stack direction="inline" alignItems="center" gap="small-400">
+          <s-icon type="settings"></s-icon>
+          <h2>Settings</h2>
+        </s-stack>
+      </s-stack>
+
       {!isPlus && (
-        <div style={{ marginBottom: '20px' }}>
-          <s-banner tone="warning" heading="Business Plus Feature">
-            <s-paragraph>
-              Store settings and notification reports are only available on the <b>Business Plus</b> plan.
-            </s-paragraph>
-            <s-button variant="tertiary" onClick={() => navigate('/app/plan')}>Upgrade Plan</s-button>
-          </s-banner>
-        </div>
+        <BannerUpgrade currentLevel={level} requiredLevel="plus" featureName="Settings and Notifications" />
       )}
       <div style={{ opacity: isPlus ? 1 : 0.5, pointerEvents: isPlus ? 'auto' : 'none' }}>
         <Index setting={setting} />

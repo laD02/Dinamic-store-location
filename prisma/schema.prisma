@@ -48,6 +48,8 @@ model Store {
   updatedAt  DateTime         @default(now()) @updatedAt
   dailyStats StoreDailyStat[]
   events     StoreEvent[]
+
+  @@index([shop])
 }
 
 model Style {
@@ -70,6 +72,8 @@ model Style {
   updatedAt       DateTime @default(now()) @updatedAt
   mapStyle        String?
   markerIcon      String?
+
+  @@index([shop])
 }
 
 model GeocodeCache {

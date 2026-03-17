@@ -37,7 +37,7 @@ export default function Analytic({
                 <s-stack gap="small" inlineSize="92%">
                     <s-heading>Store Interaction Analytics</s-heading>
                     {
-                        index === 5 &&
+                        index === 4 &&
                         <>
                             <s-paragraph>This dashboard provides a comprehensive overview of how customers interact with your store locations. Track store views, searches, direction requests, website visits, and phone clicks to understand customer intent and optimize your store performance.</s-paragraph>
                             <s-stack direction="inline">

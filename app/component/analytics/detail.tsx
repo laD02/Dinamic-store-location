@@ -12,6 +12,7 @@ import {
     ResponsiveContainer,
     Legend,
 } from "recharts";
+import BannerUpgrade from "app/component/BannerUpgrade";
 
 type Interval = "0" | "1" | "2";
 
@@ -309,7 +310,8 @@ function ConversionChart({
 }
 
 export default function Index() {
-    const { store } = useLoaderData() as { store: StoreData };
+    const { store, level } = useLoaderData() as { store: StoreData, level: string };
+    const isPlus = level === 'plus';
     const navigate = useNavigate();
     const [interval, setInterval] = useState<Interval>("0");
     const intervalLabel = interval === "0" ? "Last 30 Days" : interval === "1" ? "Last 12 Weeks" : "Last 12 Months";
@@ -442,7 +444,12 @@ export default function Index() {
                         <h2 style={{ margin: 0 }}>{store.store?.storeName ?? "Store"}</h2>
                     </s-stack>
 
-                    <s-button commandFor="detail-export-menu" icon="export">Export</s-button>
+                    <div style={{ opacity: isPlus ? 1 : 0.5, pointerEvents: isPlus ? 'auto' : 'none' }}>
+                        <s-button 
+                            commandFor="detail-export-menu" 
+                            icon="export"
+                        >Export</s-button>
+                    </div>
                     <s-menu id="detail-export-menu" accessibilityLabel="Export options">
                         <s-button onClick={() => {
                             const ok = exportDetailToPDF({
@@ -478,8 +485,14 @@ export default function Index() {
                     </s-menu>
                 </s-stack>
 
-                {/* Summary cards */}
-                <s-grid
+                {!isPlus && (
+                    <BannerUpgrade currentLevel={level} requiredLevel="plus" featureName="Analytics Detail" />
+                )}
+
+                <div style={{ opacity: isPlus ? 1 : 0.5, pointerEvents: isPlus ? 'auto' : 'none' }}>
+                    <s-stack inlineSize="100%" gap="base">
+                    {/* Summary cards */}
+                    <s-grid
                     gridTemplateColumns='@container (inline-size > 768px) 1fr 1fr 1fr 1fr 1fr, 1fr 1fr'
                     gap="base"
                 >
@@ -687,8 +700,9 @@ export default function Index() {
                         />
                     </s-section>
                 </div>
-
             </s-stack>
+        </div>
+    </s-stack>
         </s-query-container>
     );
 }

@@ -62,9 +62,9 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app/allLocations">All Locations</s-link>
         <s-link href="/app/map-designers">Map Designers</s-link>
-        {level === 'plus' && <s-link href="/app/integrations">Integrations</s-link>}
-        {level !== 'basic' && <s-link href="/app/analytics">Analytics</s-link>}
-        {level === 'plus' && <s-link href="/app/settings">Settings</s-link>}
+        <s-link href="/app/integrations">Integrations</s-link>
+        <s-link href="/app/analytics">Analytics</s-link>
+        <s-link href="/app/settings">Settings</s-link>
         <s-link href="/app/plan">Pricings</s-link>
         <div style={{ flex: 1 }} />
       </s-app-nav>

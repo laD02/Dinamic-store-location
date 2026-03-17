@@ -1,3 +1,4 @@
+import { getEffectiveLevel } from "../utils/plan.server";
 import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import prisma from "app/db.server";
@@ -9,8 +10,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const url = new URL(request.url);
     const intent = url.searchParams.get("intent");
 
-    const plan = await prisma.plan.findUnique({ where: { shop } });
-    if (!plan || plan.level !== 'plus') {
+    const level = await getEffectiveLevel(shop);
+    if (level !== 'plus') {
         if (intent === "unreadCount") return { unreadCount: 0 };
         return { notifications: [], unreadCount: 0 };
     }
@@ -52,8 +53,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const formData = await request.formData();
     const intent = formData.get("intent");
 
-    const plan = await prisma.plan.findUnique({ where: { shop } });
-    if (!plan || plan.level !== 'plus') {
+    const level = await getEffectiveLevel(shop);
+    if (level !== 'plus') {
         return { ok: false, message: "Only available on Business Plus plan" };
     }
 

@@ -1,5 +1,6 @@
 import prisma from "app/db.server";
 import { authenticate } from "../shopify.server";
+import { getEffectiveLevel } from "../utils/plan.server";
 import { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -19,12 +20,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const connections = await prisma.shopConnection.findMany({
-    where: { targetShop: shop },
-    select: { sourceShop: true },
-  });
+  const level = await getEffectiveLevel(shop);
+  const isPlus = level === 'plus';
 
-  const sourceShops = connections.map((c) => c.sourceShop);
+  let sourceShops: string[] = [];
+  if (isPlus) {
+    const connections = await prisma.shopConnection.findMany({
+      where: { targetShop: shop },
+      select: { sourceShop: true },
+    });
+    sourceShops = connections.map((c) => c.sourceShop);
+  }
 
   const stores = await prisma.store.findMany({
     where: {
@@ -41,11 +47,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     orderBy: { createdAt: "desc" },
   });
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   // Calculate total activity for each store
   const stats = await prisma.storeDailyStat.groupBy({
     by: ['storeId'],
     where: {
-      storeId: { in: stores.map(s => s.id) }
+      storeId: { in: stores.map(s => s.id) },
+      date: { gte: thirtyDaysAgo }
     },
     _sum: {
       uniqueSessions: true,
@@ -203,6 +213,13 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const body = await request.json();
     const { eventType, storeId, storeIds, searchKeyword, device, sessionId } = body;
+
+    const level = await getEffectiveLevel(shop);
+    if (level === 'basic') {
+      return new Response(JSON.stringify({ success: true, masked: true }), {
+        headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+      });
+    }
 
     if (!VALID_EVENTS.includes(eventType)) {
       return new Response(JSON.stringify({ error: "Invalid event" }), { status: 400 });

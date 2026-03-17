@@ -108,6 +108,14 @@ export default function Notification({ setting }: { setting: any }) {
     const isSaving = fetcher.state === "submitting" || fetcher.state === "loading";
     const isTesting = testFetcher.state === "submitting" || testFetcher.state === "loading";
 
+    const timeOptions = useMemo(() => {
+        return Array.from({ length: 48 }, (_, i) => {
+            const hours = Math.floor(i / 2).toString().padStart(2, '0');
+            const minutes = (i % 2 === 0 ? '00' : '30');
+            return `${hours}:${minutes}`;
+        });
+    }, []);
+
     return (
         <>
             <SaveBar id="email-settings-save-bar">
@@ -118,12 +126,6 @@ export default function Notification({ setting }: { setting: any }) {
                     Discard
                 </button>
             </SaveBar>
-            <s-stack direction="inline" justifyContent="space-between" alignItems="center" gap="small-400">
-                <s-stack direction="inline" alignItems="center" gap="small-400">
-                    <s-icon type="settings"></s-icon>
-                    <h2>Settings</h2>
-                </s-stack>
-            </s-stack>
             <s-stack gap="base">
                 <s-section>
                     <s-stack gap="base">
@@ -153,11 +155,15 @@ export default function Notification({ setting }: { setting: any }) {
                                                 />
                                                 {inAppDaily && (
                                                     <div style={{ paddingInlineStart: 'var(--s-spacing-large-100)', paddingBlockStart: 'var(--s-spacing-small-200)' }}>
-                                                        <s-text-field
-                                                            label="Delivery Time (HH:mm)"
+                                                        <s-select
+                                                            label="Delivery Time"
                                                             value={dailyTime}
-                                                            onInput={(e: any) => setDailyTime(e.target.value)}
-                                                        />
+                                                            onChange={(e: any) => setDailyTime(e.currentTarget.value)}
+                                                        >
+                                                            {timeOptions.map(time => (
+                                                                <s-option key={time} value={time}>{time}</s-option>
+                                                            ))}
+                                                        </s-select>
                                                     </div>
                                                 )}
                                             </s-stack>
@@ -187,11 +193,15 @@ export default function Notification({ setting }: { setting: any }) {
                                                                 <s-option value="Saturday">Saturday</s-option>
                                                                 <s-option value="Sunday">Sunday</s-option>
                                                             </s-select>
-                                                            <s-text-field
-                                                                label="Delivery Time (HH:mm)"
+                                                            <s-select
+                                                                label="Delivery Time"
                                                                 value={weeklyTime}
-                                                                onInput={(e: any) => setWeeklyTime(e.target.value)}
-                                                            />
+                                                                onChange={(e: any) => setWeeklyTime(e.currentTarget.value)}
+                                                            >
+                                                                {timeOptions.map(time => (
+                                                                    <s-option key={time} value={time}>{time}</s-option>
+                                                                ))}
+                                                            </s-select>
                                                         </s-stack>
                                                     </div>
                                                 )}
@@ -218,11 +228,15 @@ export default function Notification({ setting }: { setting: any }) {
                                                                     <s-option key={day} value={day.toString()}>{day}</s-option>
                                                                 ))}
                                                             </s-select>
-                                                            <s-text-field
-                                                                label="Delivery Time (HH:mm)"
+                                                            <s-select
+                                                                label="Delivery Time"
                                                                 value={monthlyTime}
-                                                                onInput={(e: any) => setMonthlyTime(e.target.value)}
-                                                            />
+                                                                onChange={(e: any) => setMonthlyTime(e.currentTarget.value)}
+                                                            >
+                                                                {timeOptions.map(time => (
+                                                                    <s-option key={time} value={time}>{time}</s-option>
+                                                                ))}
+                                                            </s-select>
                                                         </s-stack>
                                                     </div>
                                                 )}

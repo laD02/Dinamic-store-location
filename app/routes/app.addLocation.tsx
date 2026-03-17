@@ -1,4 +1,5 @@
 import { ActionFunctionArgs, Form, LoaderFunctionArgs, useFetcher, useLoaderData, useNavigate } from "react-router";
+import BannerUpgrade from "app/component/BannerUpgrade";
 import { useEffect, useRef, useState } from "react";
 import prisma from "app/db.server";
 import { SaveBar, useAppBridge } from '@shopify/app-bridge-react';
@@ -607,6 +608,13 @@ export default function AddLocation() {
         });
     };
 
+    // Auto-reset when limit reached
+    useEffect(() => {
+        if (limitReached && isInitialized) {
+            handleDiscard();
+        }
+    }, [limitReached, isInitialized]);
+
     return (
         <s-page heading="Dynamic Store Locator">
             <SaveBar id="location-save-bar">
@@ -614,7 +622,7 @@ export default function AddLocation() {
                     variant="primary"
                     onClick={() => handleSubmit()}
                     loading={isSaving ? "true" : undefined}
-                    disabled={limitReached}
+                    disabled={limitReached || isSaving}
                 >
                     Save
                 </button>
@@ -633,100 +641,95 @@ export default function AddLocation() {
 
             <Form method="post" ref={formRef}>
                 {(limitReached || fetcher.data?.errors?.limit) && (
-                    <div style={{ marginBottom: '20px' }}>
-                        <s-banner tone="warning" heading="Plan Limit Reached">
-                            <s-paragraph>
-                                {fetcher.data?.errors?.limit || `Your current plan (${currentLevel.toUpperCase()}) only allows up to ${currentLimit === 1000000 ? 'unlimited' : currentLimit} locations. Please upgrade your plan to add more.`}
-                            </s-paragraph>
-                            <s-button variant="tertiary" onClick={() => navigate('/app/plan')}>Upgrade Plan</s-button>
-                        </s-banner>
-                    </div>
+                    <BannerUpgrade currentLevel={currentLevel} requiredLevel={currentLevel === 'basic' ? 'advanced' : 'plus'} featureName="Add Location" />
                 )}
-                {/* Hidden inputs for hours */}
-                {days.map(day => (
-                    <div key={day}>
-                        <input type="hidden" name={`${day}-open`} value={dayStatus[day].valueOpen} />
-                        <input type="hidden" name={`${day}-close`} value={dayStatus[day].valueClose} />
-                    </div>
-                ))}
-                <input type="hidden" name="lat" value={coordinates.lat} />
-                <input type="hidden" name="lon" value={coordinates.lon} />
-                <input type="hidden" name="tags" value={JSON.stringify(tags.filter(t => t.trim() !== ""))} />
+                <div style={{ opacity: limitReached ? 0.5 : 1, pointerEvents: limitReached ? 'none' : 'auto' }}>
+                    {/* Hidden inputs for hours */}
+                    {days.map(day => (
+                        <div key={day}>
+                            <input type="hidden" name={`${day}-open`} value={dayStatus[day].valueOpen} />
+                            <input type="hidden" name={`${day}-close`} value={dayStatus[day].valueClose} />
+                        </div>
+                    ))}
+                    <input type="hidden" name="lat" value={coordinates.lat} />
+                    <input type="hidden" name="lon" value={coordinates.lon} />
+                    <input type="hidden" name="tags" value={JSON.stringify(tags.filter(t => t.trim() !== ""))} />
 
-                <s-query-container>
-                    <s-grid
-                        gridTemplateColumns="@container (inline-size > 768px) 2fr 1fr, 1fr"
-                        gap="base"
-                    >
-                        <s-grid-item>
-                            <s-stack>
-                                <input type="hidden" name="visibility" value={visibility} />
-                                <s-stack gap="base">
-                                    <LocationInfoSection
-                                        googleMapsApiKey={googleMapsApiKey}
-                                        fieldErrors={fieldErrors}
-                                        phoneError={phoneError}
-                                        websiteError={websiteError}
-                                        formRef={formRef}
-                                        previewData={previewData}
-                                        onPreviewChange={(data) => setPreviewData(prev => ({ ...prev, ...data }))}
-                                        onClearFieldError={(field) => setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next; })}
-                                        onPhoneErrorChange={setPhoneError}
-                                        onWebsiteErrorChange={setWebsiteError}
-                                        onAddressValidChange={setIsAddressValid}
-                                        onCoordinatesChange={(lat, lon) => setCoordinates({ lat, lon })}
-                                        checkDirty={checkDirty}
-                                    />
+                    <s-query-container>
+                        <s-grid
+                            gridTemplateColumns="@container (inline-size > 768px) 2fr 1fr, 1fr"
+                            gap="base"
+                        >
+                            <s-grid-item>
+                                <s-stack>
+                                    <input type="hidden" name="visibility" value={visibility} />
+                                    <s-stack gap="base">
+                                        <LocationInfoSection
+                                            googleMapsApiKey={googleMapsApiKey}
+                                            fieldErrors={fieldErrors}
+                                            phoneError={phoneError}
+                                            websiteError={websiteError}
+                                            formRef={formRef}
+                                            previewData={previewData}
+                                            onPreviewChange={(data) => setPreviewData(prev => ({ ...prev, ...data }))}
+                                            onClearFieldError={(field) => setFieldErrors(prev => { const next = { ...prev }; delete next[field]; return next; })}
+                                            onPhoneErrorChange={setPhoneError}
+                                            onWebsiteErrorChange={setWebsiteError}
+                                            onAddressValidChange={setIsAddressValid}
+                                            onCoordinatesChange={(lat, lon) => setCoordinates({ lat, lon })}
+                                            checkDirty={checkDirty}
+                                        />
 
-                                    <HoursOfOperationSection
-                                        hourSchedules={hourSchedules}
-                                        hourErrors={hourErrors}
-                                        onAdd={handleAddHourSchedule}
-                                        onRemove={handleRemoveHourSchedule}
-                                        onUpdate={handleUpdateHourSchedule}
-                                        onClearError={(index) => setHourErrors(prev => { const next = { ...prev }; delete next[index]; return next; })}
-                                    />
-                                    <SocialMediaSection
-                                        countSocial={countSocial}
-                                        socialErrors={socialErrors}
-                                        socialResetKey={socialResetKey}
-                                        onAdd={handleAdd}
-                                        onRemove={handleRemove}
-                                        onChange={(id, field, value) => {
-                                            setCountSocial(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
-                                        }}
-                                        onClearError={(id) => setSocialErrors(prev => { const next = { ...prev }; delete next[id]; return next; })}
-                                        onValidatePlatform={validateSocialMedia}
-                                        setSocialErrors={setSocialErrors}
-                                    />
-                                    <TagsSection
-                                        tags={tags}
-                                        onTagsChange={setTags}
-                                        checkDirty={checkDirty}
-                                    />
+                                        <HoursOfOperationSection
+                                            hourSchedules={hourSchedules}
+                                            hourErrors={hourErrors}
+                                            onAdd={handleAddHourSchedule}
+                                            onRemove={handleRemoveHourSchedule}
+                                            onUpdate={handleUpdateHourSchedule}
+                                            onClearError={(index) => setHourErrors(prev => { const next = { ...prev }; delete next[index]; return next; })}
+                                        />
+                                        <SocialMediaSection
+                                            countSocial={countSocial}
+                                            socialErrors={socialErrors}
+                                            socialResetKey={socialResetKey}
+                                            onAdd={handleAdd}
+                                            onRemove={handleRemove}
+                                            onChange={(id, field, value) => {
+                                                setCountSocial(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+                                            }}
+                                            onClearError={(id) => setSocialErrors(prev => { const next = { ...prev }; delete next[id]; return next; })}
+                                            onValidatePlatform={validateSocialMedia}
+                                            setSocialErrors={setSocialErrors}
+                                        />
+                                        <TagsSection
+                                            tags={tags}
+                                            onTagsChange={setTags}
+                                            checkDirty={checkDirty}
+                                        />
+                                    </s-stack>
                                 </s-stack>
-                            </s-stack>
-                        </s-grid-item>
+                            </s-grid-item>
 
-                        <s-grid-item>
-                            <LocationSidebar
-                                visibility={visibility}
-                                onVisibilityChange={setVisibility}
-                                preview={preview}
-                                imageBase64={imageBase64}
-                                onImageChange={(base64, previewUrl) => {
-                                    setImageBase64(base64);
-                                    setPreview(previewUrl);
-                                }}
-                                previewData={previewData}
-                                countSocial={countSocial}
-                                dayStatus={dayStatus}
-                                days={days}
-                                tags={tags}
-                            />
-                        </s-grid-item>
-                    </s-grid>
-                </s-query-container>
+                            <s-grid-item>
+                                <LocationSidebar
+                                    visibility={visibility}
+                                    onVisibilityChange={setVisibility}
+                                    preview={preview}
+                                    imageBase64={imageBase64}
+                                    onImageChange={(base64, previewUrl) => {
+                                        setImageBase64(base64);
+                                        setPreview(previewUrl);
+                                    }}
+                                    previewData={previewData}
+                                    countSocial={countSocial}
+                                    dayStatus={dayStatus}
+                                    days={days}
+                                    tags={tags}
+                                />
+                            </s-grid-item>
+                        </s-grid>
+                    </s-query-container>
+                </div>
             </Form>
 
             <s-stack alignItems="center" paddingBlock="large">

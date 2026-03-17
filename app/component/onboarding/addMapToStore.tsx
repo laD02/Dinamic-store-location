@@ -61,7 +61,7 @@ export default function AddMapToStore({
                 <s-stack gap="small" inlineSize="92%">
                     <s-heading>Install the Map Using App Blocks</s-heading>
                     {
-                        index === 6 &&
+                        index === 7 &&
                         <>
                             <s-paragraph>Enable the Store Locator core in your theme by clicking “Open Shopify CMS” and “Save”.</s-paragraph>
                             <s-stack direction="inline" gap="base">

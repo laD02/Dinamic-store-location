@@ -1,5 +1,5 @@
 
-export default function Update({
+export default function Setting({
     storeHandle,
     check,
     handleCheck,
@@ -10,11 +10,8 @@ export default function Update({
     handleCheck: (value: boolean) => void
     index: number
 }) {
-    // const fetcher = useFetcher()
-
     const handleToggle = (e: any) => {
         e.stopPropagation()
-
         handleCheck(!check)
     }
 
@@ -26,8 +23,8 @@ export default function Update({
                         {
                             check ?
                                 <>
-                                    <s-icon type="check-circle-filled" interestFor="update" />
-                                    <s-tooltip id="update" >Done</s-tooltip>
+                                    <s-icon type="check-circle-filled" interestFor="setting-done" />
+                                    <s-tooltip id="setting-done">Done</s-tooltip>
                                 </>
                                 :
                                 <s-icon type="circle-dashed" />
@@ -35,14 +32,14 @@ export default function Update({
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-heading>Update Individual Locations</s-heading>
+                    <s-heading>Configure Notification Settings</s-heading>
                     {
-                        index === 3 &&
+                        index === 5 &&
                         <>
-                            <s-paragraph>Click on individual locations to add or update imported or synced data, ensuring your store locator remains accurate. You can also preview how each location will appear on your live site.</s-paragraph>
+                            <s-paragraph>Stay updated with your store's performance. Configure how and when you receive automated analytics reports in your notification center.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/allLocations`}>
-                                    <s-button variant="primary">View All Locations</s-button>
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/settings`}>
+                                    <s-button variant="primary">Go to Settings</s-button>
                                 </s-link>
                             </s-stack>
                         </>

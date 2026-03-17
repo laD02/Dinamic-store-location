@@ -1,9 +1,15 @@
 import Index from "app/component/analytics/detail";
 import prisma from "app/db.server";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { authenticate } from "app/shopify.server";
+import { getEffectiveLevel } from "app/utils/plan.server";
+import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
     const { id } = params;
+
+    const level = await getEffectiveLevel(shop);
 
     // Lấy thông tin store
     const storeInfo = await prisma.store.findUnique({
@@ -18,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
 
     // Tổng hợp tổng (dùng unique session fields)
-    const totals = dailyStats.reduce((acc, stat) => ({
+    let totals = dailyStats.reduce((acc, stat) => ({
         uniqueViewSessions: acc.uniqueViewSessions + stat.uniqueViewSessions,
         uniqueSearchSessions: acc.uniqueSearchSessions + stat.uniqueSearchSessions,
         uniqueCallSessions: acc.uniqueCallSessions + stat.uniqueCallSessions,
@@ -26,23 +32,43 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         uniqueWebsiteSessions: acc.uniqueWebsiteSessions + stat.uniqueWebsiteSessions,
     }), { uniqueViewSessions: 0, uniqueSearchSessions: 0, uniqueCallSessions: 0, uniqueDirectionSessions: 0, uniqueWebsiteSessions: 0 });
 
+    let finalDailyStats = dailyStats;
+    if (level !== 'plus') {
+        finalDailyStats = dailyStats.map(stat => ({
+            ...stat,
+            uniqueViewSessions: 0,
+            uniqueSearchSessions: 0,
+            uniqueCallSessions: 0,
+            uniqueDirectionSessions: 0,
+            uniqueWebsiteSessions: 0,
+        }));
+        totals = {
+            uniqueViewSessions: 0,
+            uniqueSearchSessions: 0,
+            uniqueCallSessions: 0,
+            uniqueDirectionSessions: 0,
+            uniqueWebsiteSessions: 0,
+        };
+    }
+
     return {
         store: {
             store: storeInfo,
-            dailyStats,
+            dailyStats: finalDailyStats,
             ...totals,
-        }
+        },
+        level
     }
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-
-    return {
-
-    }
+    return {}
 }
 
 export default function AnalyticDetail() {
+    const { level } = useLoaderData<typeof loader>();
+    const isPlus = level === 'plus';
+
     return (
         <s-page heading="Store Locator">
             <Index />

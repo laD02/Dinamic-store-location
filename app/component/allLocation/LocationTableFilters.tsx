@@ -42,7 +42,7 @@ export default function LocationTableFilters({
               <s-button commandFor="customer-menu" icon="menu-horizontal"></s-button>
               <s-popover id="customer-menu">
                 <s-stack direction="block">
-                  {level !== 'basic' && <s-button variant="tertiary" onClick={onExport}>Export CSV</s-button>}
+                  <s-button variant="tertiary" onClick={onExport} disabled={level === 'basic'}>Export CSV</s-button>
                   <s-button variant="tertiary" commandFor="deleteTrash-modal" tone="critical">Delete all stores</s-button>
                 </s-stack>
               </s-popover>

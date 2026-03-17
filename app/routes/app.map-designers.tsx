@@ -6,6 +6,7 @@ import prisma from "app/db.server";
 import 'leaflet/dist/leaflet.css';
 import MapGoogle from "../component/map";
 import MapDesigner from "../component/mapDesigner";
+import BannerUpgrade from "app/component/BannerUpgrade";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { deleteImageFromCloudinary, uploadImageToCloudinary } from "app/utils/upload.server";
@@ -115,42 +116,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return { ok: true };
 }
-const previewStore = {
-  id: "mock-apple-park",
-  storeName: "Apple Park",
-  address: "1 Apple Park Way, Cupertino, CA 95014, USA",
-  city: "Cupertino",
-  state: "CA",
-  code: "95014",
-  phone: "+1 408-996-1010",
-  lat: 37.3346,
-  lng: -122.0090,
-  image: null,
-  time: {
-    mondayOpen: "09:00",
-    mondayClose: "17:00",
-    tuesdayOpen: "09:00",
-    tuesdayClose: "17:00",
-    wednesdayOpen: "09:00",
-    wednesdayClose: "17:00",
-    thursdayOpen: "09:00",
-    thursdayClose: "17:00",
-    fridayOpen: "09:00",
-    fridayClose: "17:00",
-    saturdayOpen: "10:00",
-    saturdayClose: "16:00",
-    sundayOpen: "close",
-    sundayClose: "close",
-  },
-};
 
 export default function MapDesigners() {
   const fetcher = useFetcher()
   const navigate = useNavigate();
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<number>(0);
   const { stores, config, level } = useLoaderData<typeof loader>();
-  const [searchAddress, setSearchAddress] = useState<string>("");
   const shopify = useAppBridge()
   const [leftWidth, setLeftWidth] = useState<number>(49);
   const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -301,15 +272,6 @@ export default function MapDesigners() {
     };
   }, [isResizing, isMobile]);
 
-  const search = useMemo(() => {
-    return stores.filter(stores => {
-      const matchesSearch =
-        stores.address.toLowerCase().includes(searchAddress.toLowerCase()) ||
-        stores.code.toLowerCase().includes(searchAddress.toLowerCase())
-
-      return matchesSearch
-    })
-  }, [stores, searchAddress])
 
   const handleSave = () => {
     setClosePickerTrigger(prev => !prev);
@@ -365,14 +327,7 @@ export default function MapDesigners() {
       </s-stack>
 
       {level === 'basic' && activeTab === 2 && (
-        <div style={{ marginBottom: '20px', marginTop: '10px' }}>
-          <s-banner tone="warning" heading="Unlock Premium Features">
-            <s-paragraph>
-              Upgrade your plan to unlock <b>Premium Markers</b>, <b>Custom Icons</b>, and <b>Advanced Map Themes</b>.
-            </s-paragraph>
-            <s-button variant="tertiary" onClick={() => navigate('/app/plan')}>Upgrade Plan</s-button>
-          </s-banner>
-        </div>
+        <BannerUpgrade currentLevel={level} requiredLevel="advanced" featureName="Premium Markers, Custom Icons, and Advanced Map Themes" />
       )}
 
       <div
@@ -527,8 +482,6 @@ export default function MapDesigners() {
             <MapGoogle
               key={isMobile ? 'mobile-map' : 'desktop-map'}
               stores={stores ?? []}
-              selectedIndex={selectedIndex}
-              searchAddress={searchAddress}
               popupStyle={popup}
               mapStyle={branding.mapStyle}
               markerIcon={branding.markerIcon}

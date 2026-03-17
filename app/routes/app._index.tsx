@@ -5,10 +5,11 @@ import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData, useFetcher } fro
 import { authenticate } from 'app/shopify.server'
 import prisma from 'app/db.server'
 import Review from 'app/component/onboarding/review'
-import Update from 'app/component/onboarding/update'
 import { hasStoreLocatorEmbedEnabled } from 'app/utils/embedStore'
 import Integrations from 'app/component/onboarding/integrations'
 import Analytic from 'app/component/onboarding/analytic'
+import Setting from 'app/component/onboarding/setting'
+import Pricing from 'app/component/onboarding/pricing'
 import { getEffectiveLevel } from 'app/utils/plan.server'
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -131,10 +132,11 @@ export async function action({ request }: ActionFunctionArgs) {
         saveGoogleMap: "googleMap",
         saveDesignMap: "designMap",
         saveReview: "review",
-        saveUpdate: "update",
         saveIntegrations: "integrations",
         saveAddMap: "addMap",
         saveAnalytic: "analytic",
+        saveSetting: "setting",
+        savePricing: "pricing",
     }
 
     const step = STEP_MAP[actionType]
@@ -196,9 +198,10 @@ export default function Onboarding() {
 
     const designFetcher = useFetcher()
     const reviewFetcher = useFetcher()
-    const updateFetcher = useFetcher()
     const integrationsFetcher = useFetcher()
     const analyticFetcher = useFetcher()
+    const settingFetcher = useFetcher()
+    const pricingFetcher = useFetcher()
     const addMapFetcher = useFetcher()
 
     function getOptimisticState(
@@ -218,18 +221,20 @@ export default function Onboarding() {
 
     const design = getOptimisticState("designMap", designFetcher, false)
     const review = getOptimisticState("review", reviewFetcher, false)
-    const update = getOptimisticState("update", updateFetcher, false)
     const integrations = getOptimisticState("integrations", integrationsFetcher, false)
     const analytic = getOptimisticState("analytic", analyticFetcher, false)
+    const setting = getOptimisticState("setting", settingFetcher, false)
+    const pricing = getOptimisticState("pricing", pricingFetcher, false)
     const addMap = getOptimisticState("addMap", addMapFetcher, false)
 
     const handleCheck = (step: string, check: boolean) => {
         const fetcherMap: Record<string, any> = {
             designMap: designFetcher,
             review: reviewFetcher,
-            update: updateFetcher,
             integrations: integrationsFetcher,
             analytic: analyticFetcher,
+            setting: settingFetcher,
+            pricing: pricingFetcher,
             addMap: addMapFetcher
         }
         const fetcher = fetcherMap[step]
@@ -243,9 +248,9 @@ export default function Onboarding() {
 
     useEffect(() => {
         setCount(
-            [design, review, update, integrations, analytic, addMap].filter(Boolean).length
+            [design, review, integrations, analytic, setting, pricing, addMap].filter(Boolean).length
         )
-    }, [design, review, update, integrations, analytic, addMap])
+    }, [design, review, integrations, analytic, setting, pricing, addMap])
 
     const hasAddMapStep =
         Array.isArray(onBoard?.onBoarding) &&
@@ -304,12 +309,12 @@ export default function Onboarding() {
                             </s-stack>
                             <s-stack gap='small'>
                                 <s-box>
-                                    <s-text>{count} of 6 tasks completed </s-text>
+                                    <s-text>{count} of 7 tasks completed </s-text>
                                 </s-box>
                                 <div style={{ width: "100%", background: "#E1E3E5", borderRadius: 4 }}>
                                     <div
                                         style={{
-                                            width: `${(count / 6) * 100}%`,
+                                            width: `${(count / 7) * 100}%`,
                                             height: 8,
                                             background: "rgb(145, 208, 255)",
                                             borderRadius: 4,
@@ -320,14 +325,6 @@ export default function Onboarding() {
                             </s-stack>
 
                             <s-stack gap='small'>
-                                {/* <s-clickable onClick={() => setIndex(0)} background={index === 0 ? 'subdued' : 'base'} borderRadius='large'>
-                                    <GoogleApi
-                                        storeHandle={storeHandle}
-                                        check={googleMap}
-                                        handleCheck={setGoogleMap}
-                                        index={index}
-                                    />
-                                </s-clickable> */}
 
                                 <s-clickable onClick={() => setIndex(1)} background={index === 1 ? 'subdued' : 'base'} borderRadius='large'>
                                     <DesignMap
@@ -348,15 +345,6 @@ export default function Onboarding() {
                                 </s-clickable>
 
                                 <s-clickable onClick={() => setIndex(3)} background={index === 3 ? 'subdued' : 'base'} borderRadius='large'>
-                                    <Update
-                                        storeHandle={storeHandle}
-                                        check={update}
-                                        handleCheck={(val) => handleCheck("update", val)}
-                                        index={index}
-                                    />
-                                </s-clickable>
-
-                                <s-clickable onClick={() => setIndex(4)} background={index === 4 ? 'subdued' : 'base'} borderRadius='large'>
                                     <Integrations
                                         storeHandle={storeHandle}
                                         check={integrations}
@@ -365,7 +353,7 @@ export default function Onboarding() {
                                     />
                                 </s-clickable>
 
-                                <s-clickable onClick={() => setIndex(5)} background={index === 5 ? 'subdued' : 'base'} borderRadius='large'>
+                                <s-clickable onClick={() => setIndex(4)} background={index === 4 ? 'subdued' : 'base'} borderRadius='large'>
                                     <Analytic
                                         storeHandle={storeHandle}
                                         check={analytic}
@@ -374,7 +362,25 @@ export default function Onboarding() {
                                     />
                                 </s-clickable>
 
+                                <s-clickable onClick={() => setIndex(5)} background={index === 5 ? 'subdued' : 'base'} borderRadius='large'>
+                                    <Setting
+                                        storeHandle={storeHandle}
+                                        check={setting}
+                                        handleCheck={(val) => handleCheck("setting", val)}
+                                        index={index}
+                                    />
+                                </s-clickable>
+
                                 <s-clickable onClick={() => setIndex(6)} background={index === 6 ? 'subdued' : 'base'} borderRadius='large'>
+                                    <Pricing
+                                        storeHandle={storeHandle}
+                                        check={pricing}
+                                        handleCheck={(val) => handleCheck("pricing", val)}
+                                        index={index}
+                                    />
+                                </s-clickable>
+
+                                <s-clickable onClick={() => setIndex(7)} background={index === 7 ? 'subdued' : 'base'} borderRadius='large'>
                                     <AddMapToStore
                                         storeHandle={storeHandle}
                                         themeId={themeId}

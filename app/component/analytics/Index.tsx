@@ -465,17 +465,6 @@ export default function Index() {
 
     return (
         <s-stack inlineSize="100%">
-            <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                <s-stack direction="inline" alignItems="center" gap="small-400">
-                    <s-icon type="chart-vertical"></s-icon>
-                    <h2>Analytics</h2>
-                </s-stack>
-                <s-stack direction="inline" gap="small-400" alignItems="center">
-                    <s-button commandFor="export-menu" icon="export">Export</s-button>
-                    {level === 'plus' && <NotificationCenter />}
-                </s-stack>
-            </s-stack>
-
             <s-menu id="export-menu" accessibilityLabel="Customer actions">
                 <s-button onClick={() => {
                     const ok = exportAnalyticsToPDF(filteredStores, {

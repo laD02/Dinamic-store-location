@@ -402,6 +402,8 @@
 .store-item-header-bottom {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .store-item-name {
@@ -486,6 +488,7 @@
   position: relative;
   overflow: hidden;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 /* Shine overlay effect */
@@ -1166,7 +1169,6 @@ p {
   padding: 2px 8px;
   border-radius: 6px;
   margin-left: auto;
-  flex-shrink: 0;
 }
 
 /* Toast Notification (Relocated from JS) */

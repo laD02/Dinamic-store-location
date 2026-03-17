@@ -15,19 +15,20 @@ export default function LocationPageHeader({ windowWidth, level }: LocationPageH
       </s-stack>
       {windowWidth > 768 ? (
         <s-stack direction="inline" gap="base">
-          {level !== 'basic' && <Import />}
+          <Import level={level} />
           <Link to="/app/addLocation">
             <s-button variant="primary" icon="plus-circle">Add Location</s-button>
           </Link>
         </s-stack>
       ) : (
         <s-stack direction="inline" justifyContent="end" gap="base">
-          {level !== 'basic' && <Import />}
+          <Import level={level} />
           <Link to="/app/addLocation">
             <s-button variant="primary" icon="plus-circle"></s-button>
           </Link>
         </s-stack>
       )}
+
     </s-stack>
   );
 }

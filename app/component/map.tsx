@@ -2,7 +2,6 @@ import { GoogleMap, OverlayView, useJsApiLoader, MarkerF } from "@react-google-m
 import { useState, useEffect, useRef, useMemo } from "react";
 import styles from "../css/mapDesigner.module.css"
 import { useLoaderData } from "react-router";
-import { getOpenStatus } from "app/utils/timeUtils";
 
 type Store = {
   id: string;
@@ -37,8 +36,6 @@ interface PopupStyle {
   cornerRadius: number
 }
 
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 // Mock store for preview
 const previewStore: Store = {
   id: "mock-apple-park",
@@ -56,15 +53,11 @@ const previewStore: Store = {
 
 export default function MapGoogle({
   stores,
-  selectedIndex,
-  searchAddress,
   popupStyle,
   mapStyle,
   markerIcon
 }: {
   stores: Store[];
-  selectedIndex: number | null;
-  searchAddress: string;
   popupStyle: PopupStyle;
   mapStyle?: string;
   markerIcon?: string | null;
@@ -147,35 +140,13 @@ export default function MapGoogle({
     }
   }, [mapLoaded, currentStores]);
 
-  // Khi click store trong danh sách → pan tới store đó
   useEffect(() => {
-    if (
-      selectedIndex !== null &&
-      currentStores[selectedIndex]?.lat != null &&
-      currentStores[selectedIndex]?.lng != null &&
-      mapRef.current
-    ) {
-      const s = currentStores[selectedIndex];
-      panToStoreWithOffset(s.lat!, s.lng!, 16);
-      setSelected(s);
+    if (mapLoaded && currentStores[0]?.lat != null && currentStores[0]?.lng != null) {
+      const firstStore = currentStores[0];
+      panToStoreWithOffset(firstStore.lat!, firstStore.lng!, 16);
+      setSelected(firstStore);
     }
-  }, [selectedIndex, currentStores]);
-
-  useEffect(() => {
-    if (!mapLoaded || !searchAddress.trim()) return;
-
-    const geocoder = new google.maps.Geocoder();
-
-    geocoder.geocode({ address: searchAddress }, (results, status) => {
-      if (status === "OK" && results && results[0]) {
-        const loc = results[0].geometry.location;
-        const newCenter = { lat: loc.lat(), lng: loc.lng() };
-        mapRef.current?.panTo(newCenter);
-        mapRef.current?.setZoom(14);
-        setCenter(newCenter);
-      }
-    });
-  }, [searchAddress, mapLoaded]);
+  }, [mapLoaded, currentStores]);
 
 
 
@@ -247,32 +218,9 @@ export default function MapGoogle({
                   <i className="fa-solid fa-clock" style={{ color: popupStyle.iconColor }}></i>
                   <table>
                     <tbody>
-                      {days.map(day => {
-                        const time = selected.time || {};
-                        const lowerDay = day.toLowerCase();
-                        const valueOpen = time[`${lowerDay}Open`];
-                        const valueClose = time[`${lowerDay}Close`];
-
-                        if (
-                          !valueOpen ||
-                          !valueClose ||
-                          valueOpen === "close" ||
-                          valueClose === "close") {
-                          return (
-                            <tr key={day}>
-                              <td>{day}</td>
-                              <td>Close</td>
-                            </tr>
-                          );
-                        }
-
-                        return (
-                          <tr key={day}>
-                            <td>{day}</td>
-                            <td>{valueOpen} - {valueClose}</td>
-                          </tr>
-                        );
-                      })}
+                      <tr><td>Monday - Friday</td><td>09:00 - 17:00</td></tr>
+                      <tr><td>Saturday</td><td>10:00 - 16:00</td></tr>
+                      <tr><td>Sunday</td><td>Closed</td></tr>
                     </tbody>
                   </table>
                 </div>

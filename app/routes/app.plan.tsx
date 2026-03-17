@@ -166,14 +166,12 @@ export async function action({ request }: ActionFunctionArgs) {
           $name: String!,
           $returnUrl: URL!,
           $trialDays: Int,
-          $test: Boolean,
           $lineItems: [AppSubscriptionLineItemInput!]!
         ) {
           appSubscriptionCreate(
             name: $name,
             returnUrl: $returnUrl,
             trialDays: $trialDays,
-            test: $test,
             lineItems: $lineItems
           ) {
             confirmationUrl
@@ -185,7 +183,6 @@ export async function action({ request }: ActionFunctionArgs) {
                     name: plan,
                     returnUrl: `https://${session.shop}/admin/apps/${process.env.SHOPIFY_APP_NAME || 'app-1972'}/app/plan`,
                     trialDays: 3,
-                    test: true,
                     lineItems: [{
                         plan: {
                             appRecurringPricingDetails: {
@@ -279,13 +276,22 @@ export default function Plan() {
                                         Current
                                     </div>
                                 ) : (
-                                    <s-button
-                                        variant="primary"
-                                        onClick={() => handleSelectPlan('basic')}
-                                        loading={isLoading && fetcher.formData?.get('plan') === 'basic'}
-                                    >
-                                        Select
-                                    </s-button>
+                                    <>
+                                        <s-button
+                                            variant="primary"
+                                            commandFor="downgrade-modal"
+                                            loading={isLoading && fetcher.formData?.get('plan') === 'basic'}
+                                        >
+                                            Select
+                                        </s-button>
+                                        <s-modal id="downgrade-modal" heading="Downgrade to Basic plan?">
+                                            <s-box padding="base">
+                                                <s-text>This will cancel your current paid subscription. You will still have access to your current features until the end of your billing cycle.</s-text>
+                                            </s-box>
+                                            <s-button slot="primary-action" variant="primary" onClick={() => fetcher.submit({ plan: 'basic' }, { method: "post" })} commandFor="downgrade-modal" command="--hide">Confirm Downgrade</s-button>
+                                            <s-button slot="secondary-actions" commandFor="downgrade-modal" command="--hide">Cancel</s-button>
+                                        </s-modal>
+                                    </>
                                 )}
                             </div>
 
@@ -430,6 +436,10 @@ export default function Plan() {
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
                                     <span>Bulk CSV Import/Export</span>
+                                </div>
+                                <div className={styles.listItem}>
+                                    <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
+                                    <span><b>Advanced Store Analytics Detail</b></span>
                                 </div>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>

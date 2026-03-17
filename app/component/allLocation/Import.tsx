@@ -3,7 +3,11 @@ import { useAppBridge } from '@shopify/app-bridge-react';
 import { useState, useEffect } from 'react';
 import { useFetcher } from 'react-router';
 
-export default function Import() {
+interface ImportProps {
+    level?: string;
+}
+
+export default function Import({ level }: ImportProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [importResult, setImportResult] = useState<{
         type: 'success' | 'error';
@@ -179,7 +183,7 @@ export default function Import() {
 
     return (
         <>
-            <s-button icon="import" commandFor="btnImport">
+            <s-button icon="import" commandFor="btnImport" disabled={level === 'basic'}>
                 Import
             </s-button>
             <div style={{ display: "none" }}>

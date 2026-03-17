@@ -1,4 +1,5 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
+import BannerUpgrade from "app/component/BannerUpgrade";
 import styles from "../css/intergration.module.css"
 import { useState } from "react";
 import GoogleMap from "app/component/googleMap";
@@ -14,8 +15,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const shop = session.shop
 
   const level = await getEffectiveLevel(shop);
+  // Remove redirect
+  // if (level !== 'plus') {
+  //   throw new Response(null, { status: 302, headers: { Location: "/app/plan" } });
+  // }
+
   if (level !== 'plus') {
-    throw new Response(null, { status: 302, headers: { Location: "/app/plan" } });
+    return { exitkey: null, shopConnection: null, shopB2B: null, level };
   }
 
   const exitkey = await prisma.key.findFirst({
@@ -27,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const shopB2B = shopConnection?.sourceShop
     ? await prisma.key.findFirst({ where: { shop: shopConnection.sourceShop } })
     : null
-  return { exitkey, shopConnection, shopB2B };
+  return { exitkey, shopConnection, shopB2B, level };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -120,7 +126,9 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Intergrations() {
-  const [number, setNumber] = useState<number>(0)
+  const { level } = useLoaderData<typeof loader>();
+  const [number, setNumber] = useState<number>(0);
+  const isPlus = level === 'plus';
 
   return (
     <s-page heading="Dynamic Store Locator">
@@ -128,7 +136,10 @@ export default function Intergrations() {
         <s-icon type="connect"></s-icon>
         <h2>Integrations</h2>
       </s-stack>
-      <div className={styles.wrapper}>
+      {!isPlus && (
+        <BannerUpgrade currentLevel={level} requiredLevel="plus" featureName="Integrations" />
+      )}
+      <div className={styles.wrapper} style={{ opacity: isPlus ? 1 : 0.5, pointerEvents: isPlus ? 'auto' : 'none' }}>
         <s-stack inlineSize="100%">
           {number === 0 && <ShopifyB2B />}
         </s-stack>

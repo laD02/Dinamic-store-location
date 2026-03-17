@@ -89,12 +89,15 @@ export function startCron() {
             const currentHrMin = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
             const currentDayName = now.toLocaleDateString('en-US', { weekday: 'long' });
             const currentDate = now.getDate();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
 
-            // 1️⃣ Cleanup: Delete old StoreEvent (older than 1 minute)
-            const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
+            // 1️⃣ Cleanup: Delete old StoreEvent (older than 24 hours)
+            // Essential for unique tracking logic that relies on daily session history
+            const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             await prisma.storeEvent.deleteMany({
                 where: {
-                    createdAt: { lte: oneMinuteAgo }
+                    createdAt: { lte: twentyFourHoursAgo }
                 }
             });
 
@@ -143,9 +146,15 @@ export function startCron() {
                 }
             }
 
-            // 4️⃣ Check for automated notifications for Plus plans only
+            // 4️⃣ Check for automated notifications for Plus plans only (active/not expired)
             const plusPlans = await prisma.plan.findMany({
-                where: { level: "plus" },
+                where: {
+                    level: "plus",
+                    OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: now } }
+                    ]
+                },
                 select: { shop: true }
             });
             const plusShops = plusPlans.map(p => p.shop);
@@ -222,7 +231,7 @@ export function startCron() {
         } catch (error) {
             console.error("[Cron] Error:", error);
         }
-    }, 1000);
+    }, 60000);
 }
 
 // Start core services

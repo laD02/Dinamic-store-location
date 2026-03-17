@@ -1,5 +1,5 @@
 
-export default function Review({
+export default function Pricing({
     storeHandle,
     check,
     handleCheck,
@@ -10,11 +10,8 @@ export default function Review({
     handleCheck: (value: boolean) => void
     index: number
 }) {
-    // const fetcher = useFetcher()
-
     const handleToggle = (e: any) => {
         e.stopPropagation()
-
         handleCheck(!check)
     }
 
@@ -26,8 +23,8 @@ export default function Review({
                         {
                             check ?
                                 <>
-                                    <s-icon type="check-circle-filled" interestFor="review" />
-                                    <s-tooltip id="review" >Done</s-tooltip>
+                                    <s-icon type="check-circle-filled" interestFor="pricing-done" />
+                                    <s-tooltip id="pricing-done">Done</s-tooltip>
                                 </>
                                 :
                                 <s-icon type="circle-dashed" />
@@ -35,14 +32,14 @@ export default function Review({
                     </s-clickable>
                 </s-stack>
                 <s-stack gap="small" inlineSize="92%">
-                    <s-heading>Shopify B2B (Business Plus Plans Only)</s-heading>
+                    <s-heading>Choose the Right Plan</s-heading>
                     {
-                        index === 3 &&
+                        index === 6 &&
                         <>
-                            <s-paragraph>If Shopify B2B is enabled on your store (or on an expansion store), you can automatically import Company Locations to display on your map. Go to the Integrations tab to sync your Shopify B2B companies with the map. If you're using B2B on an expansion store, make sure to generate an API key in that expansion store first before syncing.</s-paragraph>
+                            <s-paragraph>Unlock advanced features like bulk import/export, Shopify B2B integration, and unlimited locations by choosing the plan that fits your business scale.</s-paragraph>
                             <s-stack direction="inline">
-                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/integrations`}>
-                                    <s-button variant="primary">Go to Integrations</s-button>
+                                <s-link href={`https://admin.shopify.com/store/${storeHandle}/apps/app-1972/app/plan`}>
+                                    <s-button variant="primary">Explore Plans</s-button>
                                 </s-link>
                             </s-stack>
                         </>
