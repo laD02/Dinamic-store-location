@@ -19,8 +19,6 @@ export async function getEffectiveLevel(shop: string): Promise<string> {
             await prisma.plan.update({
                 where: { shop },
                 data: {
-                    level: "basic",
-                    expiresAt: null,
                 },
             });
         }

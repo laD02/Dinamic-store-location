@@ -55,7 +55,7 @@ export default function PremiumMarkerSection({
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                 gap: '6px',
                 padding: '6px',
                 background: '#fcfcfc',
@@ -85,14 +85,15 @@ export default function PremiumMarkerSection({
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+                                transition: 'border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, transform 200ms cubic-bezier(0.4, 0, 0.2, 1), filter 200ms ease, opacity 200ms ease',
                                 boxShadow: isSelected ? '0 2px 6px rgba(0,91,211,0.15)' : (isHovered ? '0 2px 4px rgba(0,0,0,0.06)' : '0 1px 2px rgba(0,0,0,0.04)'),
                                 transform: isHovered ? 'translateY(-1px) scale(1.02)' : 'translateY(0) scale(1)',
                                 height: '100%',
                                 boxSizing: 'border-box',
                                 filter: level === 'basic' ? 'grayscale(1)' : 'none',
                                 opacity: level === 'basic' ? 0.6 : 1,
-                                zIndex: isHovered ? 1 : 0
+                                zIndex: isHovered ? 1 : 0,
+                                willChange: 'transform, box-shadow'
                             }}
                         >
                             <div style={{
@@ -113,7 +114,8 @@ export default function PremiumMarkerSection({
                             <div style={{
                                 fontSize: '11px',
                                 color: isSelected || isHovered ? '#005bd3' : '#4a5568',
-                                fontWeight: isSelected || isHovered ? '600' : '500',
+                                fontWeight: isSelected ? '600' : '500',
+                                textShadow: isHovered && !isSelected ? '0 0 0.5px currentColor' : 'none',
                                 lineHeight: '1.2',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,

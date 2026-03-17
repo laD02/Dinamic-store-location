@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         prisma.store.count({ where: { shop } })
     ]);
     let limit = 10;
-    if (level === 'advanced') limit = 500;
+    if (level === 'advanced') limit = 50;
     if (level === 'plus') limit = 1000000;
 
     const googleMapsApiKey = process.env.GOOGLE_MAP_KEY || "";
@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const level = plan?.level || 'basic';
     let limit = 10;
-    if (level === 'advanced') limit = 500;
+    if (level === 'advanced') limit = 50;
     if (level === 'plus') limit = 1000000; // Unlimited practically
 
     if (locationCount >= limit) {

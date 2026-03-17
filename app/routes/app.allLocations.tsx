@@ -84,7 +84,7 @@ export async function action({ request }: ActionFunctionArgs) {
       prisma.store.count({ where: { shop } })
     ]);
     let limit = 10;
-    if (level === 'advanced') limit = 500;
+    if (level === 'advanced') limit = 50;
     if (level === 'plus') limit = 1000000;
 
     const file = formData.get("file");

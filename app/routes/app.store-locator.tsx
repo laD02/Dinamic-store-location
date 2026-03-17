@@ -92,6 +92,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       mapStyle: "[]",
     };
 
+  // Apply soft gating for Basic plan
+  if (level === 'basic') {
+    (style as any).markerIcon = null;
+    (style as any).mapStyle = "[]";
+  }
+
   return new Response(JSON.stringify({ stores: storesWithStats, style }), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });

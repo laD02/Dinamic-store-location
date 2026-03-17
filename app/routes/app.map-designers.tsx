@@ -44,12 +44,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let markerIconUrl = branding.markerIcon;
 
-  // Gating for Basic plan
+  // Gating for Basic plan - PRESERVE existing DB values if already premium
   if (level === 'basic') {
-    // Only standard map style allowed
-    branding.mapStyle = "[]";
-    // Only default marker allowed (null)
-    markerIconUrl = null;
+    // We don't allow UPDATING to premium, but we also won't overwrite existing premium with defaults here
+    // unless the user specifically clears them (which they can't because of UI disabling)
+    // Actually, to be safe, we just don't allow updating these fields at all if on basic
+    branding.mapStyle = exist?.mapStyle || "[]";
+    markerIconUrl = exist?.markerIcon || null;
   }
 
   if (markerIconUrl && markerIconUrl.startsWith("data:image")) {
@@ -221,7 +222,7 @@ export default function MapDesigners() {
         cornerRadius: cfg.cornerRadius,
       };
 
-      const loadedBranding = {
+      const loadedBranding = (level === 'basic') ? defaultBranding : {
         markerIcon: cfg.markerIcon,
         mapStyle: cfg.mapStyle || "[]",
       };
@@ -483,8 +484,8 @@ export default function MapDesigners() {
               key={isMobile ? 'mobile-map' : 'desktop-map'}
               stores={stores ?? []}
               popupStyle={popup}
-              mapStyle={branding.mapStyle}
-              markerIcon={branding.markerIcon}
+              mapStyle={level === 'basic' ? "[]" : branding.mapStyle}
+              markerIcon={level === 'basic' ? null : branding.markerIcon}
             />
           </div>
         </div>

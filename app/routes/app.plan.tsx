@@ -278,7 +278,7 @@ export default function Plan() {
                                 </div>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
-                                    <span>Standard Map Themes & Pins</span>
+                                    <span>Standard Map Themes</span>
                                 </div>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
@@ -332,7 +332,7 @@ export default function Plan() {
                             <div className={styles.list}>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
-                                    <span>Up to 500 Locations</span>
+                                    <span>Up to 50 Locations</span>
                                 </div>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
@@ -340,7 +340,7 @@ export default function Plan() {
                                 </div>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
-                                    <span>Conversion & Click Tracking</span>
+                                    <span><b>Conversion & Click Tracking</b></span>
                                 </div>
                                 <div className={styles.listItem}>
                                     <i className={`fa-solid fa-check ${styles.checkIcon}`}></i>
