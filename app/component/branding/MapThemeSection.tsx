@@ -30,7 +30,11 @@ export default function MapThemeSection({
                     transform: isHovered ? 'translateY(-1px)' : 'translateY(0)'
                 }}
             >
-                <s-select value={mapStyleName} onChange={(e: any) => onThemeChange(e.currentTarget.value)}>
+                <s-select 
+                    value={mapStyleName} 
+                    onChange={(e: any) => onThemeChange(e.currentTarget.value)}
+                    disabled={level === 'basic'}
+                >
                     {mapThemes.filter(t => level !== 'basic' || t.name === "Standard").map((theme) => (
                         <s-option key={theme.name} value={theme.name}>
                             {theme.name}

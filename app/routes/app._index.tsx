@@ -15,6 +15,9 @@ import { getEffectiveLevel } from 'app/utils/plan.server'
 export async function loader({ request }: LoaderFunctionArgs) {
     const { admin, session } = await authenticate.admin(request);
 
+    const shop = session.shop;
+    const storeHandle = shop.replace(".myshopify.com", "");
+
     const query = `
         query {
         themes(first: 10) {
@@ -29,61 +32,58 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
     `;
 
-    const response = await admin.graphql(query);
-    const data = await response.json();
+    // Fetch shop connections once
+    const sourceShopsPromise = prisma.shopConnection.findMany({
+        where: { targetShop: shop },
+        select: { sourceShop: true }
+    }).then(connections => connections.map(c => c.sourceShop));
 
-    const mainTheme = data.data.themes.edges.find(
+    // Phase 1: Fetch theme, on-board status, level, and shop connections
+    const [themeData, onBoard, level, sourceShops] = await Promise.all([
+        admin.graphql(query).then((res: any) => res.json()),
+        prisma.onBoard.findFirst({ where: { shop } }),
+        getEffectiveLevel(shop),
+        sourceShopsPromise
+    ]);
+
+    const mainTheme = themeData.data.themes.edges.find(
         (edge: any) => edge.node.role === "MAIN"
     );
+    const themeId = mainTheme?.node.id.split("/").pop() || "";
 
-    const themeGid = mainTheme.node.id;
-    const themeId = themeGid.split("/").pop(); // số ID
+    // Filter sourceShops by plan level
+    const effectiveSourceShops = level === 'plus' ? sourceShops : [];
 
-    const shop = session.shop
-    const storeHandle = session.shop.replace(".myshopify.com", "");
+    // Phase 2: Fetch embed status and counts using data from Phase 1
+    // CACHE: Trust the database if embed is already enabled
+    const cachedEmbed = onBoard?.embedEnabled ?? false;
 
-    const onBoard = await prisma.onBoard.findFirst({
-        where: { shop }
-    })
+    const [counts, newEmbedStore] = await Promise.all([
+        prisma.store.groupBy({
+            by: ['visibility'],
+            where: {
+                OR: [
+                    { shop },
+                    { shop: { in: effectiveSourceShops } }
+                ]
+            },
+            _count: true
+        }),
+        cachedEmbed ? Promise.resolve(true) : hasStoreLocatorEmbedEnabled(session, 'store-locator', themeId)
+    ]);
 
-    const visibleCount = await prisma.store.count({
-        where: {
-            OR: [
-                { shop, visibility: "visible" },
-                // Lấy các shop được connect với shop hiện tại
-                {
-                    shop: {
-                        in: await prisma.shopConnection.findMany({
-                            where: { targetShop: shop },
-                            select: { sourceShop: true }
-                        }).then(connections => connections.map(c => c.sourceShop))
-                    },
-                    visibility: "visible"
-                }
-            ]
-        }
-    })
+    const visibleCount = counts.find(c => c.visibility === "visible")?._count ?? 0;
+    const hiddenCount = counts.find(c => c.visibility === "hidden")?._count ?? 0;
+    let embedStore = newEmbedStore;
 
-    const hiddenCount = await prisma.store.count({
-        where: {
-            OR: [
-                { shop, visibility: "hidden" },
-                // Lấy các shop được connect với shop hiện tại
-                {
-                    shop: {
-                        in: await prisma.shopConnection.findMany({
-                            where: { targetShop: shop },
-                            select: { sourceShop: true }
-                        }).then(connections => connections.map(c => c.sourceShop))
-                    },
-                    visibility: "hidden"
-                }
-            ]
-        }
-    })
-
-    const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
-    const level = await getEffectiveLevel(shop)
+    // Update cache if it changed to true
+    if (newEmbedStore && !cachedEmbed) {
+        await prisma.onBoard.upsert({
+            where: { shop },
+            update: { embedEnabled: true },
+            create: { shop, embedEnabled: true, onBoarding: [] }
+        });
+    }
 
     return { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount, level }
 }
@@ -97,11 +97,15 @@ export async function action({ request }: ActionFunctionArgs) {
     const remove = formData.get("remove") === "true"
 
     if (actionType === 'checkAddMap') {
-        // const hasBlock = await hasStoreLocatorAddBlock(admin, 'store-locator')
         const embedStore = await hasStoreLocatorEmbedEnabled(session, 'store-locator')
         const verified = embedStore
 
         if (verified) {
+            await prisma.onBoard.upsert({
+                where: { shop },
+                update: { embedEnabled: true },
+                create: { shop, embedEnabled: true, onBoarding: ["addMap"] }
+            })
             const existing = await prisma.onBoard.findFirst({
                 where: { shop },
             })
@@ -194,7 +198,7 @@ export default function Onboarding() {
     const [count, setCount] = useState(0)
     const { storeHandle, themeId, onBoard, embedStore, visibleCount, hiddenCount, level } = useLoaderData()
 
-    const locationLimit = level === 'plus' ? 'Unlimited' : (level === 'advanced' ? '500' : '10')
+    const locationLimit = level === 'plus' ? 'Unlimited' : (level === 'advanced' ? '50' : '10')
 
     const designFetcher = useFetcher()
     const reviewFetcher = useFetcher()

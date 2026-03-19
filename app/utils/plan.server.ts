@@ -29,24 +29,53 @@ export async function getEffectiveLevel(shop: string): Promise<string> {
 }
 
 /**
+ * Lấy plan từ cache (DB), nếu cũ quá 1 tiếng thì tự động sync ngầm.
+ * Giúp app load tức thì mà vẫn đảm bảo dữ liệu mới.
+ */
+export async function getCachedPlan(admin: any, shop: string): Promise<string> {
+    const plan = await prisma.plan.findUnique({ where: { shop } });
+    const now = new Date();
+    const oneHour = 60 * 60 * 1000;
+
+    // Nếu chưa có plan trong DB, bắt buộc phải sync lần đầu
+    if (!plan) {
+        return await syncPlanWithShopify(admin, shop);
+    }
+
+    // Nếu đã có plan, trả về ngay lập tức (mất 1-2ms)
+    // Nếu dữ liệu cũ hơn 1 tiếng, thì bắn lệnh sync ngầm (không await)
+    const isStale = !plan.lastSyncedAt || (now.getTime() - plan.lastSyncedAt.getTime() > oneHour);
+    if (isStale) {
+        syncPlanWithShopify(admin, shop).catch((err) => {
+            console.error(`[Background Sync Error] ${shop}:`, err);
+        });
+    }
+
+    return plan.level;
+}
+
+/**
  * Đồng bộ hóa thông tin gói cước từ Shopify GraphQL API vào Database.
  * Thường dùng khi người dùng truy cập app lần đầu hoặc cài đặt lại.
  */
 export async function syncPlanWithShopify(admin: any, shop: string) {
-    const response = await admin.graphql(
-        `#graphql
-        query {
-            appInstallation {
-                activeSubscriptions {
-                    id
-                    name
-                    status
-                    currentPeriodEnd
-                    trialDays
+    const [response, existingPlan] = await Promise.all([
+        admin.graphql(
+            `#graphql
+            query {
+                appInstallation {
+                    activeSubscriptions {
+                        id
+                        name
+                        status
+                        currentPeriodEnd
+                        trialDays
+                    }
                 }
-            }
-        }`
-    );
+            }`
+        ),
+        prisma.plan.findUnique({ where: { shop } })
+    ]);
 
     const json = await response.json();
     const subscriptions = json.data?.appInstallation?.activeSubscriptions || [];
@@ -55,7 +84,6 @@ export async function syncPlanWithShopify(admin: any, shop: string) {
     let expiresAt: Date | null = null;
 
     const activeSub = subscriptions.find((sub: any) => sub.status === 'ACTIVE');
-    const existingPlan = await prisma.plan.findUnique({ where: { shop } });
 
     if (activeSub) {
         actualLevel = activeSub.name.toLowerCase();
@@ -82,8 +110,23 @@ export async function syncPlanWithShopify(admin: any, shop: string) {
     if (!existingPlan || existingPlan.level !== actualLevel || oldExpiresAt !== newExpiresAt) {
         await prisma.plan.upsert({
             where: { shop },
-            update: { level: actualLevel, expiresAt: expiresAt },
-            create: { shop, level: actualLevel, expiresAt: expiresAt },
+            update: {
+                level: actualLevel,
+                expiresAt: expiresAt,
+                lastSyncedAt: new Date()
+            },
+            create: {
+                shop,
+                level: actualLevel,
+                expiresAt: expiresAt,
+                lastSyncedAt: new Date()
+            },
+        });
+    } else {
+        // Cập nhật lại thời gian sync kể cả khi level không đổi
+        await prisma.plan.update({
+            where: { shop },
+            data: { lastSyncedAt: new Date() }
         });
     }
 

@@ -1,37 +1,42 @@
-// app/utils/embedStore.ts
 export async function hasStoreLocatorEmbedEnabled(
   session: any,
-  embedBlockHandle: string
+  embedBlockHandle: string,
+  themeId?: string
 ): Promise<boolean> {
   try {
     const shopDomain = session.shop;
     const accessToken = session.accessToken;
 
-    // Step 1: Get main theme
-    const themesResponse = await fetch(
-      `https://${shopDomain}/admin/api/2025-01/themes.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
+    let mainThemeId = themeId;
+
+    if (!mainThemeId) {
+      // Step 1: Get main theme
+      const themesResponse = await fetch(
+        `https://${shopDomain}/admin/api/2025-01/themes.json`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!themesResponse.ok) {
+        return false;
       }
-    );
 
-    if (!themesResponse.ok) {
-      return false;
-    }
+      const themesData = await themesResponse.json();
+      const mainTheme = themesData.themes?.find((t: any) => t.role === 'main');
 
-    const themesData = await themesResponse.json();
-    const mainTheme = themesData.themes?.find((t: any) => t.role === 'main');
-
-    if (!mainTheme) {
-      return false;
+      if (!mainTheme) {
+        return false;
+      }
+      mainThemeId = mainTheme.id;
     }
 
     // Step 2: Get settings_data.json
     const assetResponse = await fetch(
-      `https://${shopDomain}/admin/api/2025-01/themes/${mainTheme.id}/assets.json?asset[key]=config/settings_data.json`,
+      `https://${shopDomain}/admin/api/2025-01/themes/${mainThemeId}/assets.json?asset[key]=config/settings_data.json`,
       {
         headers: {
           'X-Shopify-Access-Token': accessToken,

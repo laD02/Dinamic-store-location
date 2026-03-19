@@ -20,7 +20,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const level = await getEffectiveLevel(shop);
+  const [level, style] = await Promise.all([
+    getEffectiveLevel(shop),
+    prisma.style.findFirst({ where: { shop } }).then(s => s || {
+      primaryColor: "#000",
+      secondaryColor: "#000",
+      primaryFont: "Roboto",
+      secondaryFont: "Open Sans",
+      color: "#000",
+      markerIcon: null,
+      mapStyle: "[]",
+    })
+  ]);
+
   const isPlus = level === 'plus';
 
   let sourceShops: string[] = [];
@@ -80,17 +92,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ...store,
     totalActivity: statsMap.get(store.id) || 0
   }));
-
-  const style =
-    (await prisma.style.findFirst({ where: { shop } })) || {
-      primaryColor: "#000",
-      secondaryColor: "#000",
-      primaryFont: "Roboto",
-      secondaryFont: "Open Sans",
-      color: "#000",
-      markerIcon: null,
-      mapStyle: "[]",
-    };
 
   // Apply soft gating for Basic plan
   if (level === 'basic') {

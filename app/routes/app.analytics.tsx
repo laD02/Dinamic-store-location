@@ -10,19 +10,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const { session } = await authenticate.admin(request);
     const shop = session?.shop;
 
-    const level = await getEffectiveLevel(shop);
-    // Remove redirect
-    // if (!plan || plan.level === 'basic') {
-    //     throw new Response(null, { status: 302, headers: { Location: "/app/plan" } });
-    // }
-
-    const connections = level === 'plus'
-        ? await prisma.shopConnection.findMany({
+    const [level, connections] = await Promise.all([
+        getEffectiveLevel(shop),
+        prisma.shopConnection.findMany({
             where: { targetShop: shop }
         })
-        : [];
+    ]);
 
     const sourceShops = connections.map(c => c.sourceShop);
+
+    const effectiveSourceShops = level === 'plus' ? sourceShops : [];
 
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -32,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             where: {
                 OR: [
                     { shop },
-                    { shop: { in: sourceShops } }
+                    { shop: { in: effectiveSourceShops } }
                 ],
                 date: { gte: ninetyDaysAgo }
             },
@@ -65,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             where: {
                 OR: [
                     { shop },
-                    ...(sourceShops.length ? [{ shop: { in: sourceShops } }] : [])
+                    { shop: { in: effectiveSourceShops } }
                 ]
             },
             select: {

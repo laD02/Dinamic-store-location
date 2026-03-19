@@ -30,19 +30,21 @@ export default function CustomIconSection({
                         onMouseEnter={() => level !== 'basic' && setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
                         style={{
-                            border: isHovered ? '1px dashed #005bd3' : '1px dashed #d2d5d8',
+                            border: isHovered && level !== 'basic' ? '1px dashed #005bd3' : '1px dashed #d2d5d8',
                             borderRadius: '6px',
-                            background: isHovered ? '#f9fbff' : '#fafbfb',
+                            background: isHovered && level !== 'basic' ? '#f9fbff' : '#fafbfb',
                             transition: 'all 200ms ease',
                             padding: '10px',
                             cursor: level === 'basic' ? 'not-allowed' : 'pointer',
                             opacity: level === 'basic' ? 0.6 : 1,
                             filter: level === 'basic' ? 'grayscale(1)' : 'none',
-                            transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
-                            boxShadow: isHovered ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'
+                            transform: isHovered && level !== 'basic' ? 'translateY(-1px)' : 'translateY(0)',
+                            boxShadow: isHovered && level !== 'basic' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                            pointerEvents: level === 'basic' ? 'none' : 'auto'
                         }}
                     >
                         <s-drop-zone
+                            disabled={level === 'basic'}
                             accessibilityLabel="Upload custom marker icon"
                             accept="image/*"
                             onChange={(e: any) => {
@@ -68,8 +70,11 @@ export default function CustomIconSection({
                             border: isHovered ? '1px solid #b3d1ff' : '1px solid #f0f0f0',
                             borderRadius: '8px',
                             transition: 'all 200ms ease',
-                            transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
-                            boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.02)'
+                            transform: isHovered && level !== 'basic' ? 'translateY(-1px)' : 'translateY(0)',
+                            boxShadow: isHovered && level !== 'basic' ? '0 4px 12px rgba(0,0,0,0.08)' : '0 1px 2px rgba(0,0,0,0.02)',
+                            opacity: level === 'basic' ? 0.7 : 1,
+                            filter: level === 'basic' ? 'grayscale(0.5)' : 'none',
+                            pointerEvents: level === 'basic' ? 'none' : 'auto'
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -100,6 +105,7 @@ export default function CustomIconSection({
                             variant="tertiary"
                             tone="critical"
                             onClick={onRemove}
+                            disabled={level === 'basic'}
                         >
                             Clear
                         </s-button>

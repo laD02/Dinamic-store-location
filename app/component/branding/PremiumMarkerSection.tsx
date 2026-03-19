@@ -44,6 +44,7 @@ export default function PremiumMarkerSection({
                         <s-button
                             variant="tertiary"
                             tone="critical"
+                            disabled={level === 'basic'}
                             onClick={onRemove}
                         >
                             Clear
@@ -92,6 +93,7 @@ export default function PremiumMarkerSection({
                                 boxSizing: 'border-box',
                                 filter: level === 'basic' ? 'grayscale(1)' : 'none',
                                 opacity: level === 'basic' ? 0.6 : 1,
+                                pointerEvents: level === 'basic' ? 'none' : 'auto',
                                 zIndex: isHovered ? 1 : 0,
                                 willChange: 'transform, box-shadow'
                             }}
@@ -135,18 +137,21 @@ export default function PremiumMarkerSection({
                         <div style={{ fontSize: '12px', color: '#4a5568', fontWeight: '500' }}>Marker Color:</div>
                         <div style={{ position: 'relative' }} ref={colorPickerRef}>
                             <div
-                                onClick={() => setShowColorPicker(!showColorPicker)}
+                                onClick={() => level !== 'basic' && setShowColorPicker(!showColorPicker)}
                                 style={{
                                     width: '28px',
                                     height: '28px',
                                     borderRadius: '4px',
                                     backgroundColor: markerColor,
                                     border: '1px solid #d2d5d8',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                    cursor: level === 'basic' ? 'not-allowed' : 'pointer',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                    opacity: level === 'basic' ? 0.6 : 1,
+                                    filter: level === 'basic' ? 'grayscale(0.5)' : 'none',
+                                    pointerEvents: level === 'basic' ? 'none' : 'auto'
                                 }}
                             />
-                            {showColorPicker && (
+                            {showColorPicker && level !== 'basic' && (
                                 <div style={{
                                     position: 'absolute',
                                     zIndex: 100,

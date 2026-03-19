@@ -7,12 +7,12 @@ import { authenticate } from "../shopify.server";
 import prisma from "app/db.server";
 import { useEffect, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { syncPlanWithShopify } from "../utils/plan.server";
+import { getCachedPlan } from "../utils/plan.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
-  const level = await syncPlanWithShopify(admin, session.shop);
-  
+  const level = await getCachedPlan(admin, session.shop);
+
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     level: level

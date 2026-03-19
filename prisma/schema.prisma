@@ -50,6 +50,7 @@ model Store {
   events     StoreEvent[]
 
   @@index([shop])
+  @@index([shop, visibility])
 }
 
 model Style {
@@ -87,9 +88,10 @@ model GeocodeCache {
 }
 
 model OnBoard {
-  id         String @id @default(cuid())
-  shop       String @unique
-  onBoarding Json?
+  id           String @id @default(cuid())
+  shop         String @unique
+  onBoarding   Json?
+  embedEnabled Boolean?
 }
 
 model Key {
@@ -188,12 +190,13 @@ model Notification {
 }
 
 model Plan {
-  id        String   @id @default(cuid())
-  shop      String   @unique
-  level     String   @default("basic")
-  expiresAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  shop         String    @unique
+  level        String    @default("basic")
+  expiresAt    DateTime?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 enum StoreEventType {

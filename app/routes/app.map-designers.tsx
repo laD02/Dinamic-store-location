@@ -16,16 +16,15 @@ import { getEffectiveLevel } from "../utils/plan.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const shop = session?.shop;
-  const stores = await prisma.store.findMany({
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-  const config = await prisma.style.findFirst({
-    where: { shop }
-  })
-  const googleMapsApiKey = process.env.GOOGLE_MAP_KEY
-  const level = await getEffectiveLevel(session.shop);
+  const [stores, config, level] = await Promise.all([
+    prisma.store.findMany({ 
+      where: { shop },
+      orderBy: { createdAt: 'desc' } 
+    }),
+    prisma.style.findFirst({ where: { shop } }),
+    getEffectiveLevel(session.shop)
+  ]);
+  const googleMapsApiKey = process.env.GOOGLE_MAP_KEY;
   return { stores, config, googleMapsApiKey, level };
 }
 
